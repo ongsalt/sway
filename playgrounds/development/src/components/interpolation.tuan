@@ -1,0 +1,10 @@
+<script>
+    import { signal } from "tuan"
+
+    let description = signal("sdjfhgiu")
+</script>
+
+<main>
+    <h1> Title </h1>
+    <p>{description.value}</p>
+</main>

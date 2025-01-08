@@ -8,3 +8,6 @@ export type Test = typeof a & {
 }
 
 console.log("jdfhuik")
+
+export { parse } from "./internal/index"
+export { computed, signal, effect } from "./signal"
