@@ -16,6 +16,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "default": "./dist/runtime.js"
     }
   },
   "devDependencies": {
@@ -25,12 +29,17 @@
     "vite-plugin-dts": "^4.4.0"
   },
   "dependencies": {
+    "@types/escodegen": "^0.0.10",
     "@types/estree": "^1.0.6",
+    "@types/html-minifier": "^4.0.5",
     "acorn": "^8.14.0",
     "acorn-typescript": "^1.4.13",
     "escodegen": "^2.1.0",
+    "estree-walker": "^3.0.3",
+    "html-minifier": "^4.0.0",
     "node-html-parser": "^7.0.1",
     "periscopic": "^4.0.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "zimmerframe": "^1.1.2"
   }
 }

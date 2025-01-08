@@ -2,7 +2,6 @@ import { expect, it, test } from "vitest"
 import { parseInterpolation } from "../lib/compiler/parser"
 
 test("interpolation parsing", () => {
-
     expect(parseInterpolation("whatever {a} djdfhuj {b.method({ c: 12 })}"))
         .toStrictEqual([
             {

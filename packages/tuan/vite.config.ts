@@ -11,10 +11,14 @@ export default defineConfig({
     ],
     build: {
         lib: {
-            entry: resolve(__dirname, 'lib/index.ts'),
-            name: 'Tuan',
+            entry: [
+                resolve(__dirname, 'lib/index.ts'),
+                resolve(__dirname, 'lib/runtime.ts')
+            ],
+            formats: ["es"],
+            // name: 'Tuan',
             // the proper extensions will be added
-            fileName: 'index',
+            fileName: (format, entryName) => `${entryName}.js`,
         },
         rollupOptions: {
             // make sure to externalize deps that shouldn't be bundled

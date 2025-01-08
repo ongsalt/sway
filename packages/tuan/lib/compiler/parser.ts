@@ -1,4 +1,4 @@
-type TextNode = {
+export type TuanTextNode = {
     type: "text" | "interpolation"
     body: string // without {}
 }
@@ -7,8 +7,8 @@ type TextNode = {
  * input: `whatever {a} djdfhuj {b.method({ c: 12 })}` 
  * input: `whatever /{a} djdfhuj {b.method({ c: 12 })}` 
  */
-export function parseInterpolation(code: string): TextNode[] {
-    const out: TextNode[] = []
+export function parseInterpolation(code: string): TuanTextNode[] {
+    const out: TuanTextNode[] = []
     let text = ""
     let count = 0
     let current = 0
@@ -33,6 +33,7 @@ export function parseInterpolation(code: string): TextNode[] {
             count--
             if (count === 0) {
                 current++
+                // TODO: verify that `text` is an expression using acorn
                 out.push({
                     type: "interpolation",
                     body: text
@@ -46,6 +47,11 @@ export function parseInterpolation(code: string): TextNode[] {
         current += 1;
     }
 
+    if (count !== 0) {
+        // TODO: provide more useful information
+        throw new Error("Mismatched parentheses");
+        
+    }
 
     return out
 }
