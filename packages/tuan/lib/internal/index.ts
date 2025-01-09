@@ -1,3 +1,3 @@
 
 
-export * from "./template"
+export { parse } from "./template"

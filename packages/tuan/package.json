@@ -4,11 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite build -w",
+    "dev": "tsup --watch",
     "build": "tsc -p tsconfig.lib.json && vite build",
-    "tsup": "tsup",
-    "watch": "tsup --watch",
-    "preview": "vite preview",
     "test": "vitest"
   },
   "files": [

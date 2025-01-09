@@ -8,27 +8,26 @@ Components
 - need to check out how svelte can have multiple root component
 */
 
-// import { Component } from "../types"
+import { Component } from "../types"
 
-// const _parserNode: HTMLElement = document.createElement("div")
-// export function parseHtml(content: string) {
-//     _parserNode.innerHTML = content
-//     // TODO: multi root
+const _parserNode: HTMLElement = document.createElement("div")
+export function parseHtml(content: string) {
+    _parserNode.innerHTML = content
+    // TODO: multi root
 
-//     const element = _parserNode.removeChild(_parserNode.children[0])
-//     return () => element.cloneNode(true)
-// }
+    const element = _parserNode.removeChild(_parserNode.children[0])
+    return () => element.cloneNode(true)
+}
 
-// export function parse(content: string) {
-//     return clientParse(content)
-// }
+export function parse(content: string) {
+    return clientParse(content)
+}
 
-// export function clientParse(content: string): Component {
-//     const root = parseHtml(content)
+export function clientParse(content: string) {
+    const root = parseHtml(content)
 
-//     return ({ }) => {
+    return () => {
+        return root()
+    }
 
-//         root()
-//     }
-
-// }
+}

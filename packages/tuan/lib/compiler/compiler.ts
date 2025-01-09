@@ -4,7 +4,8 @@ import type { Node } from "estree"
 import { walk } from "estree-walker"
 import { NodeType, parse as parseHtml, type Node as HtmlNode } from "node-html-parser"
 import { NodeCount } from "../types"
-import { generateInterpolation, generateTextAccessor } from "./codegen"
+import { Codegen } from "./codegen"
+import { analyze } from "periscopic"
 import { minifyHtml } from "./html"
 import { parseInterpolation } from "./parser"
 
@@ -19,56 +20,74 @@ export type CompilerOptions = {
 export function compile(code: string, options: Partial<CompilerOptions>) {
     let output = `import * as $ from "tuan/runtime";`
     let func = `export default function ${options.name ?? ""}($$context) {\n`
+
     // First split script, css, and html part
-    const fileRoot = parseHtml(`${code}`)
-    // console.log(fileRoot)
+    const fileRoot = parseHtml(minifyHtml(code), {})
     const scriptNode = fileRoot.children.find(it => it.tagName === "SCRIPT")
     let script = ""
 
-    // to prevent name coliision
-    const nodeCount: NodeCount = {
-        text: 0
-    }
+    let scriptCode = ""
 
+    scriptCode += 'const root = createRoot();\n'
     if (scriptNode) {
         if (scriptNode.attributes.lang === "ts") {
             // fuck ts i will think about this later
         }
 
-        let code = scriptNode.textContent
-        const program = acorn.parse(code, {
-            ecmaVersion: "latest",
-            sourceType: "module"
-        })
-
-        const toRemove: (Node & { start: number, end: number })[] = []
-        walk(program as Node, {
-            enter(node, parent, key, index) {
-                if (node.type === "ImportDeclaration") {
-                    toRemove.push(node as Node & { start: number, end: number })
-                    output = escodegen.generate(node) + '\n' + output
-                }
-            }
-        })
-
-        toRemove.reverse()
-        for (const { start, end } of toRemove) {
-            code = code.substring(0, start) + code.substring(end)
-        }
-
-        // TODO: bind this
-        // TODO: prettier this
-        script += code
-        output += '\n\n'
+        scriptCode += scriptNode.textContent
     }
+
+    const program = acorn.parse(scriptCode, {
+        ecmaVersion: "latest",
+        sourceType: "module"
+    })
+    const { globals, map, scope } = analyze(program as Node)
+
+    // Moving import 
+    const toRemove: (Node & { start: number, end: number })[] = []
+    walk(program as Node, {
+        enter(node, parent, key, index) {
+            if (node.type === "ImportDeclaration") {
+                toRemove.push(node as Node & { start: number, end: number })
+                output = escodegen.generate(node) + '\n' + output
+            }
+        }
+    })
+
+    toRemove.reverse()
+    for (const { start, end } of toRemove) {
+        scriptCode = scriptCode.substring(0, start) + scriptCode.substring(end)
+    }
+
+    // TODO: bind this
+    // TODO: prettier this
+    script += scriptCode
+    output += '\n\n'
 
     func += script + '\n\n';
 
-    // parse html part ---------------
+
+    // Template codegen -------------------
+    const codegen = new Codegen(scope.references)
+
+    let declarations = ''
+    function addDeclaration(declaration: string) {
+        declarations += declaration;
+    }
+
+    let body = ''
+    function addStatement(statements: string) {
+        body += statements;
+    }
+
 
     // TODO: multi root component
     const rest = fileRoot.children.filter(it => it !== scriptNode)
     const root = rest[0]
+    const html = root.toString()
+    const rootName = 'root'
+
+    output += codegen.template(html)
 
     // TODO: move this to seperated function
     // traverse this to find which part of it use reactive value
@@ -84,13 +103,14 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
         const texts = parseInterpolation(node.textContent)
         // const isReactive = texts.some(it => it.type === "interpolation")
         const isReactive = texts.length > 1
-        const interpolationCode = generateInterpolation(texts)
+        const interpolation = codegen.interpolation(texts)
         if (isReactive) {
             // 1. Generate accessor for the text node
-            // accessor: $$runtime.at(parent, path)
-            generateTextAccessor(nodeCount, path)
-            func += `\n`
+            // accessor: $.at(parent, path)
+            const { name, statement } = codegen.accessor("text", path, rootName)
+            addDeclaration(statement)
             // 2. Generate template effect
+            addStatement(codegen.textEffect(name, interpolation))
         } else {
             // embed it into html as is -> ignore
         }
@@ -98,11 +118,31 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
 
     walk_(root, [0])
 
-    console.log(
-        minifyHtml(root.toString())
-    )
+    func += declarations + '\n\n' + body + '\n\n';
 
-    func += "\n}"
-    output += func
+    func += '$.append($$context.anchor, root);\n}';
+    output += func;
+
+    console.log({
+        html,
+        output
+    })
     return output
 }
+
+
+/*
+Subroutine: compile_template
+return: 
+ - $.template("[with {interpolation} removed]")
+ - list of node references (as needed)
+    $.at(root, [1, 2, 4])
+ - list of template effect
+    $.templateEffect(() => {
+        $.setText(node, template)
+    })
+ [later]
+ - bindThis
+ - condition
+ - each
+*/

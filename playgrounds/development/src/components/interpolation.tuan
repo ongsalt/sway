@@ -1,10 +1,15 @@
 <script>
     import { signal } from "tuan";
 
-    let description = signal("sdjfhgiu")
+    let counter = signal(0);
+
+    setInterval(() => {
+        counter.value += 1
+    }, 200)
 </script>
 
 <main>
-    <h1> Title </h1>
-    <p>{description.value}</p>
+    <h1> Counter </h1>
+    <p>Count {counter.value}</p>
+    <button> increment </button>
 </main>

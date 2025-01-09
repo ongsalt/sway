@@ -1,25 +1,56 @@
-import { NodeCount } from "../types";
+import { TagName } from "../types";
 import { TuanTextNode } from "./parser";
 
-export function generateTextAccessor(nodeCount: NodeCount, path: number[]) {
-    
-}
+export class Codegen {
+    constructor(public references: Set<string>) {
 
-export function generateTemplateEffect() {
+    }
 
-}
+    template(html: string) {
+        return `const createRoot = $.template(\`${html}\`);\n`
+    }
 
-export function generateInterpolation(texts: TuanTextNode[]) {
-    let code = '`'
-    for (const { body, type } of texts) {
-        if (type === "text") {
-            code += body
-        } else {
-            code += '${'
-            code += body
-            code += '}'
+    append(anchor: string = '$$context.anchor') {
+
+    }
+
+    accessor(tagName: TagName, path: number[], root: string) {
+        let name: string = tagName
+        let i = 1
+        while (this.references.has(name)) { // Optimize: cache this
+            name = `${tagName}_${i}`
+        }
+        return {
+            name,
+            index: i,
+            statement: `const ${name} = $.at(${root}, [${path.toString()}]);\n`
         }
     }
-    code += '`'
-    return code
+
+    templateEffect(inner: string) {
+        return `$.templateEffect(${inner})`
+    }
+
+    textEffect(nodeName: string, template: string) {
+        return this.templateEffect(`() => $.setText(${nodeName}, ${template})`)
+    }
+
+    interpolation(texts: TuanTextNode[]) {
+        let code = '`'
+        for (const { body, type } of texts) {
+            if (type === "text") {
+                code += body
+            } else {
+                code += '${'
+                code += body
+                code += '}'
+            }
+        }
+        code += '`'
+        return code
+    }
+
+    mount(root: string) {
+
+    }
 }

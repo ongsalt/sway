@@ -1,12 +1,18 @@
 # TODO
-- [ ] templating
+- [ ] compiler/templating
     - [ ] get path of the node that access a signal 
     - [ ] auto update
     - [ ] if/else
     - [ ] loop
+    - [ ] fucking event listener
+- [ ] Signal
+    - [ ] effect
+        - [ ] disposing function 
+        - [ ] auto retrack 
+    - batched rerun
 - [ ] bind:this
 - [ ] vite plugin 
-    - [ ] allow direct component import
+    - [x] allow direct component import
     - [ ] transpile ts
 
 ## Low priority
