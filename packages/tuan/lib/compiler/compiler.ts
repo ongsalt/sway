@@ -1,14 +1,12 @@
 import * as acorn from "acorn"
-import { walk } from "estree-walker"
-import { analyze } from "periscopic"
-import { NodeType, parse as parseHtml, type Node as HtmlNode } from "node-html-parser"
-import type { Node } from "estree"
-import { parseInterpolation } from "./parser"
-import { generateInterpolation, generateTextAccessor } from "./codegen"
 import escodegen from "escodegen"
+import type { Node } from "estree"
+import { walk } from "estree-walker"
+import { NodeType, parse as parseHtml, type Node as HtmlNode } from "node-html-parser"
 import { NodeCount } from "../types"
+import { generateInterpolation, generateTextAccessor } from "./codegen"
 import { minifyHtml } from "./html"
-
+import { parseInterpolation } from "./parser"
 
 
 // we should ignore ts syntax
@@ -19,11 +17,11 @@ export type CompilerOptions = {
 }
 
 export function compile(code: string, options: Partial<CompilerOptions>) {
-    let output = `import * as $ from "tuan/runtime"`
-    let func = `export defualt function ${options.name ?? ""}($$context) {\n`
+    let output = `import * as $ from "tuan/runtime";`
+    let func = `export default function ${options.name ?? ""}($$context) {\n`
     // First split script, css, and html part
     const fileRoot = parseHtml(`${code}`)
-    console.log(fileRoot)
+    // console.log(fileRoot)
     const scriptNode = fileRoot.children.find(it => it.tagName === "SCRIPT")
     let script = ""
 
@@ -80,6 +78,7 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
             node.childNodes.forEach((child, index) => {
                 walk_(child, [...path, index])
             })
+            return
         }
 
         const texts = parseInterpolation(node.textContent)

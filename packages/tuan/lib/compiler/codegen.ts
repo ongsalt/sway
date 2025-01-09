@@ -21,4 +21,5 @@ export function generateInterpolation(texts: TuanTextNode[]) {
         }
     }
     code += '`'
+    return code
 }

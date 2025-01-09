@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite build -w",
     "build": "tsc -p tsconfig.lib.json && vite build",
+    "tsup": "tsup",
+    "watch": "tsup --watch",
     "preview": "vite preview",
     "test": "vitest"
   },
@@ -15,18 +17,25 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./compiler": {
+      "types": "./dist/compiler/index.d.ts",
+      "import": "./dist/compiler/index.js",
+      "require": "./dist/compiler/index.cjs"
     },
     "./runtime": {
       "types": "./dist/runtime.d.ts",
-      "default": "./dist/runtime.js"
+      "import": "./dist/runtime.js",
+      "require": "./dist/runtime.cjs"
     }
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.49.1",
     "@types/node": "^22.10.5",
-    "typescript": "~5.6.2",
-    "vite": "^6.0.5",
-    "vite-plugin-dts": "^4.4.0"
+    "tsup": "^8.3.5",
+    "typescript": "~5.6.2"
   },
   "dependencies": {
     "@types/escodegen": "^0.0.10",

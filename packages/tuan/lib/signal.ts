@@ -1,4 +1,3 @@
-import { Component } from "./types"
 
 export type Subscriber = () => unknown
 export type Signal<T> = {
@@ -54,7 +53,7 @@ export function computed<T>(fn: () => T) {
 // In case there is something else to track/cleanup
 // i should track component scope too
 // but how do i dispose a subscriber tho
-let currentComponent: Component | null = null
+// let currentComponent: Component | null = null
 
 export function templateEffect(fn: () => unknown) {
     effect(fn)

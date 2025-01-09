@@ -12,7 +12,6 @@ export function parseInterpolation(code: string): TuanTextNode[] {
     let text = ""
     let count = 0
     let current = 0
-    let isText = true
     let ignore = false
 
     while (current < code.length) {
@@ -26,7 +25,6 @@ export function parseInterpolation(code: string): TuanTextNode[] {
                     type: "text",
                     body: text
                 })
-                isText = false
                 text = ""
             }
         } else if (code[current] === "}" && !ignore) {
@@ -38,7 +36,6 @@ export function parseInterpolation(code: string): TuanTextNode[] {
                     type: "interpolation",
                     body: text
                 })
-                isText = true
                 text = ""
             }
         }
