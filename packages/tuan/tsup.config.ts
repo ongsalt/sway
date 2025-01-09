@@ -7,7 +7,8 @@ export default defineConfig({
         'lib/compiler/index.ts',
     ],
     format: ["cjs", "esm"],
-    experimentalDts: true,
+    // experimentalDts: true,
+    dts: true,
     tsconfig: "tsconfig.lib.json",
     shims: true,
 })

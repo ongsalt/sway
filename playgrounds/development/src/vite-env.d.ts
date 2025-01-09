@@ -3,5 +3,7 @@
 
 // TODO: make a tsconfig
 declare module '*.tuan' {
-    export default () => unknown
+    import type { Component } from "tuan"
+    declare const component: Component
+    export default component
 }

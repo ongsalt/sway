@@ -22,8 +22,6 @@ export default function tuan(options: Options = {}): Plugin {
         transform(src: string, id: string) {
             if (fileRegex.test(id)) {
                 const code = compile(src, options.compiler ?? {})
-                return code
-                // return `export const msg = "from virtual module"`
                 return {
                     code,
                     // map: null, // TODO: Rich harris' MagicString
