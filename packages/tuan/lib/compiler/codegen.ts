@@ -16,10 +16,12 @@ export class Codegen {
 
     accessor(tagName: TagName, path: number[], root: string) {
         let name: string = tagName
-        let i = 1
+        let i = 2
         while (this.references.has(name)) { // Optimize: cache this
             name = `${tagName}_${i}`
+            i += 1;
         }
+        this.references.add(name)
         return {
             name,
             index: i,
@@ -28,7 +30,7 @@ export class Codegen {
     }
 
     templateEffect(inner: string) {
-        return `$.templateEffect(${inner})`
+        return `$.templateEffect(${inner});\n`
     }
 
     textEffect(nodeName: string, template: string) {

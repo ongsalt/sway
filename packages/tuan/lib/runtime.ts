@@ -6,13 +6,10 @@ export function template(html: string) {
 
 export function at(root: Node, path: number[]): Node {
     let node = root
-
     // TODO: multiple root node
     // ignore first node
     path.shift()
-
     for (const index of path) {
-        console.log(node.childNodes)
         node = node.childNodes[index]
     }
 

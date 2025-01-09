@@ -10,7 +10,8 @@
     - [ ] effect
         - [ ] disposing function 
         - [ ] auto retrack 
-    - batched rerun
+    - [ ] batched dom update
+        - by defualt svelte (user)effect will run after templateEffect
 - [ ] use escodegen or somehow format the generated code
 - [ ] bind:this
 - [ ] vite plugin 
