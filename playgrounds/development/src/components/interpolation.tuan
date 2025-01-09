@@ -8,8 +8,8 @@
     }, 200)
 </script>
 
-<main>
-    <h1> Counter </h1>
-    <p>Count {counter.value}</p>
-    <button> increment </button>
+<main class="m-8 border rounded p-4 space-y-2">
+    <h1 class="text-2xl"> Counter </h1>
+    <p class="">Count {counter.value}</p>
+    <button class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white "> increment </button>
 </main>

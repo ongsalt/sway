@@ -9,7 +9,6 @@ export default function Interpolation($$context: ComponentContext) {
 
     const text = $.at(root, [0, 1, 0]);
 
-
     $.templateEffect(() => $.setText(text, `Count ${counter.value}`));
 
     $.append($$context.anchor, root)

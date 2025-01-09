@@ -1,15 +1,17 @@
 # TODO
 - [ ] compiler/templating
-    - [ ] get path of the node that access a signal 
-    - [ ] auto update
+    - [x] get path of the node that access a signal 
+    - [x] auto update
     - [ ] if/else
     - [ ] loop
-    - [ ] fucking event listener
+    - [ ] event listener
+        - [ ] should remove all event listener from the template and attach it with generated code instead
 - [ ] Signal
     - [ ] effect
         - [ ] disposing function 
         - [ ] auto retrack 
     - batched rerun
+- [ ] use escodegen or somehow format the generated code
 - [ ] bind:this
 - [ ] vite plugin 
     - [x] allow direct component import
