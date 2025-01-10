@@ -34,7 +34,10 @@ export function signal<T>(initial: T) {
     }
 }
 
-export function effect(fn: () => unknown) {
+type CleanupFn = () => unknown
+type EffectFn = () => (CleanupFn | void)
+
+export function effect(fn: EffectFn) {
     const withTracking = () => {
         const previousSubscriber = currentSubscriber
         currentSubscriber = withTracking
@@ -45,6 +48,7 @@ export function effect(fn: () => unknown) {
     withTracking()
 }
 
+// TODO: writable computed
 export function computed<T>(fn: () => T) {
     let state = signal<T | null>(null)
 
@@ -61,6 +65,6 @@ export function computed<T>(fn: () => T) {
 // but how do i dispose a subscriber tho
 // let currentComponent: Component | null = null
 
-export function templateEffect(fn: () => unknown) {
+export function templateEffect(fn: EffectFn) {
     effect(fn)
 }

@@ -2,10 +2,11 @@ import * as acorn from "acorn"
 import escodegen from "escodegen"
 import type { Node } from "estree"
 import { walk } from "estree-walker"
-import { NodeType, parse as parseHtml, type Node as HtmlNode } from "node-html-parser"
+import { HTMLElement, NodeType, parse as parseHtml, type Node as HtmlNode } from "node-html-parser"
+import { analyze } from "periscopic"
+import { TagName } from "../types"
 import { Codegen } from "./codegen"
 import { prettify } from "./formatter"
-import { analyze } from "periscopic"
 import { minifyHtml } from "./html"
 import { parseInterpolation } from "./parser"
 
@@ -46,7 +47,7 @@ Stage 2b: analyze the template and generate reactivity related code
         {
             node: Node,
             index: number,
-            }  
+        }  
         wait we can, we know at render time what index the node is and we dont have to care its index later on
         beacuse we already have a reference to it.
         then for if/else we just use <!--> to replace maximum possible if/else root node as a marker
@@ -62,8 +63,8 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
     let func = `export default function ${options.name ?? ""}($$context) {\n`
 
     // First split script, css, and html part
-    const fileRoot = parseHtml(minifyHtml(code), {})
-    const scriptNode = fileRoot.children.find(it => it.tagName === "SCRIPT")
+    const templateRoot = parseHtml(minifyHtml(code), {})
+    const scriptNode = templateRoot.children.find(it => it.tagName === "SCRIPT")
 
     let script = ""
     script += 'const root = createRoot();\n'
@@ -97,15 +98,35 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
         script = script.substring(0, start) + script.substring(end)
     }
 
-    // TODO: bind this
-    // TODO: prettier this
-    output += '\n\n'
 
     func += script + '\n\n';
 
-
     // Template codegen -------------------
     const codegen = new Codegen(scope.references)
+
+    const rest = templateRoot.children.filter(it => it !== scriptNode)
+    const { body, template } = compileTemplate(rest, codegen)
+
+    func += body + '\n\n';
+
+    output += template;
+    output += func + '\n\n}';
+
+    try {
+        output = prettify(output)
+    } catch {
+        throw new Error("invalid syntax")
+    }
+
+    console.log(output)
+
+    return output
+}
+
+function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
+    // TODO: multi root
+    const root = rest[0]
+    const rootName = 'root'
 
     let declarations = ''
     function addDeclaration(declaration: string) {
@@ -117,58 +138,78 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
         body += statements;
     }
 
-
-    // TODO: multi root component
-    const rest = fileRoot.children.filter(it => it !== scriptNode)
-    const root = rest[0]
-    const html = root.toString()
-    const rootName = 'root'
-
-    output += codegen.template(html)
-
-    // TODO: move this to seperated function
-    // traverse this to find which part of it use reactive value
-    // then generate templateEffect function 
-    function walk_(node: HtmlNode, path: number[]) {
-        if (node.nodeType !== NodeType.TEXT_NODE) {
-            node.childNodes.forEach((child, index) => {
-                walk_(child, [...path, index])
-            })
-            return
+    function processTextInterpolation(node: HtmlNode, path: number[]) {
+        if (node.nodeType === NodeType.TEXT_NODE && node.childNodes.length === 0) {
+            const texts = parseInterpolation(node.textContent)
+            const isInterpolated = texts.some(it => it.type === "interpolation")
+            if (isInterpolated) {
+                const interpolation = codegen.stringInterpolation(texts)
+                // 1. Generate accessor for the text node
+                // accessor: $.nodeAt(parent, path)
+                // TODO: the node might dissapear if .textContent === ""
+                const { name, statement } = codegen.accessor("text", path, rootName, "node")
+                addDeclaration(statement)
+                // 2. Generate template effect
+                addStatement(codegen.textEffect(name, interpolation))
+                node.textContent = " "
+            }
         }
 
-        const texts = parseInterpolation(node.textContent)
-        // const isReactive = texts.some(it => it.type === "interpolation")
-        const isReactive = texts.length > 1
-        const interpolation = codegen.interpolation(texts)
-        if (isReactive) {
-            // 1. Generate accessor for the text node
-            // accessor: $.at(parent, path)
-            const { name, statement } = codegen.accessor("text", path, rootName)
-            addDeclaration(statement)
-            // 2. Generate template effect
-            addStatement(codegen.textEffect(name, interpolation))
-        } else {
-            // embed it into html as is -> ignore
-        }
+        node.childNodes.forEach((child, index) => {
+            processTextInterpolation(child, [...path, index])
+        })
     }
 
-    walk_(root, [0])
+    function processAttributes(element: HTMLElement, path: number[]) {
+        for (const [attribute, value] of Object.entries(element.attributes)) {
+            // event handler: on... can only be "{}" expression like this at must be callable
+            if (attribute.startsWith("on")) {
+                if (!(value.startsWith("{") && value.endsWith("}"))) {
+                    throw new Error(`Invalid attributes ${attribute}="${value}"`)
+                }
+                const expression = value.substring(1, value.length - 1)
+                const type = attribute.substring(2)
+                const { name, statement } = codegen.accessor(element.tagName.toLowerCase() as TagName, path, rootName, "element")
+                // TODO: validate expression
+                addDeclaration(statement)
+                addStatement(codegen.listener(name, type, expression))
+                element.removeAttribute(attribute)
+            } else {
+                // every other attribute can be bind the same way as text interpolation
+                const texts = parseInterpolation(value)
+                const isInterpolated = texts.some(it => it.type === "interpolation")
+                if (isInterpolated) {
+                    const interpolation = codegen.stringInterpolation(texts)
+                    const { name, statement } = codegen.accessor(element.tagName.toLowerCase() as TagName, path, rootName, "element")
+                    addDeclaration(statement)
+                    addStatement(codegen.attrEffect(name, attribute, interpolation))
+                    // remove it from template
+                    element.removeAttribute(attribute)
+                } else {
+                    // leave as is
+                }
+            }
+        }
 
-    func += declarations + '\n\n' + body + '\n\n';
+        element.children.forEach((child, index) => {
+            processAttributes(child, [...path, index])
+        })
+    }
 
-    func += '$.append($$context.anchor, root);\n}';
-    output += func;
+    processTextInterpolation(root, [0])
+    addDeclaration('\n')
+    processAttributes(root, [0])
 
-    output = prettify(output)
+    body = declarations + '\n\n' + body + '\n\n';
+    body += '$.append($$context.anchor, root);\n'
 
-    console.log({
-        html,
-        output
-    })
-    return output
+    const html = root.toString()
+
+    return {
+        template: codegen.template(html),
+        body
+    }
 }
-
 
 /*
 Subroutine: compile_template

@@ -10,9 +10,7 @@ export function prettify(code: string) {
     })
     return escodegen.generate(program as Node, {
         format: {
-            indent: {
-                style: ' ',
-            }
+
         }
     })
 }

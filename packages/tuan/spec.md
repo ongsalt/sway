@@ -6,11 +6,13 @@
         - use comment as an anchor for hidden node
     - [ ] each
     - [ ] event listener
+        - It's painful to parse `onclick={}` so for now use `onclick="{}"` instead
+          so i don't have to create a custom parser (or should i tho)
         - [ ] should remove all event listener from the template and attach it with generated code instead
 - [ ] Signal
     - [ ] effect
         - [ ] disposing function 
-        - [ ] auto retrack 
+        - [x] auto retrack 
     - [ ] batched dom update
         - by defualt svelte (user)effect will run after templateEffect
 - [ ] use escodegen or somehow format the generated code
@@ -19,14 +21,16 @@
     - [x] allow direct component import
     - [ ] transpile ts
 
+
 ## Low priority
 - [ ] Key
 - [ ] Component
 - [ ] scoped css
-
-# Template
-svelte-like
-- 
+- [ ] Faux react
+    - [ ] jsx support
+    - [ ] transpile ternary and array.map in the template
+    - [ ] useState that is a fucking signal with syntactic sugar
+    - [ ] other hook too
 
 # Notes
 - parse html template first becuase of bind:this

@@ -1,0 +1,15 @@
+<script>
+    import { signal, computed, effect } from "tuan";
+
+    let counter = signal(0);
+    let doubled = computed(() => counter.value * 2)
+
+    const increment = () => counter.value += 1
+</script>
+
+<main class="m-8 border rounded p-4 space-y-2">
+    <h1 class="text-2xl"> Counter </h1>
+    <p class="">Count {counter.value}</p>
+    <p class="">Doubled {doubled.value}</p>
+    <button class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white" onclick="{increment}"> increment </button>
+</main>

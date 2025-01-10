@@ -8,7 +8,12 @@ export class Codegen {
 
     }
 
+    has(identifier: string) {
+        return this.references.has(identifier)
+    }
+
     template(html: string) {
+        const escaped = html.replace("$", "\\$")
         return `const createRoot = $.template(\`${html}\`);\n`
     }
 
@@ -16,7 +21,7 @@ export class Codegen {
 
     }
 
-    accessor(tagName: TagName, path: number[], root: string) {
+    accessor(tagName: TagName, path: number[], root: string, type: "node" | "element") {
         let name: string = tagName
         let i = 2
         while (this.references.has(name)) { // Optimize: cache this
@@ -27,7 +32,7 @@ export class Codegen {
         return {
             name,
             index: i,
-            statement: `const ${name} = $.at(${root}, [${path.toString()}]);\n`
+            statement: `const ${name} = $.${type}At(${root}, [${path.toString()}]);\n`
         }
     }
 
@@ -38,8 +43,16 @@ export class Codegen {
     textEffect(nodeName: string, template: string) {
         return this.templateEffect(`() => $.setText(${nodeName}, ${template})`)
     }
+    
+    attrEffect(nodeName: string, attributes: string, expression: string) {
+        return this.templateEffect(`() => $.setAttribute(${nodeName}, ${attributes}, ${expression})`)
+    }
 
-    interpolation(texts: TuanTextNode[]) {
+    listener(nodeName: string, type: string, expression: string) {
+        return `$.setListener(${nodeName}, "${type}", ${expression});\n`
+    }
+
+    stringInterpolation(texts: TuanTextNode[]) {
         let code = '`'
         for (const { body, type } of texts) {
             if (type === "text") {
