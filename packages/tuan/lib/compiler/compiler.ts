@@ -164,6 +164,7 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
     }
 
     function processAttributes(element: HTMLElement, path: number[]) {
+        let accessorName: string | null = null
         for (const [attribute, value] of Object.entries(element.attributes)) {
             // event handler: on... can only be "{}" expression like this at must be callable
             if (attribute.startsWith("on")) {
@@ -172,10 +173,13 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
                 }
                 const expression = value.substring(1, value.length - 1)
                 const type = attribute.substring(2)
-                const { name, statement } = codegen.accessor(element.tagName.toLowerCase() as TagName, path, rootName, "element")
-                // TODO: validate expression
-                addDeclaration(statement)
-                addStatement(codegen.listener(name, type, expression))
+                if (accessorName === null) {
+                    const { name, statement } = codegen.accessor(element.tagName.toLowerCase() as TagName, path, rootName, "element")
+                    // TODO: validate expression
+                    addDeclaration(statement)
+                    accessorName = name
+                }
+                addStatement(codegen.listener(accessorName, type, expression))
                 element.removeAttribute(attribute)
             } else {
                 // every other attribute can be bind the same way as text interpolation
@@ -183,9 +187,13 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
                 const isInterpolated = texts.some(it => it.type === "interpolation")
                 if (isInterpolated) {
                     const interpolation = codegen.stringInterpolation(texts)
-                    const { name, statement } = codegen.accessor(element.tagName.toLowerCase() as TagName, path, rootName, "element")
-                    addDeclaration(statement)
-                    addStatement(codegen.attrEffect(name, attribute, interpolation))
+                    if (accessorName === null) {
+                        const { name, statement } = codegen.accessor(element.tagName.toLowerCase() as TagName, path, rootName, "element")
+                        // TODO: validate expression
+                        addDeclaration(statement)
+                        accessorName = name
+                    }
+                    addStatement(codegen.attrEffect(accessorName, attribute, interpolation))
                     // remove it from template
                     element.removeAttribute(attribute)
                 } else {
@@ -198,7 +206,7 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
             processAttributes(child, [...path, index])
         })
     }
-
+ 
     processTextInterpolation(root, [0])
     addDeclaration('\n')
     processAttributes(root, [0])
