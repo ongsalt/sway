@@ -1,7 +1,7 @@
 # Tuan (2)
 svelte-like frontend framework (hopefully)
 
-Read [spec.md](packages/tuan/spec.md) for more info
+Read [spec.md](packages/tuan/spec.md) for more implementation detail 
 
 ## Packages
 - [packages/tuan](packages/tuan) the core framework

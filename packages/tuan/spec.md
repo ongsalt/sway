@@ -9,7 +9,7 @@
     - [x] event listener
         - It's painful to parse `onclick={}` so for now use `onclick="{}"` instead
           so i don't have to create a custom parser (or should i tho)
-        - [ ] should remove all event listener from the template and attach it with generated code instead
+        - [x] should remove all event listener from the template and attach it with generated code instead
 - [ ] Signal
     - [ ] effect
         - [ ] disposing function 
@@ -37,7 +37,6 @@
 - parse html template to some kind of nested templateEffect
 - templateEffect should take currentNode into account
 - how tf do i 
-    - implement Key
     - implement component props binding 
 ```html
 <script lang="ts">
