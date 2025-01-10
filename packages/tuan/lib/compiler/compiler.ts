@@ -3,8 +3,8 @@ import escodegen from "escodegen"
 import type { Node } from "estree"
 import { walk } from "estree-walker"
 import { NodeType, parse as parseHtml, type Node as HtmlNode } from "node-html-parser"
-import { NodeCount } from "../types"
 import { Codegen } from "./codegen"
+import { prettify } from "./formatter"
 import { analyze } from "periscopic"
 import { minifyHtml } from "./html"
 import { parseInterpolation } from "./parser"
@@ -17,6 +17,46 @@ export type CompilerOptions = {
     name: string
 }
 
+/*
+Stage 1: split script, css and template part
+
+Stage 2a: analyze and process the script 
+    - throw every import to the start of the file
+      everything else go under default exported function
+    - TODO: throw compiler error if variable used in template is not defined
+    - Optional: auto import reactivity primitive like nuxt (e.g. signal, computed)
+      or make it a fucking $runed which is pain in the ass to do (might do it later tho)
+
+Stage 2b: analyze the template and generate reactivity related code
+    - Interpolation
+        - basically this
+            ```
+            let text = $.at(node, [0, 1])
+            $.templateEffect(() => $.setText(text, `sometext ${something.value}`))
+            ```
+        - need to think about interpolation inside if else block
+    - look for {#if } {/if} {#each} {/each}
+      node-html-parser support parsing custom expression with regex. these syntax is imple enough 
+      so we probably shouldnt need to write a custom parser
+
+    - due to dynamic nature of each we cant use $.at() with static path anymore
+        alternative: 
+        - each must return children count -> $.dynamicAt(() => [0, 1 + childrenCount, 0])
+        - or change all runtime api to accept a dom node wrapper instead 
+        {
+            node: Node,
+            index: number,
+            }  
+        wait we can, we know at render time what index the node is and we dont have to care its index later on
+        beacuse we already have a reference to it.
+        then for if/else we just use <!--> to replace maximum possible if/else root node as a marker
+        but how do we replace it tho... -> Element.insertAdjacentElement('afterend', element)
+        
+
+Stage n: format the generated code
+
+TODO: refactor this
+*/
 export function compile(code: string, options: Partial<CompilerOptions>) {
     let output = `import * as $ from "tuan/runtime";`
     let func = `export default function ${options.name ?? ""}($$context) {\n`
@@ -24,20 +64,18 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
     // First split script, css, and html part
     const fileRoot = parseHtml(minifyHtml(code), {})
     const scriptNode = fileRoot.children.find(it => it.tagName === "SCRIPT")
+
     let script = ""
-
-    let scriptCode = ""
-
-    scriptCode += 'const root = createRoot();\n'
+    script += 'const root = createRoot();\n'
     if (scriptNode) {
         if (scriptNode.attributes.lang === "ts") {
             // fuck ts i will think about this later
         }
 
-        scriptCode += scriptNode.textContent
+        script += scriptNode.textContent
     }
 
-    const program = acorn.parse(scriptCode, {
+    const program = acorn.parse(script, {
         ecmaVersion: "latest",
         sourceType: "module"
     })
@@ -56,12 +94,11 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
 
     toRemove.reverse()
     for (const { start, end } of toRemove) {
-        scriptCode = scriptCode.substring(0, start) + scriptCode.substring(end)
+        script = script.substring(0, start) + script.substring(end)
     }
 
     // TODO: bind this
     // TODO: prettier this
-    script += scriptCode
     output += '\n\n'
 
     func += script + '\n\n';
@@ -122,6 +159,8 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
 
     func += '$.append($$context.anchor, root);\n}';
     output += func;
+
+    output = prettify(output)
 
     console.log({
         html,

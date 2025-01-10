@@ -25,7 +25,9 @@ export function signal<T>(initial: T) {
         set value(newValue) {
             if (value === newValue) return
             value = newValue
-            for (const subscriber of subscribers) {
+            const previous = subscribers
+            subscribers = new Set()
+            for (const subscriber of previous) {
                 subscriber()
             }
         }
@@ -33,10 +35,14 @@ export function signal<T>(initial: T) {
 }
 
 export function effect(fn: () => unknown) {
-    const previousSubscriber = currentSubscriber
-    currentSubscriber = fn
-    fn()
-    currentSubscriber = previousSubscriber
+    const withTracking = () => {
+        const previousSubscriber = currentSubscriber
+        currentSubscriber = withTracking
+        fn()
+        currentSubscriber = previousSubscriber
+    }
+
+    withTracking()
 }
 
 export function computed<T>(fn: () => T) {

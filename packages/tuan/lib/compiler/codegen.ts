@@ -2,6 +2,8 @@ import { TagName } from "../types";
 import { TuanTextNode } from "./parser";
 
 export class Codegen {
+    // Should be a map of name and static node
+
     constructor(public references: Set<string>) {
 
     }

@@ -3,7 +3,8 @@
     - [x] get path of the node that access a signal 
     - [x] auto update
     - [ ] if/else
-    - [ ] loop
+        - use comment as an anchor for hidden node
+    - [ ] each
     - [ ] event listener
         - [ ] should remove all event listener from the template and attach it with generated code instead
 - [ ] Signal

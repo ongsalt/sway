@@ -1,12 +1,16 @@
 <script>
-    import { signal, computed } from "tuan";
+    import { signal, computed, effect } from "tuan";
 
     let counter = signal(0);
     let doubled = computed(() => counter.value * 2)
-
+    
     setInterval(() => {
         counter.value += 1
     }, 200)
+
+    effect(() => {
+        console.log(`count: ${counter.value}`)
+    })
 </script>
 
 <main class="m-8 border rounded p-4 space-y-2">

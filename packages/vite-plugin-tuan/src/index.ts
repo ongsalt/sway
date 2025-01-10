@@ -1,12 +1,11 @@
-import type { Plugin } from "vite"
-import { sep } from "node:path"
 import { compile, CompilerOptions } from "tuan/compiler"
+import type { Plugin } from "vite"
 
 // TODO: fix peer dependency later 
 
 const fileRegex = /\.(tuan)$/
 
-type Options = {
+type TuanOptions = {
     compiler?: Partial<CompilerOptions>
 }
 
@@ -15,7 +14,7 @@ function getFileName(path: string) {
     return name
 }
 
-export default function tuan(options: Options = {}): Plugin {
+export default function tuan(options: TuanOptions = {}): Plugin {
     return {
         name: 'tuan-transformer',
         resolveId(source, importer, options) {
