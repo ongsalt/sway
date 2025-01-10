@@ -1,11 +1,12 @@
 # TODO
 - [ ] compiler/templating
+    - [x] throw error if any there is a reference to `$` in scope because the user should not use jqeury
     - [x] get path of the node that access a signal 
     - [x] auto update
     - [ ] if/else
         - use comment as an anchor for hidden node
     - [ ] each
-    - [ ] event listener
+    - [x] event listener
         - It's painful to parse `onclick={}` so for now use `onclick="{}"` instead
           so i don't have to create a custom parser (or should i tho)
         - [ ] should remove all event listener from the template and attach it with generated code instead
@@ -15,7 +16,6 @@
         - [x] auto retrack 
     - [ ] batched dom update
         - by defualt svelte (user)effect will run after templateEffect
-- [ ] use escodegen or somehow format the generated code
 - [ ] bind:this
 - [ ] vite plugin 
     - [x] allow direct component import
@@ -23,7 +23,7 @@
 
 
 ## Low priority
-- [ ] Key
+- [ ] Keyed
 - [ ] Component
 - [ ] scoped css
 - [ ] Faux react
@@ -34,7 +34,7 @@
 
 # Notes
 - parse html template first becuase of bind:this
-- parset html template to some kind of nested templateEffect
+- parse html template to some kind of nested templateEffect
 - templateEffect should take currentNode into account
 - how tf do i 
     - implement Key

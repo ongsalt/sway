@@ -9,6 +9,7 @@ import { Codegen } from "./codegen"
 import { prettify } from "./formatter"
 import { minifyHtml } from "./html"
 import { parseInterpolation } from "./parser"
+import { hasDollarSign } from "./analyzer"
 
 
 // we should ignore ts syntax
@@ -101,6 +102,11 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
 
     func += script + '\n\n';
 
+    
+    if (hasDollarSign(scope.references)) {
+        throw new Error("$ prefix is reserved for framwork internal use.")
+    }
+    
     // Template codegen -------------------
     const codegen = new Codegen(scope.references)
 
