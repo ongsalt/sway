@@ -104,7 +104,7 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
 
     
     if (hasDollarSign(scope.references)) {
-        throw new Error("$ prefix is reserved for framwork internal use.")
+        throw new Error("$ prefix is reserved for framework internal use.")
     }
     
     // Template codegen -------------------
