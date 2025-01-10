@@ -17,8 +17,12 @@ export class Codegen {
         return `const createRoot = $.template(\`${html}\`);\n`
     }
 
-    append(anchor: string = '$$context.anchor') {
+    root(rootName: string) {
+        return `const ${rootName} = createRoot();\n`
+    }
 
+    append(anchor: string = '$$context.anchor', element: string) {
+        return `$.append(${anchor}, ${element});\n`
     }
 
     accessor(tagName: TagName, path: number[], root: string, type: "node" | "element") {

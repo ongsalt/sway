@@ -67,7 +67,7 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
     const scriptNode = templateRoot.children.find(it => it.tagName === "SCRIPT")
 
     let script = ""
-    script += 'const root = createRoot();\n'
+
     if (scriptNode) {
         if (scriptNode.attributes.lang === "ts") {
             // fuck ts i will think about this later
@@ -98,8 +98,6 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
         script = script.substring(0, start) + script.substring(end)
     }
 
-    func += script + '\n\n';
-
     if (hasDollarSign(scope.references)) {
         throw new Error("$ prefix is reserved for framework internal use.")
     }
@@ -108,8 +106,10 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
     const codegen = new Codegen(scope.references)
 
     const rest = templateRoot.children.filter(it => it !== scriptNode)
-    const { body, template } = compileTemplate(rest, codegen)
+    const { body, template, rootName } = compileTemplate(rest, codegen)
 
+    func += codegen.root(rootName)
+    func += script + '\n\n';
     func += body + '\n\n';
 
     output += template;
@@ -129,7 +129,7 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
 function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
     // TODO: multi root
     const root = rest[0]
-    const rootName = 'root'
+    const rootName = '$$root'
 
     let declarations = ''
     function addDeclaration(declaration: string) {
@@ -206,13 +206,13 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
             processAttributes(child, [...path, index])
         })
     }
- 
+
     processTextInterpolation(root, [0])
     addDeclaration('\n')
     processAttributes(root, [0])
 
     body = declarations + '\n\n' + body + '\n\n';
-    body += '$.append($$context.anchor, root);\n'
+    body += codegen.append('$$context.anchor', rootName)
 
     const html = root.toString()
 
@@ -220,6 +220,7 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
 
     return {
         template: codegen.template(html),
-        body
+        body,
+        rootName
     }
 }
