@@ -1,4 +1,4 @@
-import { parse } from "./internal"
+import { parse } from "./template"
 
 export function template(html: string) {
     return parse(html)
@@ -52,4 +52,4 @@ export function append(anchor: Node, node: Node) {
     anchor.appendChild(node)
 }
 
-export { templateEffect } from "./signal"
+export { templateEffect } from "../signal"

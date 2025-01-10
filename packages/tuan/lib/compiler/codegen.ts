@@ -45,7 +45,7 @@ export class Codegen {
     }
     
     attrEffect(nodeName: string, attributes: string, expression: string) {
-        return this.templateEffect(`() => $.setAttribute(${nodeName}, ${attributes}, ${expression})`)
+        return this.templateEffect(`() => $.setAttribute(${nodeName}, "${attributes}", ${expression})`)
     }
 
     listener(nodeName: string, type: string, expression: string) {
@@ -54,6 +54,7 @@ export class Codegen {
 
     stringInterpolation(texts: TuanTextNode[]) {
         let code = '`'
+        console.log(texts)
         for (const { body, type } of texts) {
             if (type === "text") {
                 code += body

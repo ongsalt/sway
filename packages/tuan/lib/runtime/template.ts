@@ -8,7 +8,6 @@ Components
 - need to check out how svelte can have multiple root component
 */
 
-import { Component } from "../types"
 
 const _parserNode: HTMLElement = document.createElement("div")
 export function parseHtml(content: string) {

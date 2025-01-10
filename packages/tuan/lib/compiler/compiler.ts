@@ -5,11 +5,10 @@ import { walk } from "estree-walker"
 import { HTMLElement, NodeType, parse as parseHtml, type Node as HtmlNode } from "node-html-parser"
 import { analyze } from "periscopic"
 import { TagName } from "../types"
-import { Codegen } from "./codegen"
-import { prettify } from "./formatter"
-import { minifyHtml } from "./html"
-import { parseInterpolation } from "./parser"
 import { hasDollarSign } from "./analyzer"
+import { Codegen } from "./codegen"
+import { minifyHtml, prettify } from "./html"
+import { parseInterpolation } from "./parser"
 
 
 // we should ignore ts syntax
@@ -99,14 +98,12 @@ export function compile(code: string, options: Partial<CompilerOptions>) {
         script = script.substring(0, start) + script.substring(end)
     }
 
-
     func += script + '\n\n';
 
-    
     if (hasDollarSign(scope.references)) {
         throw new Error("$ prefix is reserved for framework internal use.")
     }
-    
+
     // Template codegen -------------------
     const codegen = new Codegen(scope.references)
 
@@ -211,24 +208,10 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
 
     const html = root.toString()
 
+    // console.log(body)
+
     return {
         template: codegen.template(html),
         body
     }
 }
-
-/*
-Subroutine: compile_template
-return: 
- - $.template("[with {interpolation} removed]")
- - list of node references (as needed)
-    $.at(root, [1, 2, 4])
- - list of template effect
-    $.templateEffect(() => {
-        $.setText(node, template)
-    })
- [later]
- - bindThis
- - condition
- - each
-*/

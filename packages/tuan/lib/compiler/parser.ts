@@ -39,6 +39,9 @@ export function parseInterpolation(code: string): TuanTextNode[] {
                 text = ""
             }
         }
+        if (current >= code.length) {
+            break
+        }
         text += code[current]
         ignore = false
         current += 1;
@@ -47,7 +50,13 @@ export function parseInterpolation(code: string): TuanTextNode[] {
     if (count !== 0) {
         // TODO: provide more useful information
         throw new Error("Mismatched parentheses");
-        
+    }
+
+    if (text.length !== 0) {
+        out.push({
+            type: "text",
+            body: text
+        })
     }
 
     return out
