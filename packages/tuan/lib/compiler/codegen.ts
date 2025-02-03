@@ -21,7 +21,7 @@ export class Codegen {
         return `const ${rootName} = createRoot();\n`
     }
 
-    append(anchor: string = '$$context.anchor', element: string) {
+    append(anchor: string = '$$context.anchor', element: string) { // wtf is this
         return `$.append(${anchor}, ${element});\n`
     }
 

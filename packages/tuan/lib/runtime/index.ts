@@ -36,6 +36,20 @@ export function setText(node: Node, text: string) {
     node.textContent = text
 }
 
+export function nextElement(element: Element, n = 1) {
+    for (; n > 0; n -= 1) {
+        element = element.nextElementSibling!
+    }
+    return element
+}
+
+export function nextNode(node: Node, n = 1) {
+    for (; n > 0; n -= 1) {
+        node = node.nextSibling!
+    }
+    return node
+}
+
 export function setAttribute(element: Element, attributes: string, value: string) {
     element.setAttribute(attributes, value)
 }

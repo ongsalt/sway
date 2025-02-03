@@ -5,21 +5,31 @@
     - [x] auto update
     - [ ] if/else
         - use comment as an anchor for hidden node
+        - svelte use `[` and `]` to indicate if/each boundaries (???), probably for component too
     - [ ] each
+        `each a`
+        `each a as b`
+        `each a as b (key)`
+        `each a as b, index`
+        `each a as b, index (key)`
     - [x] event listener
         - It's painful to parse `onclick={}` so for now use `onclick="{}"` instead
-          so i don't have to create a custom parser (or should i tho)
+          so i don't have to write a custom parser (i should tho, will do this later)
         - [x] should remove all event listener from the template and attach it with generated code instead
+        - if we directly attach event handler without some kind of metadata (svelte: Node.__attributes) it will be harder to track change????
 - [ ] Signal
     - [ ] effect
         - [ ] disposing function 
         - [x] auto retrack 
+        - [ ] untrack
     - [ ] batched dom update
         - by defualt svelte (user)effect will run after templateEffect
 - [ ] bind:this
 - [ ] vite plugin 
     - [x] allow direct component import
     - [ ] transpile ts
+
+see comments in `lib/compiler/compiler.ts` for more detail
 
 
 ## Low priority

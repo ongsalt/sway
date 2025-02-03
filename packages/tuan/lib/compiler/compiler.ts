@@ -8,7 +8,7 @@ import { TagName } from "../types"
 import { hasDollarSign } from "./analyzer"
 import { Codegen } from "./codegen"
 import { minifyHtml, prettify } from "./html"
-import { parseInterpolation } from "./parser"
+import { parseSpecialMarkUp, parseInterpolation } from "./parser"
 
 
 // we should ignore ts syntax
@@ -36,9 +36,28 @@ Stage 2b: analyze the template and generate reactivity related code
             $.templateEffect(() => $.setText(text, `sometext ${something.value}`))
             ```
         - need to think about interpolation inside if else block
+
     - look for {#if } {/if} {#each} {/each}
-      node-html-parser support parsing custom expression with regex. these syntax is imple enough 
-      so we probably shouldnt need to write a custom parser
+      node-html-parser support parsing custom expression with regex. these syntax is simple enough 
+      so we probably dont need to write custom parser.
+      IMPORTANT: AS WE NEED TO INSERT A COMMENT MARKER INTO DOM THIS MIGHT RESULT IN INDEX CHANGE SO 
+        I WONT INSERT THOSE COMMENT IN COMPILING STEP, IT WILL BE ADDED DYNAMICALLY LATER WHEN THE COMPONENT RUN 
+
+    - IF
+      We also need to verify if those {#if } are correctly matched too
+      It should be compiled to something like
+      note that we use the comment as an anchor here
+        ``` 
+        $._if(
+            () => condition.value, // some ComputedFn
+            () => {
+                let text = $.nodeAt(anchor, [])
+            },
+            () => {
+                let text = $.nodeAt(anchor, [])
+            }
+        )
+        ``` 
 
     - due to dynamic nature of each we cant use $.at() with static path anymore
         alternative: 
@@ -141,15 +160,53 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
         body += statements;
     }
 
+    type ControlFlowContext = {
+        parent?: HTMLElement,
+        previousAnchor: string
+        type: "if" | "each"
+    }
+    let controlFlowContexts: ControlFlowContext[] = [] // should track tree depth
+    let currentAnchor = rootName
+
     function processTextInterpolation(node: HtmlNode, path: number[]) {
         if (node.nodeType === NodeType.TEXT_NODE && node.childNodes.length === 0) {
-            const texts = parseInterpolation(node.textContent)
-            const isInterpolated = texts.some(it => it.type === "interpolation")
-            if (isInterpolated) {
+
+            // Check if it interpolation or our markup syntax   
+            const { isSpecialMarkUp, node: controlFlowNode } = parseSpecialMarkUp(node.textContent)
+            if (isSpecialMarkUp) {
+                // TODO: Check if {#if}, ... are match
+                const parent = path.length == 1 ? undefined : node.parentNode
+                switch (controlFlowNode.type) {
+                    case "if": {
+                        controlFlowContexts.push({
+                            parent,
+                            type: "if",
+                            previousAnchor: currentAnchor
+                        })
+
+                        break
+                    }
+                    case "elif": {
+                        const context = controlFlowContexts.pop();
+                        if (!context || context?.parent === parent || context.type !== "if") {
+                            throw new Error("if and elif must be on the same level")
+                        }
+                        currentAnchor = context.previousAnchor;
+                        break
+                    }
+                }
+            } else {
+                // case: normal interpolation
+                const texts = parseInterpolation(node.textContent)
+                const isInterpolated = texts.some(it => it.type === "interpolation") // bruh
+                if (!isInterpolated) {
+                    return; // text nodes are always leaf
+                }
                 const interpolation = codegen.stringInterpolation(texts)
                 // 1. Generate accessor for the text node
                 // accessor: $.nodeAt(parent, path)
                 // TODO: the node might dissapear if .textContent === ""
+                // TODO: read html spec/check how browsers parse html, it probably gonna give me a headache
                 const { name, statement } = codegen.accessor("text", path, rootName, "node")
                 addDeclaration(statement)
                 // 2. Generate template effect
@@ -207,6 +264,8 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
         })
     }
 
+
+    // We 
     processTextInterpolation(root, [0])
     addDeclaration('\n')
     processAttributes(root, [0])

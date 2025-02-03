@@ -61,3 +61,123 @@ export function parseInterpolation(code: string): TuanTextNode[] {
 
     return out
 }
+
+export function parse(template: string) {
+    const roots: HTMLNode[] = [];
+
+    let current = 0;
+}
+
+type ParseSpecialMarkUpResult = {
+    isSpecialMarkUp: false;
+    node: undefined;
+} | {
+    isSpecialMarkUp: true;
+    node: ControlFlowNode;
+}
+
+type ControlFlowNode = {
+    type: "if" | "elif",
+    condition: string
+} | {
+    type: "each",
+    iteratable: string,
+    as?: {
+        name: string,
+        index?: string,
+        key?: string
+    }
+} | {
+    type: "else" | "endif" | "endeach",
+}
+
+// I shuold write a custom parser for real
+export function parseSpecialMarkUp(interpolation: string): ParseSpecialMarkUpResult {
+    const trimmed = interpolation.trim();
+    const isSpecialMarkUp = trimmed.startsWith('#') || trimmed.startsWith('/') || trimmed.startsWith(':');
+    if (!isSpecialMarkUp) {
+        return {
+            isSpecialMarkUp
+        }
+    }
+
+    const node = _parseSpecialMarkup(interpolation)
+
+    return {
+        isSpecialMarkUp: true,
+        node
+    }
+}
+
+function _parseSpecialMarkup(trimmed: string): ControlFlowNode {
+    if (trimmed.startsWith('#if ')) {
+        return {
+            type: "if",
+            condition: trimmed.substring(3).trimStart()
+        }
+    } else if (trimmed.startsWith(':else if ')) {
+        return {
+            type: "elif",
+            condition: trimmed.substring(8).trimStart()
+        }
+    } else if (trimmed.startsWith(':else ')) {
+        return {
+            type: "else",
+        }
+    } else if (trimmed.startsWith("\if")) {
+        return {
+            type: "endif"
+        }
+    } else if (trimmed.startsWith("#each")) {
+        const words = trimmed.split(' ').filter(it => it.length != 0)
+        if (words.length < 2) {
+            // TODO: better error handling
+            throw new Error("Invalid each syntax")
+        }
+        if (words.length == 2) {
+            return {
+                type: "each",
+                iteratable: words[1],
+            }
+        }
+        if (words[2] != "as") {
+            throw new Error("Invalid each syntax")
+        }
+        if (words.length >= 4) {
+            // TODO: parse index and key
+            return {
+                type: "each",
+                iteratable: words[1],
+                as: {
+                    name: words[3]
+                }
+            }
+        }
+        throw new Error("Invalid each syntax")
+    } else if (trimmed.startsWith("\each")) {
+        return {
+            type: "endeach"
+        }
+    }
+
+    throw new Error("Invalid each syntax")
+}
+
+
+export type HTMLNode = {
+    type: "element",
+    attributes: Record<string, TemplateAttribute>,
+    tag: string,
+    children: HTMLNode[]
+} | HTMLTextNode
+
+export type HTMLTextNode = {
+    type: "text",
+    value: string
+}
+
+export type TemplateAttribute = {
+    type: "event-handler" | "text"
+    // isBinding: boolean,
+    value: string,
+}
