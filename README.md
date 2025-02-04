@@ -1,5 +1,10 @@
+
 # Tuan (2)
 svelte-like frontend framework (hopefully)
+
+>  [!NOTE]  
+> currently in the process of rewriting. (i really should have wrote a parser from the beginning) 
+> please use commit from Jan 11, 2025 if you want to play around with this
 
 Read [spec.md](packages/tuan/spec.md) for more implementation detail 
 

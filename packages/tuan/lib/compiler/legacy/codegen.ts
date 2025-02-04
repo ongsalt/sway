@@ -1,4 +1,4 @@
-import { TagName } from "../types";
+import { TagName } from "../../types";
 import { TuanTextNode } from "./parser";
 
 export class Codegen {
