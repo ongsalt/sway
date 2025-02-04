@@ -1,7 +1,8 @@
 import { Token } from "../tokenize";
-import { InterpolationToken, LiteralToken, QuotedToken, TextNodeToken, TokenWithoutLineNumber } from "../tokenize/token";
-import { Attribute, ControlFlowElement, Node, TextNode, Element, Fn, InferConstTuple } from "./types";
+import { ControlFlowToken, EachToken, IfOrElifToken, InterpolationToken, LiteralToken, QuotedToken, TextNodeToken, TokenWithoutLineNumber } from "../tokenize/token";
+import { Attribute, ControlFlowNode, Node, TextNode, Element, Fn, InferConstTuple, IfNode, EachNode } from "./types";
 import { ParserError } from "./error"
+import { Result } from "../utils"
 
 export class Parser {
     private current = 0
@@ -24,20 +25,21 @@ export class Parser {
         return this.peek()?.line
     }
 
-    private safe<T>(fn: () => T) { // auto rewinding
+    private safe<T>(fn: () => T): Result<T> { // auto unwinding
         const position = this.current
         // BRUH
         try {
             return {
                 ok: true,
                 value: fn()
-            } as const
+            }
         } catch (error) {
+            // console.log('[unwinding] ',error)
             this.current = position
             return {
                 ok: false,
                 error
-            } as const
+            }
         }
     }
 
@@ -56,6 +58,10 @@ export class Parser {
         const results: T[] = []
         while (true) {
             const res = this.safe(() => consume())
+            // console.log({
+            //     res: res.value,
+            //     current: this.peek()
+            // })
             // console.log(`[consumeAll] consuming ${res.value}`)
             if (!res.ok) {
                 // console.log(`[consumeAll] stoping ${res.ok}`)
@@ -67,7 +73,7 @@ export class Parser {
         return results
     }
 
-    private oneOf<const T extends readonly Fn<any>[]>(fns: T): InferConstTuple<T>[number] {
+    private oneOf<const T extends readonly Fn<any>[]>(fns: T): Result<InferConstTuple<T>[number]> {
         for (const fn of fns) {
             const res = this.safe(() => fn())
             if (res.ok) {
@@ -79,7 +85,8 @@ export class Parser {
         }
 
         return {
-            ok: false
+            ok: false,
+            error: undefined
         } as const
     }
 
@@ -88,22 +95,22 @@ export class Parser {
         E extends Error = ParserError
     >(
         fns: T,
-        errorBuilder: () => E = (() => new ParserError("expected", "not exist") as Error as E)
+        errorBuilder: (e: any) => E = (() => new ParserError("expected", "not exist") as Error as E)
     ): InferConstTuple<T>[number] {
         const res = this.oneOf(fns)
         if (!res.ok) {
-            throw errorBuilder()
+            throw errorBuilder(res.error)
         }
 
         return res.value
     }
 
     parse(): Node[] {
-        return this.consumeAll(() => {
-            const node = this.node()
-            // console.log(node)
-            return node
-        })
+        return this.nodes()
+    }
+
+    private nodes(): Node[] {
+        return this.consumeAll(() => this.node())
     }
 
     private node(): Node {
@@ -111,7 +118,7 @@ export class Parser {
             [
                 () => ({
                     type: "text" as const,
-                    node: this.text()
+                    text: this.text()
                 }),
                 () => ({
                     type: "element" as const,
@@ -127,6 +134,13 @@ export class Parser {
     }
 
     private element(): Element {
+        return this.oneOfOrThrow([
+            () => this.normalElement(),
+            () => this.selfClosingElement()
+        ])
+    }
+
+    private normalElement(): Element {
         const { attributes, tagName } = this.openingTag()
         const children = this.consumeAll(() => this.node())
         const closingTagName = this.closingTag()
@@ -141,6 +155,16 @@ export class Parser {
             children,
         }
     }
+
+    private selfClosingElement(): Element {
+        const { attributes, tagName } = this.selfClosingTag()
+        return {
+            tag: tagName,
+            attributes,
+            children: [],
+        }
+    }
+
 
     // TODO: handle void element - https://developer.mozilla.org/en-US/docs/Glossary/Void_element
     private openingTag() {
@@ -160,7 +184,10 @@ export class Parser {
     private selfClosingTag() {
         this.consumeToken("tag-open")
         const res = this.tagBody()
+        // console.log(`Self closing tag: ${res.tagName}`)
+        // console.log(this.peek())
         this.consumeToken("tag-close-2")
+        // console.log(`Self closing tag: ${res.tagName}`)
         return res
     }
 
@@ -195,24 +222,6 @@ export class Parser {
             ],
             () => new ParserError("invalid", `Invalid attribute at line ${this.line}`)
         )
-        // try {
-        //     const { body: value } = this.consumeToken<QuotedToken>("quoted")
-        //     return {
-        //         key,
-        //         value,
-        //         dynamic: false
-        //     }
-        // } catch { }
-        // try {
-        //     const { body: value } = this.consumeToken<InterpolationToken>("interpolation")
-        //     return {
-        //         key,
-        //         value,
-        //         dynamic: true,
-        //         isFunction: key.startsWith("on") // or this is component & Might remove later
-        //     }
-        // } catch { }
-        // throw new ParserError("invalid", `Invalid attribute at line ${this.line}`)
     }
 
     private text(): TextNode {
@@ -228,7 +237,6 @@ export class Parser {
         }
 
         return {
-            type: "text",
             texts: texts.map(it => ({
                 type: it.type === "text" ? "static" : "interpolation",
                 body: it.body
@@ -236,7 +244,85 @@ export class Parser {
         }
     }
 
-    private controlFlow(): ControlFlowElement {
-        throw new Error("Unimplemented")
+    private controlFlow(): ControlFlowNode {
+        return this.oneOfOrThrow([
+            () => this.ifNode(),
+            () => this.eachNode(),
+        ])
+    }
+
+    private ifNode(): IfNode {
+        const { condition } = this.consumeToken<IfOrElifToken>("if")
+        // Should we allow empty if body
+        const children = this.nodes()
+
+        let elseChildren: Node[] = []
+
+        const elifChildren = this.safe(() => ({
+            type: "control-flow" as const,
+            control: this.elifNode()
+        }))
+
+        if (elifChildren.ok) {
+            elseChildren.push(elifChildren.value)
+        } else {
+            const res = this.safe(() => {
+                this.consumeToken("else")
+                return this.nodes()
+            })
+
+            if (res.ok) {
+                elseChildren = res.value
+            }
+        }
+
+        console.dir(children, { depth: null })
+        this.consumeToken("endif")
+
+        return {
+            type: "if",
+            condition,
+            children,
+            elseChildren
+        }
+    }
+
+    private elifNode(): IfNode {
+        const { condition } = this.consumeToken<IfOrElifToken>("elif")
+        const children = this.nodes()
+
+        const elseChildren: Result<Node[]> = this.oneOf([
+            () => [{
+                type: "control-flow" as const,
+                control: this.elifNode()
+            }],
+            () => {
+                this.consumeToken("else")
+                return this.nodes()
+            }
+        ])
+        console.log("elseChildren")
+
+        return {
+            type: "if",
+            condition,
+            children,
+            elseChildren: elseChildren?.value ?? []
+        }
+    }
+
+    private eachNode(): EachNode {
+        const { iteratable, as = undefined, key = undefined } = this.consumeToken<EachToken>("each")
+        // Should we allow empty if body
+        const children = this.nodes()
+        this.consumeToken("endeach")
+
+        return {
+            type: "each",
+            iteratable,
+            as,
+            key,
+            children
+        }
     }
 }

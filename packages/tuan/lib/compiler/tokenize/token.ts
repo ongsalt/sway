@@ -39,20 +39,20 @@ export type SymbolToken = {
     type: SymbolTokenType
 }
 
-export type ControlFlowToken = {
+export type IfOrElifToken = {
     type: "if" | "elif",
     condition: string
-} | {
+}
+export type EachToken = {
     type: "each",
     iteratable: string,
-    as?: {
-        name: string,
-        index?: string,
-        key?: string
-    }
-} | {
+    as?: string,
+    key?: string
+}
+export type ControlFlowTerminatorToken = {
     type: "else" | "endif" | "endeach",
 }
+export type ControlFlowToken = IfOrElifToken | EachToken | ControlFlowTerminatorToken
 
 export type InterpolationToken = {
     type: "interpolation",

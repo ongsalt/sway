@@ -3,6 +3,7 @@
     - [x] throw error if any there is a reference to `$` in scope because the user should not use jqeury
     - [x] get path of the node that access a signal 
     - [x] auto update
+    - [x] think about array reassingment
     - [ ] if/else
         - use comment as an anchor for hidden node
         - svelte use `[` and `]` to indicate if/each boundaries (???), probably for component too

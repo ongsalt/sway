@@ -244,6 +244,9 @@ export class Lexer {
                 type: "endif"
             }
         } else if (trimmed.startsWith("#each")) {
+            // #each $collection as $item, $index ($key)
+            // $item can be variable name or destructuring
+            // we could parse this with acorn at later stage
             const words = trimmed.split(' ').filter(it => it.length != 0)
             if (words.length < 2) {
                 // TODO: better error handling
@@ -259,13 +262,24 @@ export class Lexer {
                 throw new Error("Invalid each syntax")
             }
             if (words.length >= 4) {
-                // TODO: parse index and key
+                let lastWord = words.at(-1)
+                let key: string | undefined = undefined
+                if (lastWord?.startsWith("(") && lastWord.endsWith(")")) {
+                    key = lastWord.slice(1, -1)
+                }
+
+                let as = ""
+                if (key) {
+                    as = words.slice(3, -1).join('')
+                } else {
+                    as = words.slice(3).join('')
+                }
+                
                 return {
                     type: "each",
                     iteratable: words[1],
-                    as: {
-                        name: words[3]
-                    }
+                    as,
+                    key
                 }
             }
             throw new Error("Invalid each syntax")
