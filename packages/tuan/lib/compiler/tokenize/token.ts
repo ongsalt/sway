@@ -1,3 +1,27 @@
+/*
+html
+Element -> OpenTag[T] Body CloseTag[T]
+OpenTag[T] -> <{T} {Attr*} >
+Attr = StaticAttr | DynamicAttr
+StaticAttr -> {Identifier}="{any}"
+DynamicAttr -> {Identifier}={any}
+Identifier is alphabet + number + symbol - {'/', '<', '>'}
+Body -> (Element | Text)*
+CloseTag[T] -> </{T}>
+Text -> anything else
+Interpolation -> \{TEXT\}
+Comment -> 
+
+ok this one is better -> https://cs.lmu.edu/~ray/notes/xmlgrammar/
+subset to implement:
+- element
+- attribute
+- comment (ignore)
+- text nodes (this is fucked up)
+    - ignore whitespaces before and after body EXCEPT ???
+    - svelte also has some non standard way of doing this 
+*/
+
 const symbolTokens = [
     "tag-open", // <
     "tag-open-2", // </
@@ -35,6 +59,7 @@ export type InterpolationToken = {
     body: string
 }
 
+// TODO: think of better name
 export type DynamicToken = InterpolationToken | ControlFlowToken
 
 export type TextNodeToken = {
@@ -54,4 +79,5 @@ export type LiteralToken = {
 
 export type WithLineNumber<T> = T & { line: number }
 
-export type Token = WithLineNumber<TextNodeToken | DynamicToken | QuotedToken | SymbolToken | LiteralToken>
+export type TokenWithoutLineNumber = TextNodeToken | DynamicToken | QuotedToken | SymbolToken | LiteralToken
+export type Token = WithLineNumber<TokenWithoutLineNumber>
