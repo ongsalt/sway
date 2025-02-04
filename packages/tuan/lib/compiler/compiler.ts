@@ -48,6 +48,7 @@ Stage 2b: analyze the template and generate reactivity related code
       It should be compiled to something like
       note that we use the comment as an anchor here
         ``` 
+        // We also need to create new root for each if/else branch then mark that as <!> in the root template
         $._if(
             () => condition.value, // some ComputedFn
             () => {
@@ -186,7 +187,19 @@ function compileTemplate(rest: HTMLElement[], codegen: Codegen) {
 
                         break
                     }
-                    case "elif": {
+                    // case "elif": { // TODO: later
+                    //     just threat this as and else and then start new if scope
+                    //     break
+                    // }
+                    case "else": {
+                        const context = controlFlowContexts.at(-1);
+                        if (!context || context?.parent === parent || context.type !== "if") {
+                            throw new Error("if and else must be on the same level")
+                        }
+
+                        break
+                    }
+                    case "endif": {
                         const context = controlFlowContexts.pop();
                         if (!context || context?.parent === parent || context.type !== "if") {
                             throw new Error("if and elif must be on the same level")

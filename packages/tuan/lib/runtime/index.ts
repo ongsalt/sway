@@ -1,3 +1,4 @@
+import { templateEffect } from "../signal"
 import { parse } from "./template"
 
 export function template(html: string) {
@@ -64,6 +65,18 @@ export function setListener(element: Element, type: keyof ElementEventMap, liste
 
 export function append(anchor: Node, node: Node) {
     anchor.appendChild(node)
+}
+
+export function _if(conditionFn: () => any, then: () => void, _else?: () => void) {
+    templateEffect(() => {
+        const show = !!conditionFn()
+
+        if (show) {
+            
+        } else if (_else) {
+
+        }
+    })
 }
 
 export { templateEffect } from "../signal"
