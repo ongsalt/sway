@@ -62,6 +62,14 @@ export class Lexer {
                     break;
                 }
 
+                case '/': {
+                    if (this.match('>')) {
+                        this.isInsideTag = false
+                        this.symbolToken("tag-close-2");
+                        break;
+                    } 
+                }
+
                 case ' ':
                 case '\r':
                 case '\t':
