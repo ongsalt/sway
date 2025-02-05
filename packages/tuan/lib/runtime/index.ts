@@ -25,15 +25,7 @@ export function setListener(element: Element, type: keyof ElementEventMap, liste
     // or call $.reset()
 }
 
-// Should anchor be a node
-function _if(anchor: Node, effect: () => void) {
-    templateEffect(() => {
-        // TODO: Clean up anchor and everything else
-        effect()
-    })
-}
-
-export { _if as if };
+export { if, type FragmentInitializer } from "./if"
 export { mount, unmount } from "./dom"
 export { append, children, comment } from "./internal"
 export { templateEffect } from "../signal"
