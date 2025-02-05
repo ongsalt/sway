@@ -3,27 +3,25 @@ export function children(node: Node, index = 0): Node {
     return node.childNodes[index]
 }
 
-let doTrackAppending = false;
 let appended: Node[] | undefined = undefined;
 export function append(anchor: Node, nodes: Node[]) {
     // i want insertAfter but whatever
     const parent = anchor.parentNode!;
     for (const node of nodes) {
-        if (doTrackAppending) {
-            appended!.push(node)
+        if (appended) {
+            appended.push(node)
         }
         parent.insertBefore(node, anchor);
     }
 }
 
 export function trackAppending(fn: () => unknown) {
-    doTrackAppending = true;
+    const previousAppended = appended; 
     appended = []
     fn()
-    doTrackAppending = false;
-    const _appended = appended ?? [];
-    appended = undefined;
-    return _appended;
+    const ret = appended;
+    appended = previousAppended;
+    return ret;
 }
 
 export function comment(data = '') {

@@ -3,24 +3,23 @@ import { trackAppending } from "./internal";
 
 // TODO: transformer: avoid this type of name collision
 
-export type FragmentInitializer = ($$anchor: Node) => void
-export type RenderFn = (fn: FragmentInitializer, key?: boolean) => void
-export type IfEffect = ($$render: RenderFn) => void
+export type RenderFn = ($$anchor: Node) => void
+export type RenderDelegationFn = (fn: RenderFn, key?: boolean) => void
+export type IfEffect = ($$render: RenderDelegationFn) => void
 
 // Should anchor be a node
 function _if(anchor: Node, effect: IfEffect) {
     let key: boolean | undefined;
     let newKey: boolean | undefined;
-    let init: FragmentInitializer | undefined
-    let reset = () => {};
+    let init: RenderFn | undefined
+    let reset = () => { };
 
-    const prepare: RenderFn = (fn, _newKey = true) => {
+    const prepare: RenderDelegationFn = (fn, _newKey = true) => {
         newKey = _newKey;
         init = fn;
     }
 
     templateEffect(() => {
-        // TODO: Clean up anchor and everything else
         effect(prepare)
         // console.log({ key, newKey })
 
@@ -29,20 +28,13 @@ function _if(anchor: Node, effect: IfEffect) {
             if (key !== undefined) {
                 console.log("remove previous one")
                 reset();
-                reset = () => {};
-                // TODO: how tho
-                // Idea 1: track append call
+                reset = () => { };
             }
             if (init) {
                 // console.log(`Init new content ${init}`)
-                const nodes = trackAppending(() => {
-                    init!(anchor)
-                })
-                reset = () => nodes.forEach(it => {
-                    console.log(it)
-                    it.parentNode!.removeChild(it)
-                });
-            } 
+                const nodes = trackAppending(() => init!(anchor))
+                reset = () => nodes.forEach(it => it.parentNode!.removeChild(it));
+            }
             key = newKey;
         }
         init = undefined
