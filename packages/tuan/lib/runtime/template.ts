@@ -1,13 +1,6 @@
-/*
-So we need to first parse everything in <script> (lang="ts")
-script will be run AS IS (well, after ts transpiling)
 
-then every {} exporession in html template
-
-Components
-- need to check out how svelte can have multiple root component
-*/
-
+// TODO: whitespace handling
+// https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Whitespace 
 
 const _parserNode: HTMLElement = document.createElement("div")
 export function parseHtml(template: string) {
@@ -16,7 +9,7 @@ export function parseHtml(template: string) {
 
     const elements: Element[] = []
     for (let index = _parserNode.children.length - 1; index >= 0; index--) {
-        const element = _parserNode.removeChild(_parserNode.children[index]);
+        const element = _parserNode.removeChild(_parserNode.children[0]);
         elements.push(element);
     }
     return () => elements.map(it => it.cloneNode(true))

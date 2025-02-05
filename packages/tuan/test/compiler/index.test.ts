@@ -11,10 +11,10 @@ import { ifElseInput, nestedControlFlowInput, simpleInput } from "./testcases"
 // })
 
 
-// it('should compile simple input', () => {
-//     const output = compile(simpleInput)
-//     // console.log(output)
-// })
+it('should compile simple input', () => {
+    const output = compile(simpleInput)
+    // console.log(output)
+})
 
 // it('should compile attribute binding', () => {
 //     const source = `<button class="p-2 border {active ? 'bg-blue-500' : 'bg-blue-100'} {otherClass}" onclick={fn}> something </button>`

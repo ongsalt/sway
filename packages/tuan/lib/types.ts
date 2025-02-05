@@ -1,5 +1,5 @@
 export type ComponentContext = {
-    anchor: HTMLElement
+    anchor: Node
 }
 
 export type Component = (context: ComponentContext) => unknown

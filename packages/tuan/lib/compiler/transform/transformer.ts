@@ -38,12 +38,15 @@ export class Transformer {
 
         function walk(node: TemplateASTNode) {
             if (node.type === "text") {
+                // TODO: nested effect with cleanup
+                // we need to compile node.texts then add an templateEffect
                 return
             }
             if (node.type === "control-flow") {
                 roots.push(node.children)
                 if (node.kind === "if") {
                     roots.push(node.elseChildren)
+
                     node.elseChildren.forEach(it => walk(it))
                 }
             }
