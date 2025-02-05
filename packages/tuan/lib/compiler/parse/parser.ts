@@ -1,6 +1,6 @@
 import { Token } from "../tokenize";
 import { ControlFlowToken, EachToken, IfOrElifToken, InterpolationToken, LiteralToken, QuotedToken, TextNodeToken, TokenWithoutLineNumber } from "../tokenize/token";
-import { Attribute, ControlFlowNode, Node, TextNode, Element, Fn, InferConstTuple, IfNode, EachNode } from "./types";
+import { Attribute, ControlFlowNode, ASTNode, TextNode, Element, Fn, InferConstTuple, IfNode, EachNode } from "./ast";
 import { ParserError } from "./error"
 import { Result } from "../utils"
 
@@ -105,29 +105,20 @@ export class Parser {
         return res.value
     }
 
-    parse(): Node[] {
+    parse(): ASTNode[] {
         return this.nodes()
     }
 
-    private nodes(): Node[] {
+    private nodes(): ASTNode[] {
         return this.consumeAll(() => this.node())
     }
 
-    private node(): Node {
+    private node(): ASTNode {
         return this.oneOfOrThrow(
             [
-                () => ({
-                    type: "text" as const,
-                    text: this.text()
-                }),
-                () => ({
-                    type: "element" as const,
-                    element: this.element()
-                }),
-                () => ({
-                    type: "control-flow" as const,
-                    control: this.controlFlow()
-                }),
+                () => this.text(),
+                () => this.element(),
+                () => this.controlFlow(),
             ],
             () => new ParserError("invalid", "node")
         )
@@ -150,6 +141,7 @@ export class Parser {
         }
 
         return {
+            type: "element",
             tag: tagName,
             attributes,
             children,
@@ -159,6 +151,7 @@ export class Parser {
     private selfClosingElement(): Element {
         const { attributes, tagName } = this.selfClosingTag()
         return {
+            type: "element",
             tag: tagName,
             attributes,
             children: [],
@@ -210,6 +203,7 @@ export class Parser {
             [
                 () => ({
                     key,
+                    // TODO make this consume text
                     value: this.consumeToken<QuotedToken>("quoted").body,
                     dynamic: false as const
                 }),
@@ -237,6 +231,7 @@ export class Parser {
         }
 
         return {
+            type: "text",
             texts: texts.map(it => ({
                 type: it.type === "text" ? "static" : "interpolation",
                 body: it.body
@@ -256,12 +251,9 @@ export class Parser {
         // Should we allow empty if body
         const children = this.nodes()
 
-        let elseChildren: Node[] = []
+        let elseChildren: ASTNode[] = []
 
-        const elifChildren = this.safe(() => ({
-            type: "control-flow" as const,
-            control: this.elifNode()
-        }))
+        const elifChildren = this.safe(() => this.elifNode())
 
         if (elifChildren.ok) {
             elseChildren.push(elifChildren.value)
@@ -280,7 +272,8 @@ export class Parser {
         this.consumeToken("endif")
 
         return {
-            type: "if",
+            type: "control-flow",
+            kind: "if",
             condition,
             children,
             elseChildren
@@ -291,20 +284,18 @@ export class Parser {
         const { condition } = this.consumeToken<IfOrElifToken>("elif")
         const children = this.nodes()
 
-        const elseChildren: Result<Node[]> = this.oneOf([
-            () => [{
-                type: "control-flow" as const,
-                control: this.elifNode()
-            }],
+        const elseChildren: Result<ASTNode[]> = this.oneOf([
+            () => [this.elifNode()],
             () => {
                 this.consumeToken("else")
                 return this.nodes()
             }
         ])
-        console.log("elseChildren")
+        // console.log("elseChildren")
 
         return {
-            type: "if",
+            type: "control-flow",
+            kind: "if",
             condition,
             children,
             elseChildren: elseChildren?.value ?? []
@@ -318,7 +309,8 @@ export class Parser {
         this.consumeToken("endeach")
 
         return {
-            type: "each",
+            type: "control-flow",
+            kind: "each",
             iteratable,
             as,
             key,

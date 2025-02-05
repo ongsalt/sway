@@ -13,7 +13,7 @@ export type Attribute = {
     )
 
 export type TextNode = {
-    // type: "text",
+    type: "text",
     texts: {
         type: "static" | "interpolation"
         body: string
@@ -22,38 +22,31 @@ export type TextNode = {
 
 // we gonna make if/else block behave like a node
 export type IfNode = {
-    type: "if",
+    type: "control-flow"
+    kind: "if",
     condition: string
-    children: Node[],
-    elseChildren: Node[]
+    children: ASTNode[],
+    elseChildren: ASTNode[]
 }
 
 export type EachNode = {
-    type: "each",
+    type: "control-flow"
+    kind: "each",
     iteratable: string,
-    children: Node[]
+    children: ASTNode[]
     as?: string,
     key?: string
 }
 export type ControlFlowNode = IfNode | EachNode
 
-export type Node = {
-    type: "text",
-    text: TextNode,
-} | {
-    type: "element",
-    element: Element
-} | {
-    type: "control-flow",
-    control: ControlFlowNode
-}
-
 export type Element = {
+    type: "element",
     tag: string,
-    children: Node[],
+    children: ASTNode[],
     attributes: Attribute[]
 }
 
+export type ASTNode = Element | ControlFlowNode | TextNode
 
 // TS MAGIC
 // claude wrote this
