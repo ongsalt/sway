@@ -1,7 +1,7 @@
 import { Token } from "../tokenize";
 import { EachToken, IfOrElifToken, InterpolationToken, LiteralToken, SymbolToken, TextNodeToken, TokenWithoutLineNumber } from "../tokenize/token";
 import { Result } from "../utils";
-import { ASTNode, Attribute, ControlFlowNode, EachNode, Element, Fn, IfNode, InferConstTuple, TextNode } from "./ast";
+import { TemplateASTNode, Attribute, ControlFlowNode, EachNode, Element, Fn, IfNode, InferConstTuple, TextNode } from "./ast";
 import { ParserError } from "./error";
 
 export class Parser {
@@ -105,15 +105,15 @@ export class Parser {
         return res.value
     }
 
-    parse(): ASTNode[] {
+    parse(): TemplateASTNode[] {
         return this.nodes()
     }
 
-    private nodes(): ASTNode[] {
+    private nodes(): TemplateASTNode[] {
         return this.consumeAll(() => this.node())
     }
 
-    private node(): ASTNode {
+    private node(): TemplateASTNode {
         return this.oneOfOrThrow(
             [
                 () => this.text(),
@@ -287,7 +287,7 @@ export class Parser {
         // Should we allow empty if body
         const children = this.nodes()
 
-        let elseChildren: ASTNode[] = []
+        let elseChildren: TemplateASTNode[] = []
 
         const elifChildren = this.safe(() => this.elifNode())
 
@@ -304,7 +304,7 @@ export class Parser {
             }
         }
 
-        console.dir(children, { depth: null })
+        // console.dir(children, { depth: null })
         this.consumeToken("endif")
 
         return {
@@ -320,7 +320,7 @@ export class Parser {
         const { condition } = this.consumeToken<IfOrElifToken>("elif")
         const children = this.nodes()
 
-        const elseChildren: Result<ASTNode[]> = this.oneOf([
+        const elseChildren: Result<TemplateASTNode[]> = this.oneOf([
             () => [this.elifNode()],
             () => {
                 this.consumeToken("else")

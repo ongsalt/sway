@@ -37,6 +37,8 @@ export function signal<T>(initial: T) {
 type CleanupFn = () => unknown
 type EffectFn = () => (CleanupFn | void)
 
+
+// TODO: handle case where there are more than 1 .value call
 export function effect(fn: EffectFn) {
     const withTracking = () => {
         const previousSubscriber = currentSubscriber

@@ -27,15 +27,15 @@ export type IfNode = {
     type: "control-flow"
     kind: "if",
     condition: string
-    children: ASTNode[],
-    elseChildren: ASTNode[]
+    children: TemplateASTNode[],
+    elseChildren: TemplateASTNode[]
 }
 
 export type EachNode = {
     type: "control-flow"
     kind: "each",
     iteratable: string,
-    children: ASTNode[]
+    children: TemplateASTNode[]
     as?: string,
     key?: string
 }
@@ -45,11 +45,11 @@ export type Element = {
     type: "element",
     tag: string,
     isSelfClosing: boolean,
-    children: ASTNode[],
+    children: TemplateASTNode[],
     attributes: Attribute[]
 }
 
-export type ASTNode = Element | ControlFlowNode | TextNode
+export type TemplateASTNode = Element | ControlFlowNode | TextNode
 
 // TS MAGIC
 // claude wrote this
