@@ -2,22 +2,24 @@
 
 export type Attribute = {
     key: string,
-    value: string,
 } & (
         {
-            dynamic: true,
-            isFunction: boolean,
+            whole: true, // for key={}
+            expression: string
         } | {
-            dynamic: false
+            whole: false, // for key="something-{}"
+            texts: TextOrInterpolation[]
         }
     )
 
+export type TextOrInterpolation = {
+    type: "static" | "interpolation"
+    body: string
+}
+
 export type TextNode = {
     type: "text",
-    texts: {
-        type: "static" | "interpolation"
-        body: string
-    }[]
+    texts: TextOrInterpolation[]
 }
 
 // we gonna make if/else block behave like a node

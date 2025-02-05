@@ -26,3 +26,10 @@ it('should parse each block', () => {
     const node = parse(tokens)
     console.dir(node, { depth: null })
 })
+
+it('should parse attribute binding', () => {
+    const source = `<button class="p-2 border {active ? 'bg-blue-500' : 'bg-blue-100'} {otherClass}" onclick={fn}> something </button>`
+    const tokens = tokenize(source)
+    const node = parse(tokens)
+    console.dir(node, { depth: null })
+})

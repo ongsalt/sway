@@ -4,6 +4,8 @@ export type LexerOptions = {
 
 }
 
+
+const defualtDelimiters = ["<", "{"]
 export class Lexer {
     private hasError = false
     tokens: Token[] = []
@@ -11,6 +13,7 @@ export class Lexer {
     private escapeNext = false;
     private isInsideTag = false;
     private isScript = false;
+    private quoteState: "single" | "double" | "outside" = "outside";
     private start = 0
     private current = 0
     private line = 1
@@ -77,36 +80,49 @@ export class Lexer {
                 case ' ':
                 case '\r':
                 case '\t':
-                    // Ignore whitespace. for now, TODO:
-                    break;
+                    if (this.quoteState === "outside") {
+                        // Ignore whitespace. for now, TODO:
+                        break;
+                    } else {
+                        // console.log('space', this.current, this.quoteState, this.isInsideTag)
+                        this.default()
+                    }
                 case '\n':
                     this.line++;
                     break;
                 case '"':
                     if (this.isInsideTag) {
-                        this.quoted('"');
-                        break;
+                        if (this.quoteState === "single") {
+                            // ignore
+                            // TODO: is branch realy possible
+                        } else {
+                            // console.log('"', this.current)
+                            if (this.quoteState === "outside") {
+                                this.quoteState = "double"
+                            } else {
+                                this.quoteState = "outside"
+                            }
+                            this.symbolToken('double-quote');
+                            break;
+                        }
                     }
                 case "'":
                     if (this.isInsideTag) {
-                        this.quoted("'");
-                        break;
-                    }
-
-
-                default:
-                    if (this.isInsideTag) {
-                        this.literal()
-                    } else {
-                        if (this.isScript) {
-                            // script escaping magic
-                            // we dont allow space in the tag
-                            this.text(["</script"])
-                            this.isScript = false
+                        if (this.quoteState === "double") {
+                            // ignore
                         } else {
-                            this.text()
+                            if (this.quoteState === "outside") {
+                                this.quoteState = "single"
+                            } else {
+                                this.quoteState = "single"
+                            }
+                            this.symbolToken('single-quote');
+                            break;
                         }
                     }
+
+                default:
+                    this.default()
             }
 
         }
@@ -117,6 +133,27 @@ export class Lexer {
         })
 
         return this.tokens
+    }
+
+    private default() {
+        // console.log('default', this.current, this.quoteState, this.isInsideTag)
+        if (this.isInsideTag) {
+            if (this.quoteState === "outside") {
+                this.literal()
+            } else {
+                const delimiter = this.quoteState === "double" ? '"' : "'"
+                const a = this.text([delimiter, ...defualtDelimiters], false)
+            }
+        } else {
+            if (this.isScript) {
+                // script escaping magic
+                // we dont allow space in the tag
+                this.text(["</script"])
+                this.isScript = false
+            } else {
+                this.text()
+            }
+        }
     }
 
 
@@ -176,31 +213,32 @@ export class Lexer {
         })
     }
 
-    private text(delimiters = ["<"]) {
+    private text(delimiters = defualtDelimiters, trim = true) {
         // TODO: handle escaped char
-        const matchSome = () => delimiters.some(it =>
-            // console.log(this.peek())
-            this.match(it, false)
-        )
+        const matchSome = () => delimiters.some(it => this.match(it, false))
         while (!matchSome() && !this.isAtEnd()) {
             if (this.peek() == '\n') this.line++;
             const c = this.next();
             // console.log(c);
         }
 
-        
-        console.log(this.peek())
+
+        // console.log(this.peek())
         if (this.isAtEnd()) {
             throw new Error(`Unterminated text at line:${this.line} (delimiter: ${delimiters})`)
         }
 
-        // Trim the surrounding quotes
-        const body = this.source.substring(this.start, this.current).trim();
+        let body = this.source.substring(this.start, this.current);
+        if (trim) {
+            body = body.trim()
+        }
         this.tokens.push({
             type: "text",
             body,
             line: this.line
         });
+
+        return body
     }
 
     private dynamic() {
@@ -305,30 +343,6 @@ export class Lexer {
         }
 
         throw new Error("Invalid each syntax")
-    }
-
-
-    private quoted(delimiter: string) {
-        // TODO: handle escaped char
-        while (this.peek() != delimiter && !this.isAtEnd()) {
-            if (this.peek() == '\n') this.line++;
-            this.next();
-        }
-
-        if (this.isAtEnd()) {
-            throw new Error(`Unterminated string at line:${this.line}`)
-        }
-
-        // consume the closing "
-        this.next();
-
-        // Trim the surrounding quotes
-        const body = this.source.substring(this.start + 1, this.current - 1);
-        this.tokens.push({
-            type: "quoted",
-            body,
-            line: this.line
-        });
     }
 
     isAtEnd() {

@@ -1,8 +1,8 @@
 import { Token } from "../tokenize";
-import { ControlFlowToken, EachToken, IfOrElifToken, InterpolationToken, LiteralToken, QuotedToken, TextNodeToken, TokenWithoutLineNumber } from "../tokenize/token";
-import { Attribute, ControlFlowNode, ASTNode, TextNode, Element, Fn, InferConstTuple, IfNode, EachNode } from "./ast";
-import { ParserError } from "./error"
-import { Result } from "../utils"
+import { EachToken, IfOrElifToken, InterpolationToken, LiteralToken, SymbolToken, TextNodeToken, TokenWithoutLineNumber } from "../tokenize/token";
+import { Result } from "../utils";
+import { ASTNode, Attribute, ControlFlowNode, EachNode, Element, Fn, IfNode, InferConstTuple, TextNode } from "./ast";
+import { ParserError } from "./error";
 
 export class Parser {
     private current = 0
@@ -197,25 +197,59 @@ export class Parser {
     }
 
     private attribute(): Attribute {
-        const { body: key } = this.consumeToken<LiteralToken>("literal")
-        this.consumeToken("equal")
         return this.oneOfOrThrow(
             [
-                () => ({
-                    key,
-                    // TODO make this consume text
-                    value: this.consumeToken<QuotedToken>("quoted").body,
-                    dynamic: false as const
-                }),
-                () => ({
-                    key,
-                    value: this.consumeToken<InterpolationToken>("interpolation").body,
-                    dynamic: true,
-                    isFunction: key.startsWith("on") // or this is component & Might remove later
-                })
+                () => this.wholeAttribute(),
+                () => this.normalAttribute()
             ],
-            () => new ParserError("invalid", `Invalid attribute at line ${this.line}`)
         )
+    }
+
+    private wholeAttribute(): Attribute {
+        const { body: key } = this.consumeToken<LiteralToken>("literal")
+        this.consumeToken("equal")
+        const { body: expression } = this.consumeToken<InterpolationToken>("interpolation")
+
+
+        return {
+            key,
+            whole: true,
+            expression,
+        }
+    }
+
+    private normalAttribute(): Attribute {
+        const { body: key } = this.consumeToken<LiteralToken>("literal")
+        this.consumeToken("equal")
+        const texts = this.oneOfOrThrow([
+            () => {
+                this.consumeToken<SymbolToken>("single-quote")
+                const texts = this.consumeAll(() => this.oneOfOrThrow([
+                    () => this.consumeToken<InterpolationToken>("interpolation"),
+                    () => this.consumeToken<TextNodeToken>("text"),
+                ]))
+                this.consumeToken<SymbolToken>("single-quote")
+                return texts
+            },
+            () => {
+                this.consumeToken<SymbolToken>("double-quote")
+                const texts = this.consumeAll(() => this.oneOfOrThrow([
+                    () => this.consumeToken<InterpolationToken>("interpolation"),
+                    () => this.consumeToken<TextNodeToken>("text"),
+                ]))
+                this.consumeToken<SymbolToken>("double-quote")
+                return texts
+            }
+        ])
+
+        return {
+            key,
+            whole: false,
+            texts: texts.map(it => ({
+                type: it.type === "text" ? "static" : "interpolation",
+                body: it.body
+            }))
+        }
     }
 
     private text(): TextNode {

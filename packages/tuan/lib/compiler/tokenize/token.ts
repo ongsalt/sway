@@ -31,6 +31,8 @@ const symbolTokens = [
     "equal",
     "comment-start",
     "comment-end",
+    "single-quote",
+    "double-quote",
     "eof",
 ] as const
 
@@ -67,11 +69,6 @@ export type TextNodeToken = {
     body: string
 }
 
-export type QuotedToken = {
-    type: "quoted",
-    body: string
-}
-
 export type LiteralToken = {
     type: "literal",
     body: string
@@ -79,5 +76,5 @@ export type LiteralToken = {
 
 export type WithLineNumber<T> = T & { line: number }
 
-export type TokenWithoutLineNumber = TextNodeToken | DynamicToken | QuotedToken | SymbolToken | LiteralToken
+export type TokenWithoutLineNumber = TextNodeToken | DynamicToken | SymbolToken | LiteralToken
 export type Token = WithLineNumber<TokenWithoutLineNumber>
