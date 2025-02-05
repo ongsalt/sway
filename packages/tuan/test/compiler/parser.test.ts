@@ -11,7 +11,7 @@ it('should parse simple input', () => {
     // console.dir(node, { depth: null })
 })
 
-it('should parse if/else', () => {
+it('should parse if block', () => {
     const tokens = tokenize(ifElseInput)
     // console.log(tokens)
 
@@ -19,9 +19,9 @@ it('should parse if/else', () => {
     // console.dir(node, { depth: null })
 })
 
-it('should parse each', () => {
+it('should parse each block', () => {
     const tokens = tokenize(eachInput)
-    console.log(tokens)
+    // console.log(tokens)
 
     const node = parse(tokens)
     console.dir(node, { depth: null })

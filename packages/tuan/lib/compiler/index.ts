@@ -1,2 +1,2 @@
-export { compile, type CompilerOptions } from "./compiler" 
+export { compile, type CompilerOptions } from "./legacy/compiler" 
 // export {} from "./" 

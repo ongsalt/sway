@@ -1,5 +1,9 @@
 import type { ControlFlowToken, SymbolTokenType, Token } from "./token"
 
+export type LexerOptions = {
+
+}
+
 export class Lexer {
     private hasError = false
     tokens: Token[] = []
@@ -11,7 +15,7 @@ export class Lexer {
     private current = 0
     private line = 1
 
-    constructor(private source: string) { }
+    constructor(private source: string, public readonly options: Partial<LexerOptions> = {}) { }
 
     scan() {
         while (!this.isAtEnd()) {
@@ -38,7 +42,6 @@ export class Lexer {
                 case '=': this.symbolToken("equal"); break;
                 case '>': {
                     this.isInsideTag = false
-                    this.isScript = false
                     this.symbolToken("tag-close");
                     break;
                 }
@@ -47,17 +50,18 @@ export class Lexer {
                     if (this.match('!--')) {
                         this.symbolToken("comment-start");
                     } else if (this.match('/')) {
+                        // Self closing tag
                         this.isInsideTag = true;
                         this.symbolToken("tag-open-2");
                         this.next()
-                        if (this.literal() === "script") {
-                            this.isScript = true;
-                        }
+                        this.literal()
                     } else {
                         this.isInsideTag = true;
                         this.symbolToken("tag-open");
                         this.next()
-                        this.literal()
+                        if (this.literal() === "script") {
+                            this.isScript = true;
+                        }
                     }
                     break;
                 }
@@ -67,7 +71,7 @@ export class Lexer {
                         this.isInsideTag = false
                         this.symbolToken("tag-close-2");
                         break;
-                    } 
+                    }
                 }
 
                 case ' ':
@@ -91,13 +95,17 @@ export class Lexer {
 
 
                 default:
-                    if (this.isScript) {
-                        // TODO: consume all
-
-                    } else if (this.isInsideTag) {
+                    if (this.isInsideTag) {
                         this.literal()
                     } else {
-                        this.text()
+                        if (this.isScript) {
+                            // script escaping magic
+                            // we dont allow space in the tag
+                            this.text(["</script"])
+                            this.isScript = false
+                        } else {
+                            this.text()
+                        }
                     }
             }
 
@@ -130,7 +138,7 @@ export class Lexer {
         return body;
     }
 
-    private match(expected: string) {
+    private match(expected: string, consume = true) {
         if (this.isAtEnd()) {
             return false
         }
@@ -144,9 +152,12 @@ export class Lexer {
         }
 
         // Consume it
-        this.current = cursor;
+        if (consume) {
+            this.current = cursor;
+        }
         return true
     }
+
 
     private next() {
         return this.source[this.current++] // consume
@@ -165,18 +176,22 @@ export class Lexer {
         })
     }
 
-    private text() {
+    private text(delimiters = ["<"]) {
         // TODO: handle escaped char
-        const delimiters: string[] = [
-            "<"
-        ]
-        while (!delimiters.includes(this.peek()) && !this.isAtEnd()) {
+        const matchSome = () => delimiters.some(it =>
+            // console.log(this.peek())
+            this.match(it, false)
+        )
+        while (!matchSome() && !this.isAtEnd()) {
             if (this.peek() == '\n') this.line++;
-            this.next();
+            const c = this.next();
+            // console.log(c);
         }
 
+        
+        console.log(this.peek())
         if (this.isAtEnd()) {
-            throw new Error(`Unterminated string at line:${this.line}`)
+            throw new Error(`Unterminated text at line:${this.line} (delimiter: ${delimiters})`)
         }
 
         // Trim the surrounding quotes
@@ -274,7 +289,7 @@ export class Lexer {
                 } else {
                     as = words.slice(3).join('')
                 }
-                
+
                 return {
                     type: "each",
                     iteratable: words[1],
