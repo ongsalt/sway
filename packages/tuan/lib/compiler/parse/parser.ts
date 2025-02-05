@@ -143,6 +143,7 @@ export class Parser {
         return {
             type: "element",
             tag: tagName,
+            isSelfClosing: false,
             attributes,
             children,
         }
@@ -153,6 +154,7 @@ export class Parser {
         return {
             type: "element",
             tag: tagName,
+            isSelfClosing: true,
             attributes,
             children: [],
         }

@@ -1,12 +1,12 @@
-import { expect, it } from "vitest"
+import { it } from "vitest"
 import { tokenize } from "../../lib/compiler/tokenize"
 import { ifElseInput, simpleInput } from "./testcases"
 
+// i will properly do this once these apis are stable
 
 it('should parse this thing', () => {
     const tokens = tokenize(ifElseInput)
     console.log(tokens)
-    // i will properly do this later
     // expect(lexer.tokens).toStrictEqual(lexerOutput)
 })
 

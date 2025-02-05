@@ -44,6 +44,7 @@ export type ControlFlowNode = IfNode | EachNode
 export type Element = {
     type: "element",
     tag: string,
+    isSelfClosing: boolean,
     children: ASTNode[],
     attributes: Attribute[]
 }
