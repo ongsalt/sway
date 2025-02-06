@@ -19,11 +19,11 @@ svelte-like frontend framework recreation (hopefully)
     - `signal` behave the same as svelte `$state` except you need to use `.value`.
     - there is also `effect` and `computed`
     - cleaning up is currently kinda mess.
+- event listener 
 ## What's not yet
 - Dynamic attribute `class="border {someExpression}"` or `placeholder={anotherExpression}` 
 - value binding
 - `each` syntax
-- event listener 
 <!-- ### Unlikely to implement -->
 
 
