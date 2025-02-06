@@ -1,5 +1,5 @@
 
-export type Subscriber = () => unknown
+export type Subscriber = () => void
 export type Signal<T> = {
     value: T
 }
@@ -8,7 +8,12 @@ export type Computed<T> = {
     readonly value: T
 }
 
-let currentSubscriber: Subscriber | null = null
+
+// Should be set in if/each context
+// TODO: think about component
+export let effectDisposers: Set<() => void> | null = null; 
+export const effectCleanups = new Map<EffectFn, CleanupFn>()
+let currentSubscriber: Subscriber | null = null;
 
 export function signal<T>(initial: T) {
     let value = initial
@@ -18,12 +23,26 @@ export function signal<T>(initial: T) {
         get value() {
             if (currentSubscriber) {
                 subscribers.add(currentSubscriber)
+
+                // We need to wait until currentSubscriber is finished to get cleanup function
+                if (effectDisposers) {
+                    // just captured this to shutup ts, idk if this is really needed
+                    const c = currentSubscriber;
+                    effectDisposers.add(() => {
+                        const cleanup = effectCleanups.get(c);
+                        if (cleanup) {
+                            cleanup()
+                            effectCleanups.delete(c);
+                        }
+                        subscribers.delete(c);
+                    })
+                }
             }
             return value
         },
 
         set value(newValue) {
-            if (value === newValue) return
+            if (value === newValue) return;
             value = newValue
             const previous = subscribers
             subscribers = new Set()
@@ -34,31 +53,34 @@ export function signal<T>(initial: T) {
     }
 }
 
-type CleanupFn = () => unknown
-type EffectFn = () => (CleanupFn | void)
+export type CleanupFn = () => unknown
+export type EffectFn = () => (CleanupFn | void)
 
-
-// TODO: handle case where there are more than 1 .value call
 export function effect(fn: EffectFn) {
-    const withTracking = () => {
+    const e = () => {
         const previousSubscriber = currentSubscriber
-        currentSubscriber = withTracking
-        fn()
+        currentSubscriber = e
+        const cleanup = fn()
+        if (typeof cleanup === "function") {
+            // TODO: think about this
+            // You can return a function from $effect, which will run immediately before the effect re-runs, and before it is destroyed
+            // register cleanup somehow
+            effectCleanups.set(e, cleanup)
+        }
         currentSubscriber = previousSubscriber
     }
 
-    withTracking()
+    e()
 }
 
 // TODO: writable computed
 export function computed<T>(fn: () => T) {
     let state = signal<T | null>(null)
 
-    const update = () => {
+    effect(() => {
         state.value = fn()
-    }
-
-    effect(update)
+    })
+    
     return state as Computed<T>
 }
 
@@ -69,4 +91,19 @@ export function computed<T>(fn: () => T) {
 
 export function templateEffect(fn: EffectFn) {
     effect(fn)
+}
+
+export function trackEffect(fn: () => void) {
+    const previous = effectDisposers;
+    effectDisposers = new Set();
+    fn()
+    const e = effectDisposers;
+    // idk if this kind of capturing will cuase memory leak or not;
+    const dispose = () => {
+        for (const disposeFn of e) {
+            disposeFn()
+        }
+    };
+    effectDisposers = previous;
+    return dispose;
 }

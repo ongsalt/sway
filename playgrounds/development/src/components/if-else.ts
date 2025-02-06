@@ -8,14 +8,19 @@ export default function IfElse({ anchor }: ComponentContext) {
     const fragments = root()
 
     const count = signal(1)
+    const a = signal(1)
+    setInterval(() => {
+        a.value += 1
+    }, 1000)
 
     const increment = () => { 
         count.value += 1
     } 
     const decrement = () => { 
         count.value -= 1
-    } 
-    // TODO: make $.children accept this too
+    }
+    
+    // TODO: make $.children accept Node[] too
     const p = $.children(fragments[0], 1)
     const text = $.children(p)
 
@@ -33,12 +38,18 @@ export default function IfElse({ anchor }: ComponentContext) {
         decrement()
     })
 
-
     const anchor_1 = $.children(fragments[0], 2);
     
     {   
-        const consequent: $.FragmentInitializer = ($$anchor) => {
-            const fragments_1 = root_1()
+        const consequent: $.RenderFn = ($$anchor) => {
+            const fragments_1 = root_1();
+            const p_1 = fragments_1[2];
+            const text_1 = $.children(p_1)
+
+            $.templateEffect(() => {
+                $.setText(text_1, `${a.value}`)
+                console.log(p_1)
+            })
             // ok i understand why svelte pass this around now
             $.append($$anchor, fragments_1)
         }
@@ -46,7 +57,7 @@ export default function IfElse({ anchor }: ComponentContext) {
         $.if(anchor_1, ($$render) => {
             // This wll be rerun everytime show.value is change which might rewrite all of these
             // We might do same thing as svelte which is to pass $$render to track which branch get called
-            if (count.value < 5) $$render(consequent)
+            if (count.value < 5) $$render(consequent);
         })
     }
 

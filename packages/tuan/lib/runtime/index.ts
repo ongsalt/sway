@@ -25,7 +25,6 @@ export function setListener(element: Element, type: keyof ElementEventMap, liste
     // or call $.reset()
 }
 
-export { if, type FragmentInitializer } from "./if"
-export { mount, unmount } from "./dom"
-export { append, children, comment } from "./internal"
+export { if, type RenderFn } from "./if"
+export { mount, unmount, append, children, comment } from "./dom"
 export { templateEffect } from "../signal"
