@@ -1,4 +1,5 @@
 import { Node } from "estree"
+import { TextOrInterpolation } from "../parse/ast"
 
 export type EstreeNode = {
     type: "estree",
@@ -31,28 +32,41 @@ export type AttributeUpdatingStatement = {
 export type TextSettingStatement = {
     type: "text-setting",
     accessor: string,
-    valueExpression: string
+    texts: TextOrInterpolation[]
 }
 
-export type TemplateFragmentStatement = {
-    type: "template-fragment",
+
+export type TemplateScopeStatement = {
+    type: "template-scope",
     body: TuanStatement[]
 }
 
 export type TemplateEffectStatement = {
     type: "template-effect",
-    body: (AttributeUpdatingStatement | TextSettingStatement)[]
+    body: TuanStatement[]
 }
 
 export type TemplateIfStatement = {
     type: "if",
-    // why do svelte pass anchor around tho
-    body: TuanStatement[]
+    condition: string,
+    anchor: string,
+    blockName: string,
+    fragment: string
+    body: TuanStatement[],
+    
+    else?: {
+        // can we use same anchor???
+        // anchor: string,
+        fragment: string
+        blockName: string,
+        body: TuanStatement[]
+    }
 }
 
 // TODO: think about 2way binding in each
 export type TemplateEachStatement = {
     type: "each",
+    fragmentName: string,
     iteratable: string,
     as?: string,
     key?: string
@@ -61,22 +75,47 @@ export type TemplateEachStatement = {
 
 export type TemplateRootStatement = {
     type: "template-root",
-    template: string
+    name: string,
+    template: string,
+}
+
+export type CreateRootStatement = {
+    type: "create-root",
+    name: string,
+    root: string,
 }
 
 export type AccessorDefinitionStatement = {
     type: "accessor-definition"
-    tag: string,
-    path: number[], // ???
-    anchor: string
+    name: string,
+    parent: string,
+    mode: "sibling" | "children",
+    index?: number
+}
+
+
+export type ComponentFunctionStatement = {
+    type: "component-function",
+    name: string,
+    body: TuanStatement[]
 }
 
 export type ComponentDeclarationStatement = {
     type: "component-declaration",
-    name: string,
-    body:  TuanStatement[]
+    before: TuanStatement[],
+    fn: ComponentFunctionStatement,
+    after: TuanStatement[],
 }
 
+export type AppendStatement = {
+    type: "append",
+    anchor: string,
+    node: string
+}
+
+export type TuanContainerStatement = ComponentFunctionStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement
+
 export type TuanStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateRootStatement
-    | TemplateFragmentStatement | UserEffectStatement | TextSettingStatement | AttributeUpdatingStatement
+    | TemplateScopeStatement | UserEffectStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
+    | ComponentFunctionStatement | CreateRootStatement | AppendStatement

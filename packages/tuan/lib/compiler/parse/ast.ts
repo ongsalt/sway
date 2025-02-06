@@ -28,7 +28,14 @@ export type IfNode = {
     kind: "if",
     condition: string
     children: TemplateASTNode[],
-    elseChildren: TemplateASTNode[]
+    else?: ElseNode
+}
+
+// just for the transformer
+export type ElseNode = {
+    type: "control-flow"
+    kind: "else",
+    children: TemplateASTNode[],
 }
 
 export type EachNode = {
@@ -39,7 +46,7 @@ export type EachNode = {
     as?: string,
     key?: string
 }
-export type ControlFlowNode = IfNode | EachNode
+export type ControlFlowNode = IfNode | EachNode | ElseNode
 
 export type Element = {
     type: "element",

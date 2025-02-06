@@ -1,7 +1,22 @@
 import { Component } from "../types";
 
-export function children(node: Node, index = 0): Node {
-    return node.childNodes[index]
+export function children(node: Node | Node[], index = 0): Node {
+    if (Array.isArray(node)) {
+        return node[index];
+    }
+    return node.childNodes[index];
+}
+
+export function sibling(node: Node, index: number) {
+    console.log(node, index)
+    return children(node.parentNode!, index);
+    while (index > 0) {
+        node = node.nextSibling!
+        console.log(node)
+        index -= 1;
+    }
+
+    return node
 }
 
 let appended: Node[] | undefined = undefined;

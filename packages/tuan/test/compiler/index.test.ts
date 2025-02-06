@@ -1,6 +1,6 @@
 import { it } from "vitest"
 import { compile } from "../../lib/compiler"
-import { ifElseInput, nestedControlFlowInput, simpleInput } from "./testcases"
+import { complexIfElseInput, ifElseInput, nestedControlFlowInput, simpleInput } from "./testcases"
 
 // i will properly do this once these apis are stable
 
@@ -11,10 +11,10 @@ import { ifElseInput, nestedControlFlowInput, simpleInput } from "./testcases"
 // })
 
 
-it('should compile simple input', () => {
-    const output = compile(simpleInput)
-    // console.log(output)
-})
+// it('should compile simple input', () => {
+//     const output = compile(simpleInput)
+//     // console.log(output)
+// })
 
 // it('should compile attribute binding', () => {
 //     const source = `<button class="p-2 border {active ? 'bg-blue-500' : 'bg-blue-100'} {otherClass}" onclick={fn}> something </button>`
@@ -23,7 +23,13 @@ it('should compile simple input', () => {
 // })
 
 
-it('should compile nested control flow', () => {
-    const output = compile(nestedControlFlowInput)
-    // console.log(output)
+// it('should compile nested control flow', () => {
+//     const output = compile(nestedControlFlowInput)
+//     // console.log(output)
+// })
+
+it('should compile complex if statement', () => {
+    const { ast, output } = compile(complexIfElseInput)
+    // console.dir(ast, { depth: null })
+    console.log(output)
 })

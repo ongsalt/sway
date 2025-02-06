@@ -33,6 +33,42 @@ export const ifElseInput = `<script>
     <button onclick={toggle} class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white "> increment </button>
 </main>`
 
+export const complexIfElseInput = `
+<script>
+    import { signal, computed, effect } from "tuan";
+
+    const count = signal(1)
+    const a = signal(1)
+    setInterval(() => {
+        a.value += 1
+    }, 1000)
+
+    const increment = () => { 
+        count.value += 1
+    } 
+    const decrement = () => { 
+        count.value -= 1
+    }
+</script>
+
+<main class="m-8 border rounded-lg shadow-sm p-6 space-y-2">
+    <h1 class="text-2xl"> If else test </h1>
+    <p>{count.value}</p>
+    {#if a.value < 5}
+        <h2> First content </h2>
+        <p> We're no strangers to </p>
+        <p>{a.value}</p>
+    {:else}
+        <h2> Second content </h2>
+        <p>{a.value}</p>
+        <p> Multi root </p>
+    {/if}
+
+    <button onclick={increment}>+</button>
+    <button onclick={decrement}>-</button>
+</main>
+`
+
 export const eachInput = `<script>
     import { signal, computed, effect } from "tuan";
 

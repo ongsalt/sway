@@ -31,12 +31,12 @@ export default function tuan(options: TuanOptions = {}): Plugin {
         },
         transform(src: string, id: string) {
             if (fileRegex.test(id)) {
-                const code = compile(src, {
+                const { output } = compile(src, {
                     name: getFileName(id),
                     ...options.compiler
                 })
                 return {
-                    code,
+                    code: output,
                     // map: null, // TODO: Rich harris' MagicString
                 }
             }

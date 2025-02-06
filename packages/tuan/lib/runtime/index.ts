@@ -26,5 +26,5 @@ export function setListener(element: Element, type: keyof ElementEventMap, liste
 }
 
 export { if, type RenderFn } from "./if"
-export { mount, unmount, append, children, comment } from "./dom"
+export { mount, unmount, append, children, comment, sibling } from "./dom"
 export { templateEffect } from "../signal"

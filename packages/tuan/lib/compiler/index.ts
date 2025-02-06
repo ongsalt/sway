@@ -2,8 +2,6 @@ import { parse } from "./parse"
 import { tokenize } from "./tokenize"
 import { transform } from "./transform"
 
-export { compile as compile_legacy, type CompilerOptions as CompilerOptions_legacy } from "./legacy/compiler"
-
 export type CompilerOptions = {
     name?: string,
     ecmaVersion?: string

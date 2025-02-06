@@ -4,10 +4,8 @@ import { mount } from "tuan"
 // import Interpolation from "./components/interpolation.tuan"
 // import Attributes from "./components/attributes.tuan"
 // import { autoRetracking } from "./features/auto-retracking"
-import IfElse from "./components/if-else"
+import IfElse from "./components/if-else.tuan"
 
 const appRoot = document.getElementById("app")!
-// console.log(appRoot)
 
-// mount(Interpolation, appRoot)
 mount(IfElse, appRoot)

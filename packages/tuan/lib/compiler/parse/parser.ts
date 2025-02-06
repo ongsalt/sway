@@ -312,7 +312,11 @@ export class Parser {
             kind: "if",
             condition,
             children,
-            elseChildren
+            else: {
+                type: "control-flow",
+                kind: "else",
+                children: elseChildren,
+            }
         }
     }
 
@@ -329,13 +333,23 @@ export class Parser {
         ])
         // console.log("elseChildren")
 
-        return {
+        
+        const ifNode: IfNode = {
             type: "control-flow",
             kind: "if",
             condition,
             children,
-            elseChildren: elseChildren?.value ?? []
         }
+
+        if (elseChildren.ok) {
+            ifNode.else = {
+                type: "control-flow",
+                kind: "else",
+                children: elseChildren?.value ?? [],
+            }
+        }
+
+        return ifNode;
     }
 
     private eachNode(): EachNode {

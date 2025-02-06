@@ -1,6 +1,9 @@
 import * as $ from "tuan/runtime"
 import { ComponentContext, signal } from "tuan";
 
+
+// This is handwrited to test the runtime. 
+
 const root = $.template(`<main class="m-8 border rounded-lg shadow-sm p-6 space-y-2"><h1 class="text-2xl">If else test</h1><p> </p><!></main><button class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white">increase</button><button class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white">decrease</button>`)
 const root_1 = $.template(`<h2>First content</h2><p>We're<br/>No stranger to love</p><p> </p>`)
 
