@@ -56,8 +56,15 @@ export function mount(component: Component, root: HTMLElement) {
     const anchor = comment()
     root.appendChild(anchor)
     component({ anchor })
+
+    // should return unmount()
 }
 
-export function unmount() {
+// TODO: cleanup
+export function listen(element: Element, type: keyof ElementEventMap, listener: () => unknown) {
+    console.log(element)
+    element.addEventListener(type, listener)
 
+    // onDestroy(() => element.removeEventListener(type, listener))
+    // or call $.reset()
 }

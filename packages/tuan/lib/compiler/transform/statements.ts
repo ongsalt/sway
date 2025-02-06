@@ -53,7 +53,7 @@ export type TemplateIfStatement = {
     blockName: string,
     fragment: string
     body: TuanStatement[],
-    
+
     else?: {
         // can we use same anchor???
         // anchor: string,
@@ -93,7 +93,6 @@ export type AccessorDefinitionStatement = {
     index?: number
 }
 
-
 export type ComponentFunctionStatement = {
     type: "component-function",
     name: string,
@@ -113,9 +112,31 @@ export type AppendStatement = {
     node: string
 }
 
+export type EventListenerAttachingStatement = {
+    type: "event-listener",
+    node: string,
+    event: string,
+    listenerFn: string
+}
+
 export type TuanContainerStatement = ComponentFunctionStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement
 
 export type TuanStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateRootStatement
     | TemplateScopeStatement | UserEffectStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
-    | ComponentFunctionStatement | CreateRootStatement | AppendStatement
+    | ComponentFunctionStatement | CreateRootStatement | AppendStatement | EventListenerAttachingStatement
+
+export function priority(statement: TuanStatement) {
+    switch (statement.type) {
+        // case "accessor-definition":
+        //     return -1;
+        case "if":
+        case "each":
+        case "template-effect":
+            return 1
+
+        default:
+            return 0
+    }
+
+}

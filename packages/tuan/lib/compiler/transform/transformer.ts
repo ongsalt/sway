@@ -3,7 +3,7 @@ import { Node } from "estree"
 import { walk } from "estree-walker"
 import { analyze } from "periscopic"
 import { TemplateASTNode, Element, TextNode, ControlFlowNode, IfNode } from "../parse/ast"
-import { AccessorDefinitionStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, TuanContainerStatement, TuanStatement } from "./statements"
+import { AccessorDefinitionStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, EventListenerAttachingStatement, priority, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, TuanContainerStatement, TuanStatement } from "./statements"
 import { stringify } from "./html"
 import { generate } from "./codegen"
 
@@ -63,6 +63,7 @@ export class Transformer {
     private transformTemplate(userScript: string) {
         const roots: TemplateRootStatement[] = []
 
+        // TODO: sort: accessor shuold appear before if in the same scope
         // fuck `this`
         const walk = (node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): TuanStatement[] => {
             const out: TuanStatement[] = []
@@ -116,7 +117,7 @@ export class Transformer {
                         const { name, statement } = this.createTemplateRoot(_else)
                         const { accessor, name: fragment } = this.createRootFragment(_else, name);
                         roots.push(statement);
-                        
+
                         const statements = _else.children.map(it => walk(it, [_else, node])).flat()
 
                         ifScope.else = {
@@ -128,7 +129,7 @@ export class Transformer {
 
                     out.push(ifScope)
                 } else if (node.kind === "else") {
-                    throw new Error("sfhgui")
+                    throw new Error("this is not possible unless the parser got high or something")
                 } else { // TODO: each
                     const name = this.createIdentifier("root");
                     roots.push({
@@ -140,10 +141,57 @@ export class Transformer {
                     node.children.forEach(it => walk(it, [node]))
                 }
             } else if (node.type === "element") {
+                let _accessors: AccessorDefinitionStatement[] | null = null
+                let _accessor: AccessorDefinitionStatement | null = null
+                const getOrCreateAccessor = () => {
+                    if (!_accessor) {
+                        _accessors = this.createAccessor(node, parents)
+                        _accessor = _accessors.at(-1)!
+                        out.push(..._accessors)
+                    }
+                    return {
+                        accessor: _accessor,
+                        accessors: _accessors
+                    }
+                }
+
+                // if we have attribute binding
+                let shouldCreateAccessor = false;
+                for (const attribute of node.attributes) {
+                    if (attribute.whole) {
+                        const { accessor } = getOrCreateAccessor()
+                        // determine if this is a listener or not
+                        // i will just check for on prefix
+                        // TODO: handle node.type "component"(?) differently
+                        const isListener = attribute.key.startsWith('on')
+                        if (isListener) {
+                            const statement: EventListenerAttachingStatement = {
+                                type: "event-listener",
+                                node: accessor.name,
+                                event: '"' + attribute.key.slice(2) + '"',
+                                // TODO: validate if this is a function or not
+                                listenerFn: attribute.expression
+                            }
+                            out.push(statement)
+                        } else {
+                            // do the same as below   
+                        }
+                    } else {
+                        if (attribute.texts.some(it => it.type === "interpolation")) {
+                            shouldCreateAccessor = true
+
+                        }
+                    }
+                }
+
+                if (shouldCreateAccessor) {
+                }
+
                 const statements = node.children.map(it => walk(it, [node, ...parents]))
                 out.push(...statements.flat())
             }
 
+            out.sort((a, b) => priority(a) - priority(b))
             return out;
         }
 

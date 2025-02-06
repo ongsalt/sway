@@ -131,6 +131,20 @@ export function generate(statement: TuanStatement, indentation: number, logging 
             break
         }
 
+        case "event-listener": {
+            const { event, listenerFn, node } = statement
+            // shuold we move this under an effect?
+            // TODO: add this to component context to do cleanup
+            // or remove component context and add fragmentContext??
+            add(`$.listen(${node}, ${event}, ${listenerFn});`)
+            break
+        }
+
+        case "attribute-updating": {
+            const { isFunction, key, target, type} = statement
+            break
+        }
+
         default: {
             add(`/* ${statement.type} is not implement yet. */`)
         }

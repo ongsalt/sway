@@ -1,6 +1,5 @@
 import { templateEffect } from "../signal";
-import { trackAppending } from "./dom";
-import { withCleanup } from "./context"
+import { withCleanup } from "./context";
 
 // TODO: transformer: avoid this type of name collision
 
