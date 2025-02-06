@@ -1,38 +1,46 @@
 import { Component } from "../types";
 
-export function children(node: Node | Node[], index = 0): Node {
-    if (Array.isArray(node)) {
-        return node[index];
+export function children(fragment: Node | Node[], index = 0): Node {
+    if (Array.isArray(fragment)) {
+        return fragment[index];
     }
-    return node.childNodes[index];
+    return fragment.childNodes[index];
 }
 
 export function sibling(node: Node, index: number) {
     console.log(node, index)
     return children(node.parentNode!, index);
-    while (index > 0) {
-        node = node.nextSibling!
-        console.log(node)
-        index -= 1;
-    }
+    // while (index > 0) {
+    //     node = node.nextSibling!
+    //     console.log(node)
+    //     index -= 1;
+    // }
 
-    return node
+    // return node
 }
 
 let appended: Node[] | undefined = undefined;
-export function append(anchor: Node, nodes: Node[]) {
+export function append(anchor: Node, fragment: Node[] | DocumentFragment) {
     // i want insertAfter but whatever
     const parent = anchor.parentNode!;
-    for (const node of nodes) {
+    if (fragment instanceof DocumentFragment) {
         if (appended) {
-            appended.push(node)
+            appended.push(...fragment.childNodes)
         }
-        parent.insertBefore(node, anchor);
+        parent.insertBefore(fragment, anchor);
+    } else {
+        for (const node of fragment) {
+            // console.log("got node list???")
+            if (appended) {
+                appended.push(node)
+            }
+            parent.insertBefore(node, anchor);
+        }
     }
 }
 
 export function trackAppending(fn: () => unknown) {
-    const previousAppended = appended; 
+    const previousAppended = appended;
     appended = []
     fn()
     const ret = appended;

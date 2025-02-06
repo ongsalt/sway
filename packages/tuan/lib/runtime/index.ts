@@ -1,4 +1,3 @@
-import { templateEffect } from "../signal"
 import { parse } from "./template"
 
 export function template(html: string) {
@@ -25,6 +24,7 @@ export function setListener(element: Element, type: keyof ElementEventMap, liste
     // or call $.reset()
 }
 
-export { if, type RenderFn } from "./if"
-export { mount, unmount, append, children, comment, sibling } from "./dom"
 export { templateEffect } from "../signal"
+export { append, children, comment, mount, sibling, unmount } from "./dom"
+export { if, type RenderFn } from "./if"
+
