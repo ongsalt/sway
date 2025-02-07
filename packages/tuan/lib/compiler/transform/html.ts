@@ -33,10 +33,11 @@ function stringifyNode(node: TemplateASTNode) {
         //     return `<!-- each -->`
         // }
     } else if (node.type === "element") {
+        const attribute = stringifyAttributes(node.attributes)
         if (node.isSelfClosing) {
-            return `<${node.tag}/>`
+            return `<${node.tag} ${attribute}/>`
         }
-        return `<${node.tag}${stringifyAttributes(node.attributes)}>${stringify(node.children)}</${node.tag}>`
+        return `<${node.tag} ${attribute}>${stringify(node.children)}</${node.tag}>`
     } else {
         const isDynamic = node.texts.some(it => it.type === "interpolation")
         if (isDynamic) {

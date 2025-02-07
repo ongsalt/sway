@@ -60,7 +60,7 @@ export function mount(component: Component, root: HTMLElement) {
 }
 
 // TODO: cleanup
-export function listen(element: Element, type: keyof ElementEventMap, listener: () => unknown) {
+export function listen<E extends Element>(element: E, type: keyof HTMLElementEventMap, listener: EventListenerOrEventListenerObject) {
     element.addEventListener(type, listener)
     if (!element.$$cleanups) {
         element.$$cleanups = []

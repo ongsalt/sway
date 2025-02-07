@@ -134,7 +134,6 @@ export function generate(statement: TuanStatement, indentation: number, logging 
         case "event-listener": {
             const { event, listenerFn, node } = statement
             // shuold we move this under an effect?
-            // TODO: add this to component context to do cleanup
             // or remove component context and add fragmentContext??
             add(`$.listen(${node}, ${event}, ${listenerFn});`)
             break

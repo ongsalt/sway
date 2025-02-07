@@ -27,7 +27,7 @@ const symbolTokens = [
     "tag-open-2", // </
     "tag-close", // >
     "tag-close-2", // />
-    "space", // TODO: think about how to handle space
+    "space",
     "equal",
     "comment-start",
     "comment-end",

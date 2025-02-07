@@ -109,7 +109,7 @@ export class Lexer {
                     if (this.isInsideTag) {
                         if (this.quoteState === "single") {
                             // ignore
-                            // TODO: is branch realy possible
+                            // TODO: is this branch realy possible
                         } else {
                             // console.log('"', this.current)
                             if (this.quoteState === "outside") {

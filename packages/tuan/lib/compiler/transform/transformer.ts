@@ -62,7 +62,6 @@ export class Transformer {
     private transformTemplate(userScript: string) {
         const roots: TemplateRootStatement[] = []
 
-        // TODO: sort: accessor shuold appear before if in the same scope
         // fuck `this`
         const walk = (node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): TuanStatement[] => {
             const out: TuanStatement[] = []
