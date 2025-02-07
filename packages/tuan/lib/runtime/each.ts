@@ -1,7 +1,7 @@
-import { computed, effect, templateEffect } from "../signal";
+import { CleanupFn, computed, effect, templateEffect, trackEffect } from "../signal";
 import { getTransformation, Operation } from "./array";
 import { CurrentEach, tuanContext } from "./context";
-import { append, comment, remove } from "./dom";
+import { append, comment, remove, trackAppending } from "./dom";
 import { identity } from "./utilities";
 
 // any thing that can be compared
@@ -23,20 +23,63 @@ export function each<Item>(
         nodes: new Set()
     }
 
-    const childAnchors: Comment[] = [] // their size should match
-    const currentKeys: Key[] = []
+    const endAnchor = comment("end-each");
+    append(anchor, endAnchor)
 
-    function reconcileAnchors(amount: number) {
-        while (childAnchors.length > amount) {
-            const anchor = childAnchors.pop()!
-            remove(anchor)
+    type ChildContext = {
+        cleanups: CleanupFn[],
+        nodes: Set<Node>
+        anchor: Comment
+    }
+
+    let currentKeys: Key[] = []
+    let childContexts: ChildContext[] = []
+
+    function createAnchor(index: number) {
+        const c = comment("each")
+        // We need a way to put anchor at any arbitary index
+        if (index >= childContexts.length) {
+            append(endAnchor, c, true)
+        } else {
+            append(childContexts[index].anchor, c, true)
+        }
+        return c
+    }
+
+    function render(index: number, item: Item) {
+        const anchor = createAnchor(index)
+
+        let disposeEffect: CleanupFn;
+        const nodes = trackAppending(() => {
+            disposeEffect = trackEffect(() => {
+                tuanContext.currentScope = scope
+                children(anchor, item, index)
+                tuanContext.currentScope = previous;
+            })
+        })
+
+        const context: ChildContext = {
+            cleanups: [disposeEffect!],
+            nodes: new Set(),
+            anchor
         }
 
-        while (childAnchors.length < amount) {
-            const c = comment("each")
-            childAnchors.push(c)
-            append(anchor, c)
-        }
+        nodes.forEach(context.nodes.add)
+
+        childContexts.splice(index, 0, context)
+
+        nodes.forEach(it => {
+            scope.nodes.add(it)
+            previous?.nodes.add(it)
+        })
+    }
+
+    function yeet(index: number) {
+        const childContext = childContexts[index]
+        childContext.cleanups.forEach(fn => fn())
+        childContext.nodes.forEach(it => remove(it))
+        remove(childContext.anchor)
+        childContexts.splice(index, 1)
     }
 
     templateEffect(() => {
@@ -45,18 +88,21 @@ export function each<Item>(
         const newKeys = items.map(keyFn)
         const diff = getTransformation(currentKeys, newKeys);
         // apply diff
-
-        reconcileAnchors(newKeys.length)
-        items.forEach((item, index) => {
-            // each children should have their own anchor
-            const shouldRender = true;
-            if (shouldRender) {
-                tuanContext.currentScope = scope
-                children(childAnchors[index], item, index)
-                tuanContext.currentScope = previous
-            }
+        console.log({
+            currentKeys, 
+            newKeys, 
+            diff
         })
 
+        for (const op of diff) {
+            if (op.type === "insert") {
+                render(op.index, op.item)
+            } else if (op.type === "remove") {
+                yeet(op.index)
+            }
+        }
+
+        currentKeys = newKeys
 
         // each child will have there dispose function
     })

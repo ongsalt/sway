@@ -27,27 +27,28 @@ export function sibling(node: Node, index: number) {
 }
 
 let appended: Node[] | undefined = undefined;
-export function append(anchor: Node, fragment: Node | Node[] | DocumentFragment) {
+export function append(anchor: Node, fragment: Node | Node[] | DocumentFragment, before = false) {
     // i want insertAfter but whatever
     const parent = anchor.parentNode!;
+    let currentAnchor = before ? anchor : anchor.nextSibling;
     if (fragment instanceof DocumentFragment) {
         if (appended) {
             appended.push(...fragment.childNodes)
         }
-        parent.insertBefore(fragment, anchor);
+        parent.insertBefore(fragment, currentAnchor);
     } else if (Array.isArray(fragment)) {
         for (const node of fragment) {
             // console.log("got node list???")
             if (appended) {
                 appended.push(node)
             }
-            parent.insertBefore(node, anchor);
+            parent.insertBefore(node, currentAnchor);
         }
     } else {
         if (appended) {
             appended.push(fragment)
         }
-        parent.insertBefore(fragment, anchor);
+        parent.insertBefore(fragment, currentAnchor);
     }
 }
 

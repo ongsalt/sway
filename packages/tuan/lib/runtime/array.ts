@@ -7,9 +7,10 @@ export type Operation<T> =
 
 
 // priority: amount of node that stay the same (minimize change) > dom updating
-// we shouhld do stalin sort
-
-export function stalinSort<T>(input: T[]): T[] {
+// we should do stalin sort
+// what tf was i thinking then
+// but lmao its work (at least for now)
+export function stalinSort<T>(input: T[], compare: (left: T, right: T) => number): T[] {
     if (input.length === 1) {
         return input
     }
@@ -19,7 +20,7 @@ export function stalinSort<T>(input: T[]): T[] {
         const previous = input[i - 1]
         const current = input[i]
 
-        if (current < previous) {
+        if (compare(current, previous) < 0) {
             output.splice(i, 1)
         } else {
             i += 1;
@@ -29,11 +30,14 @@ export function stalinSort<T>(input: T[]): T[] {
 }
 
 export function findLargestSortedIntersection<T>(previous: T[], after: T[]) {
-    const intersection = previous.filter(it => after.includes(it))
+    const intersection1 = previous.filter(it => after.includes(it))
+    const intersection2 = after.filter(it => previous.includes(it))
     let sequence: T[] = []
     // intersection -> [i1] [i1, i2] [i1, i2, i3] ...
-    for (let i = 0; i < intersection.length; i++) {
-        const normal = stalinSort(intersection.slice(i))
+    for (let i = 0; i < intersection1.length; i++) {
+        const normal = stalinSort(intersection1.slice(i), (a, b) => {
+            return intersection2.indexOf(a) - intersection2.indexOf(b)
+        })
 
         if (normal.length > sequence.length) {
             sequence = normal
@@ -46,16 +50,17 @@ export function findLargestSortedIntersection<T>(previous: T[], after: T[]) {
 export function getTransformation<T>(previous: T[], after: T[]): Operation<T>[] {
     // TODO: handle reverse, wait why do i reverse
     const sequence = findLargestSortedIntersection(previous, after)
-    const operations: Operation<T>[] = [] 
+    const operations: Operation<T>[] = []
     const workArray = [...previous]
 
+    console.log({ sequence })
     for (let i = 0; i < workArray.length; i++) {
         const item = workArray[i]
         if (!sequence.includes(item)) {
             workArray.splice(i, 1)
             operations.push({
                 type: "remove",
-                index: i  
+                index: i
             })
             i--;
         }

@@ -35,7 +35,7 @@
 </div>
 
 {#if show.value}
-    <!-- {someValue} -->
+    {someValue}
     <div class="border border-green-500 p-2 m-4 rounded-md">Branch 1</div>
 {:else}
     <div class="border p-2 m-4 rounded-md">Branch 2</div>

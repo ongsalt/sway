@@ -7,17 +7,42 @@
     const add = () => {
         items.value = [...items.value, current++];
     };
+
+    const addAt2 = () => {
+        items.value.splice(2, 0, current++);
+        items.value = [...items.value];
+    };
+
+    const remove = () => {
+        items.value.pop();
+        items.value = [...items.value];
+    };
 </script>
 
 <main class="m-8 border rounded-lg shadow-sm p-6 space-y-2">
     <h1 class="text-2xl">Each test</h1>
-    {#each items.value as item, index}
-        <p>{item}</p>
-    {/each}
     <button
         onclick={add}
         class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
     >
         Add
     </button>
+
+    <button
+        onclick={addAt2}
+        class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
+    >
+        Add at 2
+    </button>
+
+    <button
+        onclick={remove}
+        class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
+    >
+        Remove
+    </button>
+
+    {#each items.value as item, index}
+        <p>{item}</p>
+    {/each}
 </main>

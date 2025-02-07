@@ -5,10 +5,10 @@ import { mount } from "tuan"
 // import Attributes from "./components/attributes.tuan"
 // import { autoRetracking } from "./features/auto-retracking"
 import Each from "./components/Each.tuan"
-// import NestedControlFlow from "./components/nested-control-flow.tuan"
+import NestedControlFlow from "./components/nested-control-flow.tuan"
 // import NestedControlFlow from "./components/nested-control-flow.generated"
 
 const appRoot = document.getElementById("app")!
 
-mount(Each, appRoot)
+mount(NestedControlFlow, appRoot)
 

@@ -29,14 +29,17 @@ function _if(anchor: Node, effectFn: IfEffect) {
 
     const reset = () => {
         // console.log("[reset] ------------", scope)
+        scope.cleanups.forEach(fn => fn())
+        scope.cleanups = []
+        // should contain only immediate node
         scope.nodes.forEach(it => {
             previous?.nodes.delete(it)
             remove(it)
         })
         scope.nodes.clear()
-        scope.cleanups.forEach(fn => fn())
-        scope.cleanups = []
     }
+
+    previous?.cleanups.push(reset)
 
     templateEffect(() => {
         effectFn(prepare) // setting init and newKey
@@ -63,7 +66,7 @@ function _if(anchor: Node, effectFn: IfEffect) {
                 scope.cleanups.push(disposeEffect!)
                 nodes.forEach(it => {
                     scope.nodes.add(it)
-                    previous?.nodes.add(it)
+                    // previous?.nodes.add(it)
                 })
             }
             key = newKey;
