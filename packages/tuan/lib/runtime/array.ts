@@ -53,7 +53,6 @@ export function getTransformation<T>(previous: T[], after: T[]): Operation<T>[] 
     const operations: Operation<T>[] = []
     const workArray = [...previous]
 
-    console.log({ sequence })
     for (let i = 0; i < workArray.length; i++) {
         const item = workArray[i]
         if (!sequence.includes(item)) {

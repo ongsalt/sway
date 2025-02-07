@@ -20,14 +20,15 @@ svelte-like frontend framework recreation (hopefully)
     - there is also `effect` and `computed`
     - cleaning up is currently kinda mess.
 - event listener 
+- `each` syntax shuold be ok now
+
 ## What's not yet
-- Dynamic attribute `class="border {someExpression}"` or `placeholder={anotherExpression}` 
+- Dynamic attribute `claass="border {someExpression}"` or `placeholder={anotherExpression}` 
 - value binding
-- `each` syntax
-<!-- ### Unlikely to implement -->
 
-
-Parser for these syntax is already implemented.  
+### Unlikely to implement
+- `:else` block under `#each` 
+- transition
 
 
 ## Packages

@@ -1,4 +1,4 @@
-import { it } from "vitest"
+import { expect, it } from "vitest"
 import { tokenize } from "../../lib/compiler/tokenize"
 import { ifElseInput, simpleInput } from "./testcases"
 
@@ -6,7 +6,7 @@ import { ifElseInput, simpleInput } from "./testcases"
 
 it('should parse this thing', () => {
     const tokens = tokenize(ifElseInput)
-    console.log(tokens)
+    // console.log(tokens)
     // expect(lexer.tokens).toStrictEqual(lexerOutput)
 })
 
@@ -19,7 +19,7 @@ it('should parse simple input', () => {
 it('should parse attribute binding', () => {
     const source = `<button class="p-2 border {active ? 'bg-blue-500' : 'bg-blue-100'} {otherClass}" onclick={fn}> something </button>`
     const tokens = tokenize(source)
-    console.log(tokens)
+    // console.log(tokens)
 })
 
 it('should do script escaping magic', () => {
@@ -43,4 +43,18 @@ it('should do script escaping magic', () => {
     //     { type: 'tag-close', line: 3 },
     //     { type: 'eof', line: 3 }
     // ])
+})
+
+it('should parse complex interpolation', () => {
+    const tokens = tokenize(`<p> text {expression} 秦谷 美鈴 {add(3, 5)} </p>`)
+
+    // console.log(tokens)
+
+    // ignore p
+    expect(tokens.slice(3, -4)).toStrictEqual([
+        { type: 'text', body: 'text ', line: 1 },
+        { type: 'interpolation', body: 'expression', line: 1 },
+        { type: 'text', body: ' 秦谷 美鈴 ', line: 1 },
+        { type: 'interpolation', body: 'add(3, 5)', line: 1 },
+    ])
 })

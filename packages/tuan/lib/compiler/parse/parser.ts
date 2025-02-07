@@ -34,6 +34,9 @@ export class Parser {
                 value: fn()
             }
         } catch (error) {
+            if (!(error instanceof ParserError)) {
+                throw error;
+            }
             // console.log('[unwinding] ',error)
             this.current = position
             return {

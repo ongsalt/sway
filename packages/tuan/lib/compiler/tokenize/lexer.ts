@@ -12,8 +12,11 @@ export class Lexer {
 
     private escapeNext = false;
     private isInsideTag = false;
-    private isScript = false;
+    private isScript = false; // we shuold use this flag for interpolation too
     private quoteState: "single" | "double" | "outside" = "outside";
+    private textState: "before" | "text"  = "before"
+    // We need to modify last text
+
     private start = 0
     private current = 0
     private line = 1
@@ -51,9 +54,18 @@ export class Lexer {
 
                 case '<': {
                     if (this.match('!--')) {
+                        // wait we parse this????
                         this.symbolToken("comment-start");
                     } else if (this.match('/')) {
-                        // Self closing tag
+                        // const lastTag = this.tokens.at(-1);
+                        // if (lastTag?.type === "text") {
+                        //     // console.log(lastTag)
+                        //     lastTag.body = lastTag.body.trimEnd()
+                        //     if (lastTag.body === "") {
+                        //         // this.tokens.pop()
+                        //     }
+                        // }
+
                         this.isInsideTag = true;
                         this.symbolToken("tag-open-2");
                         this.next()
@@ -73,6 +85,7 @@ export class Lexer {
                     if (this.match('>')) {
                         this.isInsideTag = false
                         this.symbolToken("tag-close-2");
+                        this.textState = "before"
                         break;
                     }
                 }
@@ -81,12 +94,14 @@ export class Lexer {
                 case '\r':
                 case '\t':
                     if (this.quoteState === "outside") {
-                        // Ignore whitespace. for now, TODO:
-                        break;
+                        // Ignore whitespace. for now, 
+                        // HTML is dogshit
+                        // TODO:
                     } else {
                         // console.log('space', this.current, this.quoteState, this.isInsideTag)
                         this.default()
                     }
+                    break;
                 case '\n':
                     this.line++;
                     break;
@@ -151,7 +166,8 @@ export class Lexer {
                 this.text(["</script"])
                 this.isScript = false
             } else {
-                this.text()
+                this.text(defualtDelimiters, false)
+                this.textState = "text"
             }
         }
     }
@@ -224,14 +240,22 @@ export class Lexer {
 
 
         // console.log(this.peek())
-        if (this.isAtEnd()) {
-            throw new Error(`Unterminated text at line:${this.line} (delimiter: ${delimiters})`)
-        }
+        // if (this.isAtEnd()) {
+        //     throw new Error(`Unterminated text at line:${this.line} (delimiter: ${delimiters})`)
+        // }
 
         let body = this.source.substring(this.start, this.current);
         if (trim) {
             body = body.trim()
+        } else {
+            // TODO: think about this
+            if (this.textState === "before") {
+                // console.log({ body })
+                body = body.trimStart()
+            }
         }
+
+        
         this.tokens.push({
             type: "text",
             body,

@@ -1,13 +1,12 @@
-import { CleanupFn, computed, effect, templateEffect, trackEffect } from "../signal";
-import { getTransformation, Operation } from "./array";
-import { CurrentEach, tuanContext } from "./context";
-import { append, comment, remove, sweep, trackAppending } from "./dom";
+import { CleanupFn, templateEffect, trackEffect } from "../signal";
+import { getTransformation } from "./array";
+import { RuntimeEachContext, tuanContext } from "./context";
+import { append, comment, remove, sweep } from "./dom";
 import { identity } from "./utilities";
 
 // any thing that can be compared
 type Key = any
 type KeyFn<T> = (value: T) => Key
-
 
 export function each<Item>(
     anchor: Node,
@@ -16,10 +15,11 @@ export function each<Item>(
     keyFn: KeyFn<Item> = identity // use object reference as key
 ) {
     const previous = tuanContext.currentScope;
-    const scope: CurrentEach = {
+    const scope: RuntimeEachContext = {
         type: "each",
         previous,
         cleanups: [],
+        children: []
     }
 
     const endAnchor = comment("end-each");
@@ -56,7 +56,6 @@ export function each<Item>(
             cleanups: [disposeEffect!],
             anchor
         }
-
 
         childContexts.splice(index, 0, context)
     }

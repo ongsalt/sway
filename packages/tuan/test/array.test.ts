@@ -74,9 +74,10 @@ it("should detect insertion and deletion 2", () => {
 
 
 test('stalin sort', () => {
-    expect(stalinSort([1, 2, 3, 4, 5])).toStrictEqual([1, 2, 3, 4, 5])
-    expect(stalinSort([1, 0])).toStrictEqual([1])
-    expect(stalinSort([8, 23, 2, 1, 4, 6])).toStrictEqual([8, 23])
+    const naturalOrdering = (a, b) => a - b;
+    expect(stalinSort([1, 2, 3, 4, 5], naturalOrdering)).toStrictEqual([1, 2, 3, 4, 5])
+    expect(stalinSort([1, 0], naturalOrdering)).toStrictEqual([1])
+    expect(stalinSort([8, 23, 2, 1, 4, 6], naturalOrdering)).toStrictEqual([8, 23])
     // expect(stalinSort([1, 2, 3, 4, 5])).toStrictEqual([1, 2, 3, 4, 5])
 })
 

@@ -1,5 +1,5 @@
 import { templateEffect, trackEffect } from "../signal";
-import { CurrentIf, tuanContext } from "./context";
+import { RuntimeIfContext, tuanContext } from "./context";
 import { append, comment, sweep } from "./dom";
 
 // TODO: transformer: avoid this type of name collision
@@ -11,10 +11,11 @@ export type IfEffect = ($$render: RenderDelegationFn) => void
 // Should anchor be a node
 function _if(anchor: Node, effectFn: IfEffect) {
     const previous = tuanContext.currentScope;
-    const scope: CurrentIf = {
+    const scope: RuntimeIfContext = {
         type: "if",
         previous,
         cleanups: [],
+        children: []
     }
 
     const endAnchor = comment("end-each");

@@ -1,4 +1,4 @@
-import { it } from "vitest"
+import { expect, it } from "vitest"
 import { parse } from "../../lib/compiler/parse"
 import { tokenize } from "../../lib/compiler/tokenize"
 import { eachInput, ifElseInput, simpleInput } from "./testcases"
@@ -18,7 +18,7 @@ it('should parse multiroot component', () => {
 `)
 
     const node = parse(tokens)
-    console.dir(node, { depth: null })
+    // console.dir(node, { depth: null })
 })
 
 it('should parse if block', () => {

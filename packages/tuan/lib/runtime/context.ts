@@ -1,39 +1,39 @@
 import { CleanupFn } from "../signal"
 
-export type CurrentComponent = {
-    type: "component",
+type SharedRuntimeContext = {
     cleanups: CleanupFn[],
-    previous?: CurrentScope,
+    previous?: RuntimeContext,
+    children: RuntimeContext[]
+}
+
+export type RuntimeComponentContext = SharedRuntimeContext & {
+    type: "component",
     onMounts: OnMountFn[],
     onDestroys: OnDestroyFn[],
 }
 
 // each scope should wrap it own clean up and push it to previous.cleanups 
-export type CurrentIf = {
+export type RuntimeIfContext = SharedRuntimeContext & {
     type: "if",
-    cleanups: CleanupFn[],
-    previous?: CurrentScope,
 }
 
-export type CurrentEach = {
+export type RuntimeEachContext = SharedRuntimeContext & {
     type: "each",
-    cleanups: CleanupFn[],
-    previous?: CurrentScope,
 }
 
-export type CurrentScope = CurrentComponent | CurrentIf | CurrentEach
-
+export type RuntimeContext = RuntimeComponentContext | RuntimeEachContext | RuntimeIfContext
 export type OnMountFn = () => (CleanupFn | undefined)
 export type OnDestroyFn = () => void
 
 export type TuanContext = {
-    currentScope: CurrentScope | undefined
+    currentScope: RuntimeContext | undefined
 }
+
 export const tuanContext: TuanContext = {
     currentScope: undefined
 }
 
-export function getCurrentComponent(): CurrentComponent | undefined {
+export function getNearestComponent(): RuntimeComponentContext | undefined {
     let current = tuanContext.currentScope
     while (current) {
         if (current.type === "component") {
