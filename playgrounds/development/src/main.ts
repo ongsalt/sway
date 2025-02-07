@@ -4,11 +4,11 @@ import { mount } from "tuan"
 // import Interpolation from "./components/interpolation.tuan"
 // import Attributes from "./components/attributes.tuan"
 // import { autoRetracking } from "./features/auto-retracking"
-import IfElse from "./components/if-else.tuan"
-import NestedControlFlow from "./components/nested-control-flow.tuan"
+import Each from "./components/Each.tuan"
+// import NestedControlFlow from "./components/nested-control-flow.tuan"
 // import NestedControlFlow from "./components/nested-control-flow.generated"
 
 const appRoot = document.getElementById("app")!
 
-mount(NestedControlFlow, appRoot)
+mount(Each, appRoot)
 

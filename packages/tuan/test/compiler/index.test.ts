@@ -1,6 +1,6 @@
 import { it } from "vitest"
 import { compile } from "../../lib/compiler"
-import { complexIfElseInput, ifElseInput, nestedControlFlowInput, simpleInput } from "./testcases"
+import { complexIfElseInput, eachInput, ifElseInput, nestedControlFlowInput, simpleInput } from "./testcases"
 
 // i will properly do this once these apis are stable
 
@@ -28,8 +28,14 @@ import { complexIfElseInput, ifElseInput, nestedControlFlowInput, simpleInput } 
 //     // console.log(output)
 // })
 
-it('should compile complex if statement', () => {
-    const { ast, output } = compile(complexIfElseInput)
+// it('should compile complex if statement', () => {
+//     const { ast, output } = compile(complexIfElseInput)
+//     // console.dir(ast, { depth: null })
+//     console.log(output)
+// })
+
+it('should compile each statement', () => {
+    const { ast, output } = compile(eachInput)
     // console.dir(ast, { depth: null })
     console.log(output)
 })

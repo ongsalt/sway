@@ -78,3 +78,4 @@ export function getTransformation<T>(previous: T[], after: T[]): Operation<T>[] 
     // TODO: use element.moveBefore sometime later 
     return operations;
 }
+

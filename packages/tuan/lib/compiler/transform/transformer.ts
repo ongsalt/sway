@@ -3,7 +3,7 @@ import { Node } from "estree"
 import { walk } from "estree-walker"
 import { analyze } from "periscopic"
 import { TemplateASTNode, Element, TextNode, ControlFlowNode, IfNode } from "../parse/ast"
-import { AccessorDefinitionStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, EventListenerAttachingStatement, priority, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, TuanContainerStatement, TuanStatement } from "./statements"
+import { AccessorDefinitionStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, EventListenerAttachingStatement, priority, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, TuanContainerStatement, TuanStatement } from "./statements"
 import { stringify } from "./html"
 import { generate } from "./codegen"
 
@@ -17,10 +17,7 @@ type NodePath = string
 export class Transformer {
     private options: TransformOptions
 
-    private topLevelStatements: TuanStatement[] = []
-    private componentDeclaration: ComponentDeclarationStatement
-    private identifiers: Set<string>
-
+    private identifiers!: Set<string>
     // will be prune if not use
     private accessors: Map<TemplateASTNode, (AccessorDefinitionStatement | CreateRootStatement)> = new Map()
 
@@ -34,7 +31,6 @@ export class Transformer {
     private transform() {
         const { importStatements, script } = this.transformScript()
         const { roots, generated } = this.transformTemplate(script)
-        this.topLevelStatements.push(this.componentDeclaration)
 
         const componentDeclaration: ComponentDeclarationStatement = {
             type: "component-declaration",
@@ -60,7 +56,7 @@ export class Transformer {
     }
 
     private transformBinding() {
-        
+
     }
 
     private transformTemplate(userScript: string) {
@@ -75,7 +71,6 @@ export class Transformer {
 
                 // we need to compile node.texts then add an templateEffect
                 if (isInterpolated) {
-
                     // 1. create accessor
                     const accessors = this.createAccessor(node, parents)
                     out.push(...accessors)
@@ -134,14 +129,30 @@ export class Transformer {
                 } else if (node.kind === "else") {
                     throw new Error("this is not possible unless the parser got high or something")
                 } else { // TODO: each
-                    const name = this.createIdentifier("root");
-                    roots.push({
-                        type: "template-root",
-                        name,
-                        template: stringify(node.children)
-                    })
-                    // this.accessors.set()
-                    node.children.forEach(it => walk(it, [node]))
+                    const anchorAccessors = this.createAccessor(node, parents)
+                    const anchor = anchorAccessors.at(-1)!.name
+                    out.push(...anchorAccessors)
+
+                    const { name, statement } = this.createTemplateRoot(node)
+                    roots.push(statement);
+                    const { accessor, name: fragment } = this.createRootFragment(node, name);
+
+                    // TODO: parse as and index
+                    const eachScope: TemplateEachStatement = {
+                        type: "each",
+                        anchor,
+                        iteratable: node.iteratable,
+                        as: node.as,
+                        index: node.index,
+                        key: node.key,
+                        fragment: fragment,
+                        body: [
+                            accessor,
+                            ...node.children.map(it => walk(it, [node])).flat()
+                        ],
+                    }
+
+                    out.push(eachScope)
                 }
             } else if (node.type === "element") {
                 let _accessors: AccessorDefinitionStatement[] | null = null
@@ -159,7 +170,6 @@ export class Transformer {
                 }
 
                 // if we have attribute binding
-                let shouldCreateAccessor = false;
                 for (const attribute of node.attributes) {
                     if (attribute.whole) {
                         const { accessor } = getOrCreateAccessor()
@@ -181,8 +191,7 @@ export class Transformer {
                         }
                     } else {
                         if (attribute.texts.some(it => it.type === "interpolation")) {
-                            shouldCreateAccessor = true
-
+                            // TODO: 
                         }
                     }
                 }
@@ -280,6 +289,7 @@ export class Transformer {
         const [immediateParent, ...rest] = parents;
 
         // Actually we could use any name
+        // console.log(node, parents)
         const preferredName = node.type === "text" ? "text"
             : node.type === "control-flow" ? "anchor" : node.tag;
         const name = this.createIdentifier(preferredName);

@@ -66,9 +66,11 @@ export type TemplateIfStatement = {
 // TODO: think about 2way binding in each
 export type TemplateEachStatement = {
     type: "each",
-    fragmentName: string,
+    anchor: string,
+    fragment: string,
     iteratable: string,
     as?: string,
+    index?: string,
     key?: string
     body: TuanStatement[]
 }

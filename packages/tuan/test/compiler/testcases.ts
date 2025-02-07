@@ -82,7 +82,7 @@ export const eachInput = `<script>
 
 <main class="m-8 border rounded-lg shadow-sm p-6 space-y-2">
     <h1 class="text-2xl"> Each test </h1>
-    {#each items as item, index (key)}
+    {#each items.value as item, index (index)}
         <p> {item} </p>
     {/each}
     <button onclick={add} class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white "> Add </button>

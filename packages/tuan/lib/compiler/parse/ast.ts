@@ -43,6 +43,7 @@ export type EachNode = {
     kind: "each",
     iteratable: string,
     children: TemplateASTNode[]
+    index?: string,
     as?: string,
     key?: string
 }

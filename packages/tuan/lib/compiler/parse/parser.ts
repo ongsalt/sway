@@ -38,7 +38,7 @@ export class Parser {
             this.current = position
             return {
                 ok: false,
-                error
+                error: error as any
             }
         }
     }
@@ -358,11 +358,22 @@ export class Parser {
         const children = this.nodes()
         this.consumeToken("endeach")
 
+        let asName = as
+        let index = as?.split(',').at(-1)?.trim()
+        if (index) {
+            asName = as?.split(',').slice(0, -1).join('')
+            // FUCK
+            // i forget that everything under {} is js expression 
+            // TODO: count { to know when interpolation is stopped
+            // TODO: check if index is valid variable name
+        }
+
         return {
             type: "control-flow",
             kind: "each",
             iteratable,
-            as,
+            as: asName,
+            index,
             key,
             children
         }

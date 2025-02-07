@@ -61,7 +61,6 @@ function _if(anchor: Node, effectFn: IfEffect) {
                 })
 
                 scope.cleanups.push(disposeEffect!)
-                
                 nodes.forEach(it => {
                     scope.nodes.add(it)
                     previous?.nodes.add(it)

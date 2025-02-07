@@ -140,12 +140,35 @@ export function generate(statement: TuanStatement, indentation: number, logging 
             break
         }
 
-        case "attribute-updating": {
-            const { isFunction, key, target, type} = statement
+        case "each": {
+            const { body, anchor, iteratable, as, key, index, fragment } = statement
+            let asAndIndex = ''
+            if (as) {
+                asAndIndex += as;
+                if (index) {
+                    asAndIndex += `, ${index}`
+                }
+            }
+
+            add(`$.each(${anchor}, () => ${iteratable}, ($$anchor, ${asAndIndex}) => {`)
+            add(generateMany(body, indentation + 2, logging))
+            add(`$.append($$anchor, ${fragment});`, 2)
+            if (key) {
+                add(`}, (${asAndIndex}) => ${key});`)
+            } else {
+                add(`});`)
+            }
             break
         }
 
+        case "attribute-updating": {
+            const { isFunction, key, target, type } = statement
+            // throw new Error("Unimplemented (codegen)")
+            // break
+        }
+
         default: {
+            throw new Error("Unimplemented (codegen)")
             add(`/* ${statement.type} is not implement yet. */`)
         }
     }

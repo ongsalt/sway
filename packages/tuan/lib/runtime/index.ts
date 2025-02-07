@@ -13,5 +13,6 @@ export function setAttribute(element: Element, attributes: string, value: string
 export { templateEffect } from "../signal"
 export { append, children, comment, mount, sibling, listen } from "./dom"
 export { if, type RenderFn } from "./if"
+export { each } from "./each"
 export { parse, template } from "./template"
 

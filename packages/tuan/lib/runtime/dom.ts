@@ -27,7 +27,7 @@ export function sibling(node: Node, index: number) {
 }
 
 let appended: Node[] | undefined = undefined;
-export function append(anchor: Node, fragment: Node[] | DocumentFragment) {
+export function append(anchor: Node, fragment: Node | Node[] | DocumentFragment) {
     // i want insertAfter but whatever
     const parent = anchor.parentNode!;
     if (fragment instanceof DocumentFragment) {
@@ -35,7 +35,7 @@ export function append(anchor: Node, fragment: Node[] | DocumentFragment) {
             appended.push(...fragment.childNodes)
         }
         parent.insertBefore(fragment, anchor);
-    } else {
+    } else if (Array.isArray(fragment)) {
         for (const node of fragment) {
             // console.log("got node list???")
             if (appended) {
@@ -43,6 +43,11 @@ export function append(anchor: Node, fragment: Node[] | DocumentFragment) {
             }
             parent.insertBefore(node, anchor);
         }
+    } else {
+        if (appended) {
+            appended.push(fragment)
+        }
+        parent.insertBefore(fragment, anchor);
     }
 }
 
