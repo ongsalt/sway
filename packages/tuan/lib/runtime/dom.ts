@@ -26,39 +26,20 @@ export function sibling(node: Node, index: number) {
     // return node
 }
 
-let appended: Node[] | undefined = undefined;
 export function append(anchor: Node, fragment: Node | Node[] | DocumentFragment, before = false) {
     // i want insertAfter but whatever
     const parent = anchor.parentNode!;
     let currentAnchor = before ? anchor : anchor.nextSibling;
     if (fragment instanceof DocumentFragment) {
-        if (appended) {
-            appended.push(...fragment.childNodes)
-        }
         parent.insertBefore(fragment, currentAnchor);
     } else if (Array.isArray(fragment)) {
         for (const node of fragment) {
             // console.log("got node list???")
-            if (appended) {
-                appended.push(node)
-            }
             parent.insertBefore(node, currentAnchor);
         }
     } else {
-        if (appended) {
-            appended.push(fragment)
-        }
         parent.insertBefore(fragment, currentAnchor);
     }
-}
-
-export function trackAppending(fn: () => unknown) {
-    const previousAppended = appended;
-    appended = []
-    fn()
-    const ret = appended;
-    appended = previousAppended;
-    return ret;
 }
 
 export function comment(data = '') {
@@ -86,4 +67,14 @@ export function listen(element: Element, type: keyof ElementEventMap, listener: 
     }
     element.$$cleanups.push(() => element.removeEventListener(type, listener))
     // console.log(element)
+}
+
+// exclusive
+export function sweep(from: Node, to: Node | null) {
+    let current = from.nextSibling;
+    while (current != to) {
+        const toRemove = current!;
+        current = current!.nextSibling
+        remove(toRemove)
+    }
 }

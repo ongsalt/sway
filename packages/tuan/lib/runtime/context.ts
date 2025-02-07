@@ -3,7 +3,6 @@ import { CleanupFn } from "../signal"
 export type CurrentComponent = {
     type: "component",
     cleanups: CleanupFn[],
-    nodes: Set<Node>,
     previous?: CurrentScope,
     onMounts: OnMountFn[],
     onDestroys: OnDestroyFn[],
@@ -13,14 +12,12 @@ export type CurrentComponent = {
 export type CurrentIf = {
     type: "if",
     cleanups: CleanupFn[],
-    nodes: Set<Node>
     previous?: CurrentScope,
 }
 
 export type CurrentEach = {
     type: "each",
     cleanups: CleanupFn[],
-    nodes: Set<Node>
     previous?: CurrentScope,
 }
 

@@ -1,6 +1,6 @@
-import { CleanupFn, templateEffect, trackEffect } from "../signal";
+import { templateEffect, trackEffect } from "../signal";
 import { CurrentIf, tuanContext } from "./context";
-import { remove, trackAppending } from "./dom";
+import { append, comment, sweep } from "./dom";
 
 // TODO: transformer: avoid this type of name collision
 
@@ -15,8 +15,10 @@ function _if(anchor: Node, effectFn: IfEffect) {
         type: "if",
         previous,
         cleanups: [],
-        nodes: new Set()
     }
+
+    const endAnchor = comment("end-each");
+    append(anchor, endAnchor)
 
     let key: boolean | undefined;
     let newKey: boolean | undefined;
@@ -28,15 +30,9 @@ function _if(anchor: Node, effectFn: IfEffect) {
     }
 
     const reset = () => {
-        // console.log("[reset] ------------", scope)
         scope.cleanups.forEach(fn => fn())
         scope.cleanups = []
-        // should contain only immediate node
-        scope.nodes.forEach(it => {
-            previous?.nodes.delete(it)
-            remove(it)
-        })
-        scope.nodes.clear()
+        sweep(anchor, endAnchor)
     }
 
     previous?.cleanups.push(reset)
@@ -54,20 +50,13 @@ function _if(anchor: Node, effectFn: IfEffect) {
             }
             if (init) {
                 // console.log(`Init new content`)
-                let disposeEffect: CleanupFn;
-                const nodes = trackAppending(() => {
-                    disposeEffect = trackEffect(() => {
-                        tuanContext.currentScope = scope
-                        init!(anchor)
-                        tuanContext.currentScope = previous;
-                    })
+                let disposeEffect = trackEffect(() => {
+                    tuanContext.currentScope = scope
+                    init!(anchor)
+                    tuanContext.currentScope = previous;
                 })
 
                 scope.cleanups.push(disposeEffect!)
-                nodes.forEach(it => {
-                    scope.nodes.add(it)
-                    // previous?.nodes.add(it)
-                })
             }
             key = newKey;
         }
@@ -77,3 +66,4 @@ function _if(anchor: Node, effectFn: IfEffect) {
 }
 
 export { _if as if };
+

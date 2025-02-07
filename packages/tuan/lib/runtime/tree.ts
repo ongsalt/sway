@@ -10,4 +10,4 @@ type RuntimeEachNode = {
 
 // we need this when we want to remove it from dom
 // or can we just remove everythin between 2 anchor
-export type RuntimdeNode = RuntimeIfNode | RuntimeEachNode
+export type RuntimeNode = RuntimeIfNode | RuntimeEachNode

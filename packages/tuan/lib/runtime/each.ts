@@ -1,7 +1,7 @@
 import { CleanupFn, computed, effect, templateEffect, trackEffect } from "../signal";
 import { getTransformation, Operation } from "./array";
 import { CurrentEach, tuanContext } from "./context";
-import { append, comment, remove, trackAppending } from "./dom";
+import { append, comment, remove, sweep, trackAppending } from "./dom";
 import { identity } from "./utilities";
 
 // any thing that can be compared
@@ -20,7 +20,6 @@ export function each<Item>(
         type: "each",
         previous,
         cleanups: [],
-        nodes: new Set()
     }
 
     const endAnchor = comment("end-each");
@@ -28,7 +27,6 @@ export function each<Item>(
 
     type ChildContext = {
         cleanups: CleanupFn[],
-        nodes: Set<Node>
         anchor: Comment
     }
 
@@ -49,35 +47,24 @@ export function each<Item>(
     function render(index: number, item: Item) {
         const anchor = createAnchor(index)
 
-        let disposeEffect: CleanupFn;
-        const nodes = trackAppending(() => {
-            disposeEffect = trackEffect(() => {
-                tuanContext.currentScope = scope
-                children(anchor, item, index)
-                tuanContext.currentScope = previous;
-            })
+        let disposeEffect = trackEffect(() => {
+            tuanContext.currentScope = scope
+            children(anchor, item, index)
+            tuanContext.currentScope = previous;
         })
-
         const context: ChildContext = {
             cleanups: [disposeEffect!],
-            nodes: new Set(),
             anchor
         }
 
-        nodes.forEach(context.nodes.add)
 
         childContexts.splice(index, 0, context)
-
-        nodes.forEach(it => {
-            scope.nodes.add(it)
-            previous?.nodes.add(it)
-        })
     }
 
     function yeet(index: number) {
         const childContext = childContexts[index]
         childContext.cleanups.forEach(fn => fn())
-        childContext.nodes.forEach(it => remove(it))
+        sweep(childContext.anchor, childContexts[index + 1]?.anchor ?? endAnchor)
         remove(childContext.anchor)
         childContexts.splice(index, 1)
     }
@@ -88,11 +75,11 @@ export function each<Item>(
         const newKeys = items.map(keyFn)
         const diff = getTransformation(currentKeys, newKeys);
         // apply diff
-        console.log({
-            currentKeys, 
-            newKeys, 
-            diff
-        })
+        // console.log({
+        //     currentKeys,
+        //     newKeys,
+        //     diff
+        // })
 
         for (const op of diff) {
             if (op.type === "insert") {

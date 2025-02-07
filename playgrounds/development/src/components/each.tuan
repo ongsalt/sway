@@ -42,7 +42,10 @@
         Remove
     </button>
 
+    <div></div>
+
     {#each items.value as item, index}
-        <p>{item}</p>
+        {item}
+        <p class="font-bold">{item}</p>
     {/each}
 </main>
