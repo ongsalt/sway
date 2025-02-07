@@ -1,4 +1,11 @@
+import { CleanupFn } from "../signal";
 import { Component } from "../types";
+
+declare global {
+    interface Element {
+        $$cleanups?: CleanupFn[]
+    }
+}
 
 export function children(fragment: Node | Node[], index = 0): Node {
     if (Array.isArray(fragment)) {
@@ -52,6 +59,11 @@ export function comment(data = '') {
     return document.createComment(data)
 }
 
+export function remove(node: Node) {
+    node.parentNode!.removeChild(node)
+    // node.
+}
+
 export function mount(component: Component, root: HTMLElement) {
     const anchor = comment()
     root.appendChild(anchor)
@@ -62,9 +74,10 @@ export function mount(component: Component, root: HTMLElement) {
 
 // TODO: cleanup
 export function listen(element: Element, type: keyof ElementEventMap, listener: () => unknown) {
-    console.log(element)
     element.addEventListener(type, listener)
-
-    // onDestroy(() => element.removeEventListener(type, listener))
-    // or call $.reset()
+    if (!element.$$cleanups) {
+        element.$$cleanups = []
+    }
+    element.$$cleanups.push(() => element.removeEventListener(type, listener))
+    // console.log(element)
 }

@@ -1,6 +1,6 @@
 import { CleanupFn, templateEffect, trackEffect } from "../signal";
 import { CurrentIf, tuanContext } from "./context";
-import { trackAppending } from "./dom";
+import { remove, trackAppending } from "./dom";
 
 // TODO: transformer: avoid this type of name collision
 
@@ -28,10 +28,10 @@ function _if(anchor: Node, effectFn: IfEffect) {
     }
 
     const reset = () => {
-        console.log("[reset] ------------", scope)
+        // console.log("[reset] ------------", scope)
         scope.nodes.forEach(it => {
             previous?.nodes.delete(it)
-            it.parentNode!.removeChild(it)
+            remove(it)
         })
         scope.nodes.clear()
         scope.cleanups.forEach(fn => fn())
@@ -50,7 +50,7 @@ function _if(anchor: Node, effectFn: IfEffect) {
                 reset()
             }
             if (init) {
-                console.log(`Init new content`)
+                // console.log(`Init new content`)
                 let disposeEffect: CleanupFn;
                 const nodes = trackAppending(() => {
                     disposeEffect = trackEffect(() => {

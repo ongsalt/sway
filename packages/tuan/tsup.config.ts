@@ -9,6 +9,6 @@ export default defineConfig({
     format: ["cjs", "esm"],
     // experimentalDts: true,
     dts: true,
-    tsconfig: "tsconfig.lib.json",
+    tsconfig: "tsconfig.json",
     shims: true,
 })
