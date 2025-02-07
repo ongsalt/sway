@@ -1,5 +1,5 @@
 <script>
-    import { signal, computed, effect } from "tuan";
+    import { signal } from "tuan";
 
     const count = signal(1);
     const a = signal(1);
@@ -48,3 +48,16 @@
         {/if}
     </div>
 </main>
+
+<div class="border rounded-lg p-4 m-8 shadow">
+    <h2 class="text-2xl">
+        Other Card
+    </h2>
+
+    <p> immediate if children text set </p>
+    <p>
+        {#if count.value % 2 === 0}
+            {count.value}
+        {/if}
+    </p>
+</div>

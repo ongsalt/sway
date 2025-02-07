@@ -341,11 +341,11 @@ export class Parser {
             children,
         }
 
-        if (elseChildren.ok) {
+        if (elseChildren.ok && elseChildren.value.length !== 0) {
             ifNode.else = {
                 type: "control-flow",
                 kind: "else",
-                children: elseChildren?.value ?? [],
+                children: elseChildren.value,
             }
         }
 

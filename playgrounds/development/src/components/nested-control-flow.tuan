@@ -1,0 +1,46 @@
+<script>
+    import { signal } from "tuan";
+
+    const show = signal(false);
+    const show2 = signal(true);
+
+    const toggle = () => {
+        show.value = !show.value;
+    };
+
+    const toggle2 = () => {
+        show2.value = !show2.value;
+    };
+
+    const someValue = "Hihi";
+</script>
+
+<button
+    class="bg-teal-500 hover:bg-teal-500/95 text-white font-medium rounded-md p-2 px-4"
+    onclick={toggle}
+>
+    Toggle
+</button>
+
+<button
+    class="bg-teal-500 hover:bg-teal-500/95 text-white font-medium rounded-md p-2 px-4"
+    onclick={toggle2}
+>
+    Toggle 2
+</button>
+
+<div>
+    show: {show.value} <br />
+    show2: {show2.value}
+</div>
+
+{#if show.value}
+    <div class="border border-green-500 p-2 m-4 rounded-md">Branch 1</div>
+{:else}
+    <div class="border p-2 m-4 rounded-md">Branch 2</div>
+    {#if show2.value}
+        <div class="border border-blue-500 p-2 m-4 rounded-md">Branch 2.A</div>
+    {:else}
+        <div class="border border-red-500 p-2 m-4 rounded-md">Branch 2.B</div>
+    {/if}
+{/if}

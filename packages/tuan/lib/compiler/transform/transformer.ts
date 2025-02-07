@@ -59,7 +59,10 @@ export class Transformer {
         return componentDeclaration
     }
 
-    // $.template can return node[] or node ...
+    private transformBinding() {
+        
+    }
+
     private transformTemplate(userScript: string) {
         const roots: TemplateRootStatement[] = []
 
@@ -182,9 +185,6 @@ export class Transformer {
 
                         }
                     }
-                }
-
-                if (shouldCreateAccessor) {
                 }
 
                 const statements = node.children.map(it => walk(it, [node, ...parents]))
