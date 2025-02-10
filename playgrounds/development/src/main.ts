@@ -5,6 +5,7 @@ import Interpolation from "./components/interpolation.tuan"
 // import Attributes from "./components/attributes.tuan"
 // import { autoRetracking } from "./features/auto-retracking"
 import Each from "./components/Each.tuan"
+import Todos from "./components/todos.tuan"
 import NestedControlFlow from "./components/nested-control-flow.tuan"
 import IfElse from "./components/if-else.tuan"
 import Binding from "./components/binding.tuan"
@@ -12,5 +13,5 @@ import Binding from "./components/binding.tuan"
 
 const appRoot = document.getElementById("app")!
 
-mount(Binding, appRoot)
+mount(Todos, appRoot)
 

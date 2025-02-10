@@ -1,6 +1,6 @@
 // TODO: implement this in lexer and parser
 
-import { Signal, templateEffect } from "../signal";
+import { Signal, templateEffect } from "./signal";
 import { listen } from "./dom";
 
 

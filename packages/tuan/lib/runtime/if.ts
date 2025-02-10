@@ -1,4 +1,4 @@
-import { templateEffect, trackEffect } from "../signal";
+import { templateEffect, trackEffect } from "./signal";
 import { RuntimeIfContext, tuanContext } from "./context";
 import { append, comment, sweep } from "./dom";
 

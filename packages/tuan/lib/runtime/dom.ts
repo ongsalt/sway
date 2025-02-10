@@ -1,4 +1,4 @@
-import { CleanupFn } from "../signal";
+import { CleanupFn } from "./signal";
 import { Component } from "../types";
 
 declare global {

@@ -175,7 +175,6 @@ export class Parser {
                 () => this.element(),
                 () => this.controlFlow(),
             ],
-            () => new ParserError("invalid", "node")
         )
     }
 

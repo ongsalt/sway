@@ -11,7 +11,7 @@ export type Computed<T> = {
 
 // Should be set in if/each context
 // TODO: think about component
-export let effectDisposers: Set<() => void> | null = null; 
+export let effectDisposers: Set<() => void> | null = null;
 export const effectCleanups = new Map<EffectFn, CleanupFn>()
 let currentSubscriber: Subscriber | null = null;
 
@@ -53,6 +53,40 @@ export function signal<T>(initial: T) {
     }
 }
 
+export function reactive<T extends object>(object: T) {
+    let subscribers = new Set<Subscriber>()
+
+    return new Proxy(object, {
+        get(target, p, receiver) {
+            if (currentSubscriber) {
+                subscribers.add(currentSubscriber)
+                // We need to wait until currentSubscriber is finished to get cleanup function
+                if (effectDisposers) {
+                    // just captured this to shutup ts, idk if this is really needed
+                    const c = currentSubscriber;
+                    effectDisposers.add(() => {
+                        const cleanup = effectCleanups.get(c);
+                        if (cleanup) {
+                            cleanup()
+                            effectCleanups.delete(c);
+                        }
+                        subscribers.delete(c);
+                    })
+                }
+            }
+
+            // Such a dirty way to implement
+            return Reflect.get(target, p, receiver)
+        },
+        set(target, p, newValue, receiver) {
+            // Do something if target is "value"
+            const ok = Reflect.set(target, p, newValue, receiver)
+
+            return ok
+        },
+    })
+}
+
 export type CleanupFn = () => unknown
 export type EffectFn = () => (CleanupFn | void)
 
@@ -80,7 +114,7 @@ export function computed<T>(fn: () => T) {
     effect(() => {
         state.value = fn()
     })
-    
+
     return state as Computed<T>
 }
 
@@ -107,3 +141,4 @@ export function trackEffect(fn: () => void) {
     effectDisposers = previous;
     return dispose;
 }
+

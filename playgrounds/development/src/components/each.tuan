@@ -45,7 +45,9 @@
     <div></div>
 
     {#each items.value as item, index}
-        {item}
-        <p class="font-bold">{item}</p>
+        <div class="border rounded-md p-4">
+            index: {index}
+            <p class="font-bold">{item}</p>
+        </div>
     {/each}
 </main>

@@ -1,4 +1,4 @@
-import { CleanupFn, templateEffect, trackEffect } from "../signal";
+import { CleanupFn, templateEffect, trackEffect } from "./signal";
 import { getTransformation } from "./array";
 import { RuntimeEachContext, tuanContext } from "./context";
 import { append, comment, remove, sweep } from "./dom";
