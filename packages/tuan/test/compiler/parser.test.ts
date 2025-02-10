@@ -1,7 +1,7 @@
 import { expect, it } from "vitest"
 import { parse } from "../../lib/compiler/parse"
 import { tokenize } from "../../lib/compiler/tokenize"
-import { eachInput, ifElseInput, simpleInput } from "./testcases"
+import { bindingInput, eachInput, ifElseInput, simpleInput } from "./testcases"
 
 
 it('should parse simple input', () => {
@@ -42,4 +42,15 @@ it('should parse attribute binding', () => {
     const tokens = tokenize(source)
     const node = parse(tokens)
     // console.dir(node, { depth: null })
+})
+
+
+
+it('should parse bind:...', () => {
+    const tokens = tokenize(bindingInput)
+    const nodes = parse(tokens)
+    
+    console.dir(nodes, { depth: null })
+
+    // expect(lexer.tokens).toStrictEqual(lexerOutput)
 })

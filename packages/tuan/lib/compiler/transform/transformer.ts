@@ -3,7 +3,7 @@ import { Node } from "estree"
 import { walk } from "estree-walker"
 import { analyze } from "periscopic"
 import { TemplateASTNode, Element, TextNode, ControlFlowNode, IfNode } from "../parse/ast"
-import { AccessorDefinitionStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, EventListenerAttachingStatement, priority, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, TuanContainerStatement, TuanStatement } from "./statements"
+import { AccessorDefinitionStatement, BindingStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, EventListenerAttachingStatement, priority, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, TuanContainerStatement, TuanStatement } from "./statements"
 import { stringify } from "./html"
 import { generate } from "./codegen"
 
@@ -172,21 +172,32 @@ export class Transformer {
                 for (const attribute of node.attributes) {
                     if (attribute.whole) {
                         const { accessor } = getOrCreateAccessor()
-                        // determine if this is a listener or not
-                        // i will just check for on prefix
-                        // TODO: handle node.type "component"(?) differently
-                        const isListener = attribute.key.startsWith('on')
-                        if (isListener) {
-                            const statement: EventListenerAttachingStatement = {
-                                type: "event-listener",
+                        if (attribute.isBinding) {
+                            const statement: BindingStatement = {
+                                type: "binding",
+                                key: attribute.key,
                                 node: accessor.name,
-                                event: '"' + attribute.key.slice(2) + '"',
-                                // TODO: validate if this is a function or not
-                                listenerFn: attribute.expression
+                                target: attribute.expression, // todo check if this is a variable
                             }
                             out.push(statement)
                         } else {
-                            // do the same as below   
+
+                            // determine if this is a listener or not
+                            // i will just check for on prefix
+                            // TODO: handle node.type "component"(?) differently
+                            const isListener = attribute.key.startsWith('on')
+                            if (isListener) {
+                                const statement: EventListenerAttachingStatement = {
+                                    type: "event-listener",
+                                    node: accessor.name,
+                                    event: '"' + attribute.key.slice(2) + '"',
+                                    // TODO: validate if this is a function or not
+                                    listenerFn: attribute.expression
+                                }
+                                out.push(statement)
+                            } else {
+                                // do the same as below   
+                            }
                         }
                     } else {
                         if (attribute.texts.some(it => it.type === "interpolation")) {

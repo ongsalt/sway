@@ -11,17 +11,5 @@
         <span class="text-5xl">{text.value}</span>
     </div>
 
-    <input type="text" class="border rounded-md shadow-sm p-2 px-4" placeholder="Type something..." />
-
-    <h2 class="text-xl">based on timer</h2>
-    <div class="border bg-slate-50 rounded p-4">
-        {#if Math.floor(text.value.length / 2) % 2 === 0}
-            <h2>First content</h2>
-            <p>We're no strangers to love</p>
-            <p>{text.value.length}</p>
-        {:else}
-            <h2>Second content</h2>
-            <p>Multi root</p>
-        {/if}
-    </div>
+    <input type="text" class="border rounded-md shadow-sm p-2 px-4" placeholder="Type something..." bind:value={text} />
 </main>

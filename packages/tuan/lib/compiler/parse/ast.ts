@@ -5,6 +5,7 @@ export type Attribute = {
 } & (
         {
             whole: true, // for key={}
+            isBinding: boolean,
             expression: string
         } | {
             whole: false, // for key="something-{}"

@@ -121,12 +121,20 @@ export type EventListenerAttachingStatement = {
     listenerFn: string
 }
 
+export type BindingStatement = {
+    type: "binding",
+    node: string,
+    key: string,
+    target: string,
+}
+
 export type TuanContainerStatement = ComponentFunctionStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement
 
 export type TuanStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateRootStatement
     | TemplateScopeStatement | UserEffectStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
     | ComponentFunctionStatement | CreateRootStatement | AppendStatement | EventListenerAttachingStatement
+    | BindingStatement
 
 export function priority(statement: TuanStatement) {
     switch (statement.type) {

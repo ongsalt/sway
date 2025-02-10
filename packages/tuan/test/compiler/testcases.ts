@@ -126,3 +126,20 @@ export const nestedControlFlowInput = `<script>
 <button onclick={toggle} class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"> increment </button>
 <button onclick={add} class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"> Add </button>
 `
+
+export const bindingInput = `<script>
+    import { signal } from "tuan";
+
+    const text = signal("");
+</script>
+
+<main class="m-8 border rounded-lg shadow-sm p-6 space-y-2">
+    <h1 class="text-2xl">Binding test</h1>
+    <div class="text-center  border rounded bg-slate-50 p-6 flex flex-col">
+        <span class="opacity-60">Your text</span>
+        <span class="text-5xl">{text.value}</span>
+    </div>
+
+    <input type="text" class="border rounded-md shadow-sm p-2 px-4" placeholder="Type something..." bind:value={text} />
+</main>
+`

@@ -7,7 +7,7 @@ import Interpolation from "./components/interpolation.tuan"
 import Each from "./components/Each.tuan"
 import NestedControlFlow from "./components/nested-control-flow.tuan"
 import IfElse from "./components/if-else.tuan"
-import Binding from "./components/binding"
+import Binding from "./components/binding.tuan"
 // import NestedControlFlow from "./components/nested-control-flow.generated"
 
 const appRoot = document.getElementById("app")!

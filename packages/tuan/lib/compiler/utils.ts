@@ -7,3 +7,7 @@ export type Result<T, E = undefined> = {
     value: T
     error?: undefined
 }
+
+export function assertUnreachable(x: never): never {
+    throw new Error("Didn't expect to get here");
+}

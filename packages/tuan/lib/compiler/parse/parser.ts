@@ -112,8 +112,60 @@ export class Parser {
         return this.nodes()
     }
 
-    private nodes(): TemplateASTNode[] {
-        return this.consumeAll(() => this.node())
+    private nodes(trimWhitespace = true): TemplateASTNode[] {
+        let nodes = this.consumeAll(() => this.node())
+        if (trimWhitespace) {
+            // const first = nodes.at(0)
+            // const last = nodes.at(-1)
+            // if (first?.type === "text") {
+            //     const firstText = first.texts[0];
+            //     if (firstText.type === "static") {
+            //         firstText.body = firstText.body.trim()
+            //         if (firstText.body.length === 0) {
+            //             first.texts.shift()
+            //         }
+            //         if (first.texts.length === 0) {
+            //             nodes.shift()
+            //         }
+            //     }
+            // }
+
+            // if (last?.type === "text") {
+            //     const lastText = last.texts.at(-1)!;
+            //     lastText.body = lastText.body.trim()
+            //     if (lastText.body.length === 0) {
+            //         last.texts.pop()
+            //     }
+            //     if (last.texts.length === 0) {
+            //         nodes.pop()
+            //     }
+            // }
+
+            nodes = nodes.filter(it => {
+                if (it.type !== "text") {
+                    return true
+                }
+
+                const firstText = it.texts[0];
+                if (firstText && firstText.type === "static") {
+                    firstText.body = firstText.body.trimStart()
+                    if (firstText.body.length === 0) {
+                        it.texts.shift()
+                    }
+                }
+
+                const lastText = it.texts.at(-1);
+                if (lastText && lastText.type === "static") {
+                    lastText.body = lastText.body.trimEnd()
+                    if (lastText.body.length === 0) {
+                        it.texts.pop()
+                    }
+                }
+
+                return it.texts.length !== 0;
+            })
+        }
+        return nodes
     }
 
     private node(): TemplateASTNode {
@@ -136,7 +188,7 @@ export class Parser {
 
     private normalElement(): Element {
         const { attributes, tagName } = this.openingTag()
-        const children = this.consumeAll(() => this.node())
+        const children = this.nodes()
         const closingTagName = this.closingTag()
 
         if (closingTagName != tagName) {
@@ -211,13 +263,17 @@ export class Parser {
     }
 
     private wholeAttribute(): Attribute {
-        const { body: key } = this.consumeToken<LiteralToken>("literal")
+        let { body: key } = this.consumeToken<LiteralToken>("literal")
         this.consumeToken("equal")
         const { body: expression } = this.consumeToken<InterpolationToken>("interpolation")
-
+        const isBinding = key.startsWith("bind:")
+        if (isBinding) {
+            key = key.slice(5);
+        }
 
         return {
             key,
+            isBinding,
             whole: true,
             expression,
         }
@@ -336,7 +392,7 @@ export class Parser {
         ])
         // console.log("elseChildren")
 
-        
+
         const ifNode: IfNode = {
             type: "control-flow",
             kind: "if",

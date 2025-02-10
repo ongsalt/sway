@@ -14,14 +14,16 @@ export class Lexer {
     private isInsideTag = false;
     private isScript = false; // we shuold use this flag for interpolation too
     private quoteState: "single" | "double" | "outside" = "outside";
-    private textState: "before" | "text"  = "before"
+    private textState: "before" | "text" = "before"
     // We need to modify last text
 
     private start = 0
     private current = 0
     private line = 1
 
-    constructor(private source: string, public readonly options: Partial<LexerOptions> = {}) { }
+    constructor(private source: string, public readonly options: Partial<LexerOptions> = {}) {
+
+    }
 
     scan() {
         while (!this.isAtEnd()) {
@@ -57,12 +59,13 @@ export class Lexer {
                         // wait we parse this????
                         this.symbolToken("comment-start");
                     } else if (this.match('/')) {
+                        // we will handle this (removing end whitespace) in the parser
                         // const lastTag = this.tokens.at(-1);
                         // if (lastTag?.type === "text") {
                         //     // console.log(lastTag)
                         //     lastTag.body = lastTag.body.trimEnd()
                         //     if (lastTag.body === "") {
-                        //         // this.tokens.pop()
+                        //         this.tokens.pop()
                         //     }
                         // }
 
@@ -93,7 +96,7 @@ export class Lexer {
                 case ' ':
                 case '\r':
                 case '\t':
-                    if (this.quoteState === "outside") {
+                    if (this.quoteState === "outside" && this.isInsideTag) {
                         // Ignore whitespace. for now, 
                         // HTML is dogshit
                         // TODO:
@@ -175,7 +178,7 @@ export class Lexer {
 
     private literal() {
         const start = this.current - 1
-        const isValidChar = (c: string) => /[a-zA-Z0-9'-]/.test(c);
+        const isValidChar = (c: string) => /[a-zA-Z0-9'-:]/.test(c);
 
         while (isValidChar(this.peek())) {
             this.current += 1;
@@ -250,12 +253,11 @@ export class Lexer {
         } else {
             // TODO: think about this
             if (this.textState === "before") {
-                // console.log({ body })
                 body = body.trimStart()
             }
         }
 
-        
+
         this.tokens.push({
             type: "text",
             body,

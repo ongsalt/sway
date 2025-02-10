@@ -1,6 +1,6 @@
 import { expect, it } from "vitest"
 import { tokenize } from "../../lib/compiler/tokenize"
-import { ifElseInput, simpleInput } from "./testcases"
+import { bindingInput, ifElseInput, simpleInput } from "./testcases"
 
 // i will properly do this once these apis are stable
 
@@ -57,4 +57,11 @@ it('should parse complex interpolation', () => {
         { type: 'text', body: ' 秦谷 美鈴 ', line: 1 },
         { type: 'interpolation', body: 'add(3, 5)', line: 1 },
     ])
+})
+
+
+it('should parse bind:...', () => {
+    const tokens = tokenize(bindingInput)
+    // console.log(tokens)
+    // expect(lexer.tokens).toStrictEqual(lexerOutput)
 })

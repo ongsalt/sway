@@ -163,10 +163,17 @@ export function generate(statement: TuanStatement, indentation: number, logging 
         case "attribute-updating": {
             const { isFunction, key, target, type } = statement
             // throw new Error("Unimplemented (codegen)")
-            // break
+            break
+        }
+
+        case "binding": {
+            const { key, node, target } = statement;
+            add(`$.bind(${node}, \`${key}\`, ${target})`)
+            break
         }
 
         default: {
+            // return new Error("smdjfnuik")
             throw new Error("Unimplemented (codegen)")
             add(`/* ${statement.type} is not implement yet. */`)
         }
