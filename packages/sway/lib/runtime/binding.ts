@@ -1,10 +1,10 @@
 // TODO: implement this in lexer and parser
 
 import { listen } from "./dom";
-import { Signal, SignalImpl, templateEffect } from "./signal";
+import { Signal, templateEffect } from "./signal";
 
 
-export function bind(node: Node, attribute: string, target: SignalImpl<any>) {
+export function bind(node: Node, attribute: string, target: Signal<any>) {
     if (!(node instanceof Element)) {
         throw new Error(`${node} is not an Element.`)
     }

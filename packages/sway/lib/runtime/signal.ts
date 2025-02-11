@@ -5,28 +5,26 @@ export type InternalSignal<T> = {
     subscribers: Set<Subscriber>
 }
 
-type WritableSignal<T> = {
+export interface Signal<T> {
     value: T
 }
-export type { WritableSignal as Signal }
-
 
 export type Computed<T> = {
     readonly value: T
 }
 
-let currentEffect: Effect | null = null;
+let currentEffect: EffectImpl | null = null;
 
-class Signal<T> {
+export class SignalImpl<T> implements Signal<T> {
     readonly $_brand = "signal" as const
     #value: T
-    subscribers: Set<Effect>
-    skip: Set<Effect>
+    subscribers: Set<EffectImpl>
+    skip: Set<EffectImpl>
 
     constructor(initial: T) {
         this.#value = initial
-        this.subscribers = new Set<Effect>()
-        this.skip = new Set<Effect>()
+        this.subscribers = new Set<EffectImpl>()
+        this.skip = new Set<EffectImpl>()
 
         // when signal is out of scope we hope that every thing
         // that reference this is also out of scope
@@ -56,12 +54,12 @@ class Signal<T> {
         this.skip.clear()
     }
 
-    removeSubscriber(subscriber: Effect) {
+    removeSubscriber(subscriber: EffectImpl) {
         this.skip.add(subscriber)
         this.subscribers.delete(subscriber)
     }
 
-    addSubscriber(subscriber: Effect) {
+    addSubscriber(subscriber: EffectImpl) {
         this.subscribers.add(subscriber)
     }
 
@@ -73,22 +71,22 @@ class Signal<T> {
 export type CleanupFn = () => unknown
 export type EffectFn = () => (CleanupFn | void)
 
-class Effect {
+export class EffectImpl {
     private userCleanup: CleanupFn | undefined
-    private dependencies: Set<Signal<any>>
-    private children: Set<Effect>
+    private dependencies: Set<SignalImpl<any>>
+    private children: Set<EffectImpl>
 
     constructor(private fn: EffectFn) {
         this.dependencies = new Set()
         this.children = new Set()
     }
 
-    track(signal: Signal<any>) {
+    track(signal: SignalImpl<any>) {
         this.dependencies.add(signal)
         signal.addSubscriber(this)
     }
 
-    addChild(effect: Effect) {
+    addChild(effect: EffectImpl) {
         this.children.add(effect)
     }
 
@@ -121,16 +119,15 @@ class Effect {
     }
 }
 
-export { Signal as SignalImpl, Effect as EffectImpl }
 // public interfaces
 
-export function signal<T>(initial: T): WritableSignal<T> {
-    return new Signal(initial)
+export function signal<T>(initial: T): Signal<T> {
+    return new SignalImpl(initial)
 }
 
 export function effect(fn: EffectFn) {
     // every signals used own this
-    new Effect(fn).run();
+    new EffectImpl(fn).run();
 }
 
 // TODO: writable computed

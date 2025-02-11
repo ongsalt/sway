@@ -27,6 +27,11 @@ svelte-like frontend framework recreation (hopefully)
 - Dynamic attribute `claass="border {someExpression}"` or `placeholder={anotherExpression}` 
 - typescript support 
     - i dont know if i need to mess with vite or not. ts might work without any change (untested)
+- SSR
+    - i need to create a new transformer and maybe a new parser too
+    - hydration look like pain in the ass
+    - think about vite integration or may be we could offload this to `sway/kit` lmao
+- [realworld](https://github.com/gothinkster/realworld) (frontend only)
 
 ### Unlikely to implement
 - `:else` block under `#each` 

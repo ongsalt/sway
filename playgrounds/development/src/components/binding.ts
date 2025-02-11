@@ -2,7 +2,7 @@ import * as $ from 'sway/runtime';
 
 
 /* estree:  */
-import { signal } from 'sway';
+import { ComponentContext, signal } from 'sway';
 
 /* template-root:  */
 const root = $.template(`<main  class="m-8 border rounded-lg shadow-sm p-6 space-y-2"><h1  class="text-2xl">Binding test</h1><div  class="text-center  border rounded bg-slate-50 p-6 flex flex-col"><span  class="opacity-60">Your text</span><span  class="text-5xl"> </span></div><input  type="text" class="border rounded-md shadow-sm p-2 px-4" placeholder="Type something..."/><h2  class="text-xl">based on text lenght</h2><div  class="border bg-slate-50 rounded p-4"><!></div></main>`);
@@ -12,7 +12,7 @@ const root_1 = $.template(`<h2 >First content</h2><p >We're no strangers to love
 const root_2 = $.template(`<h2 >Second content</h2><p >Multi root</p>`);
 
 /* component-function:  */
-export default function Component($$context) {
+export default function Component($$context: ComponentContext) {
     /* create-root:  */
     const fragment = root();
     /* user-script:  */
@@ -37,7 +37,7 @@ export default function Component($$context) {
     $.templateEffect(() => {
         /* text-setting:  */
         $.setText(text_1, `${text.value}`)
-        
+
     });
 
     const input = $.children(main, 2);
@@ -45,7 +45,7 @@ export default function Component($$context) {
     /* if:  */
 
     {
-        const then = ($$anchor) => {
+        const then: $.RenderFn = ($$anchor) => {
             /* create-root:  */
             const fragment_1 = root_1();
             /* accessor-definition:  */
@@ -61,10 +61,9 @@ export default function Component($$context) {
 
             $.append($$anchor, fragment_1);
         };
-        const alternative = ($$anchor) => {
+        const alternative: $.RenderFn = ($$anchor) => {
             /* create-root:  */
             const fragment_2 = root_2();
-
             $.append($$anchor, fragment_2);
         };
 
