@@ -15,18 +15,18 @@ svelte-like frontend framework recreation (hopefully)
     - but if you do `onclick={createFn(a)}` this wont rerun after `a` is changed. this is to be fixed later
 - `each` syntax shuold be ok now. see [each.ts](packages/sway/spec.md) for more technical note. 
 - value binding for `input` and `textarea`
-    - auto coerce type to number for `<input type="number"/>`
+    - auto coerce type to number for `<input type="number">`
     - the same go for checkbox
 
 ## What's not yet
-    - value binding for `select`
-    - do transpiling magic that allow you to use signal without `.value`
-    - deeply reactive object
-    - dont support property binding yet (`bind:value={a}` is ok but `bind:value={a.b}` is not)
-    - you also cant do binding under each block yet
-    - Dynamic attribute `claass="border {someExpression}"` or `placeholder={anotherExpression}` 
-    - typescript support 
-        - i dont know if i need to mess with vite or not. ts might work without any change (untested)
+- value binding for `select`
+- do transpiling magic that allow you to use signal without `.value`
+- deeply reactive object
+- dont support property binding yet (`bind:value={a}` is ok but `bind:value={a.b}` is not)
+- you also cant do binding under each block yet
+- Dynamic attribute `claass="border {someExpression}"` or `placeholder={anotherExpression}` 
+- typescript support 
+    - i dont know if i need to mess with vite or not. ts might work without any change (untested)
 
 ### Unlikely to implement
 - `:else` block under `#each` 
