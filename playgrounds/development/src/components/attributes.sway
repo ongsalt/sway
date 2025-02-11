@@ -1,5 +1,5 @@
 <script>
-    import { signal, computed, effect } from "tuan";
+    import { signal, computed, effect } from "sway";
 
     const counter = signal(0);
     const doubled = computed(() => counter.value * 2)

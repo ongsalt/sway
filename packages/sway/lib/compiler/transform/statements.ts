@@ -38,12 +38,12 @@ export type TextSettingStatement = {
 
 export type TemplateScopeStatement = {
     type: "template-scope",
-    body: TuanStatement[]
+    body: SwayStatement[]
 }
 
 export type TemplateEffectStatement = {
     type: "template-effect",
-    body: TuanStatement[]
+    body: SwayStatement[]
 }
 
 export type TemplateIfStatement = {
@@ -52,14 +52,14 @@ export type TemplateIfStatement = {
     anchor: string,
     blockName: string,
     fragment: string
-    body: TuanStatement[],
+    body: SwayStatement[],
 
     else?: {
         // can we use same anchor???
         // anchor: string,
         fragment: string
         blockName: string,
-        body: TuanStatement[]
+        body: SwayStatement[]
     }
 }
 
@@ -72,7 +72,7 @@ export type TemplateEachStatement = {
     as?: string,
     index?: string,
     key?: string
-    body: TuanStatement[]
+    body: SwayStatement[]
 }
 
 export type TemplateRootStatement = {
@@ -98,14 +98,14 @@ export type AccessorDefinitionStatement = {
 export type ComponentFunctionStatement = {
     type: "component-function",
     name: string,
-    body: TuanStatement[]
+    body: SwayStatement[]
 }
 
 export type ComponentDeclarationStatement = {
     type: "component-declaration",
-    before: TuanStatement[],
+    before: SwayStatement[],
     fn: ComponentFunctionStatement,
-    after: TuanStatement[],
+    after: SwayStatement[],
 }
 
 export type AppendStatement = {
@@ -128,15 +128,15 @@ export type BindingStatement = {
     target: string,
 }
 
-export type TuanContainerStatement = ComponentFunctionStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement
+export type SwayContainerStatement = ComponentFunctionStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement
 
-export type TuanStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateRootStatement
+export type SwayStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateRootStatement
     | TemplateScopeStatement | UserEffectStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
     | ComponentFunctionStatement | CreateRootStatement | AppendStatement | EventListenerAttachingStatement
     | BindingStatement
 
-export function priority(statement: TuanStatement) {
+export function priority(statement: SwayStatement) {
     switch (statement.type) {
         // case "accessor-definition":
         //     return -1;

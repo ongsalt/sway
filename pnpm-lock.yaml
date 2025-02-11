@@ -21,7 +21,7 @@ importers:
         specifier: ^8.19.1
         version: 8.19.1(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
 
-  packages/tuan:
+  packages/sway:
     dependencies:
       '@types/escodegen':
         specifier: ^0.0.10
@@ -73,11 +73,11 @@ importers:
         specifier: ~5.6.2
         version: 5.6.3
 
-  packages/vite-plugin-tuan:
+  packages/vite-plugin-sway:
     devDependencies:
-      tuan:
+      sway:
         specifier: workspace:*
-        version: link:../tuan
+        version: link:../sway
       typescript:
         specifier: ~5.6.2
         version: 5.6.3
@@ -103,18 +103,18 @@ importers:
       '@types/bun':
         specifier: ^1.1.16
         version: 1.1.16
-      tuan:
+      sway:
         specifier: workspace:*
-        version: link:../../packages/tuan
+        version: link:../../packages/sway
       typescript:
         specifier: ~5.6.2
         version: 5.6.3
       vite:
         specifier: ^6.0.5
         version: 6.0.7(@types/node@22.10.5)(jiti@1.21.7)(yaml@2.7.0)
-      vite-plugin-tuan:
+      vite-plugin-sway:
         specifier: workspace:*
-        version: link:../../packages/vite-plugin-tuan
+        version: link:../../packages/vite-plugin-sway
 
   playgrounds/server:
     dependencies:
@@ -1148,7 +1148,7 @@ packages:
     engines: {node: '>=8.6.0'}
 
   fast-json-stable-stringify@2.1.0:
-    resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
+    resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUswaySDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
 
   fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}

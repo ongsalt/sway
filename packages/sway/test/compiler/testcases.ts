@@ -4,7 +4,7 @@ export const simpleInput = `<main class="m-8 border">
 `
 
 export const ifElseInput = `<script>
-    import { signal, computed, effect } from "tuan";
+    import { signal, computed, effect } from "sway";
 
     const show = signal(true)
     const a = signal("skibidi")
@@ -35,7 +35,7 @@ export const ifElseInput = `<script>
 
 export const complexIfElseInput = `
 <script>
-    import { signal, computed, effect } from "tuan";
+    import { signal, computed, effect } from "sway";
 
     const count = signal(1)
     const a = signal(1)
@@ -70,7 +70,7 @@ export const complexIfElseInput = `
 `
 
 export const eachInput = `<script>
-    import { signal, computed, effect } from "tuan";
+    import { signal, computed, effect } from "sway";
 
     const items = signal([1, 2, 3]);
     let current = 4;
@@ -89,7 +89,7 @@ export const eachInput = `<script>
 </main>`
 
 export const nestedControlFlowInput = `<script>
-    import { signal, computed, effect } from "tuan";
+    import { signal, computed, effect } from "sway";
 
     const items = signal([1, 2, 3]);
     let current = 4;
@@ -128,7 +128,7 @@ export const nestedControlFlowInput = `<script>
 `
 
 export const bindingInput = `<script>
-    import { signal } from "tuan";
+    import { signal } from "sway";
 
     const text = signal("");
 </script>

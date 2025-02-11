@@ -1,10 +1,10 @@
 /* component-declaration:  */
 /* any:  */
-import * as $ from 'tuan/runtime';
+import * as $ from 'sway/runtime';
 
 
 /* estree:  */
-import { signal } from 'tuan';
+import { signal } from 'sway';
 
 /* template-root:  */
 const root = $.template(`<button class="bg-teal-500 hover:bg-teal-500/95 text-white font-medium rounded-md p-2 px-4">Toggle</button><button class="bg-teal-500 hover:bg-teal-500/95 text-white font-medium rounded-md p-2 px-4">Toggle 2</button><div> <br/> </div><!>`);

@@ -1,5 +1,5 @@
 <script>
-    import { signal } from "tuan";
+    import { signal } from "sway";
 
     const show = signal(false);
     const show2 = signal(true);

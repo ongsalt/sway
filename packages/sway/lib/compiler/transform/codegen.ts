@@ -1,19 +1,19 @@
 import { TextOrInterpolation } from "../parse/ast";
-import { TuanStatement } from "./statements";
+import { SwayStatement } from "./statements";
 import * as escodegen from "escodegen";
 
 
-export function generateMany(statements: TuanStatement[], indentation: number, logging = false) {
+export function generateMany(statements: SwayStatement[], indentation: number, logging = false) {
     return statements.map(it => generate(it, indentation, logging)).join('')
 }
 
-export function generate(statement: TuanStatement, indentation: number, logging = false): string {
+export function generate(statement: SwayStatement, indentation: number, logging = false): string {
     let out = "";
     function add(string: string, more = 0) {
         out += ' '.repeat(indentation + more) + string + '\n';
     }
 
-    function log(statement: TuanStatement, message = "") {
+    function log(statement: SwayStatement, message = "") {
         if (logging) {
             add(`/* ${statement.type}: ${message} */`)
         }

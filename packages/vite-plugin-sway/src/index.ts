@@ -1,11 +1,11 @@
-import { compile, CompilerOptions } from "tuan/compiler"
+import { compile, CompilerOptions } from "sway/compiler"
 import type { Plugin } from "vite"
 
 // TODO: fix peer dependency later 
 
-const fileRegex = /\.(tuan)$/
+const fileRegex = /\.(sway)$/
 
-type TuanOptions = {
+type SwayOptions = {
     compiler?: Partial<CompilerOptions>
 }
 
@@ -14,9 +14,9 @@ function getFileName(path: string) {
     return name
 }
 
-export default function tuan(options: TuanOptions = {}): Plugin {
+export default function sway(options: SwayOptions = {}): Plugin {
     return {
-        name: 'tuan-transformer',
+        name: 'sway-transformer',
         resolveId(source, importer, options) {
             if (fileRegex.test(source)) {
                 return {

@@ -2,8 +2,8 @@
 
 
 // TODO: make a tsconfig
-declare module '*.tuan' {
-    import type { Component } from "tuan"
+declare module '*.sway' {
+    import type { Component } from "sway"
     declare const component: Component
     export default component
 }

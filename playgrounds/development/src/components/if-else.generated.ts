@@ -1,6 +1,6 @@
 /* component-declaration:  */
 /* any:  */
-import * as $ from 'tuan/runtime';
+import * as $ from 'sway/runtime';
 
 
 /* estree:  */
@@ -8,7 +8,7 @@ import {
     signal,
     computed,
     effect
-} from 'tuan';
+} from 'sway';
 
 /* template-root:  */
 const root = $.template(`<main class="m-8 border rounded-lg shadow-sm p-6 space-y-2"><h1 class="text-2xl">If else test</h1><p> </p><!><button>+</button><button>-</button></main>`);

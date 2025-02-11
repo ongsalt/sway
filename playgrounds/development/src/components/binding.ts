@@ -1,8 +1,8 @@
-import * as $ from 'tuan/runtime';
+import * as $ from 'sway/runtime';
 
 
 /* estree:  */
-import { signal } from 'tuan';
+import { signal } from 'sway';
 
 /* template-root:  */
 const root = $.template(`<main  class="m-8 border rounded-lg shadow-sm p-6 space-y-2"><h1  class="text-2xl">Binding test</h1><div  class="text-center  border rounded bg-slate-50 p-6 flex flex-col"><span  class="opacity-60">Your text</span><span  class="text-5xl"> </span></div><input  type="text" class="border rounded-md shadow-sm p-2 px-4" placeholder="Type something..."/><h2  class="text-xl">based on text lenght</h2><div  class="border bg-slate-50 rounded p-4"><!></div></main>`);

@@ -81,3 +81,15 @@ export function sweep(from: Node, to: Node | null) {
         remove(toRemove)
     }
 }
+
+export function setText(node: Node, text: string) {
+    if (node.nodeType !== 3) {
+        throw new Error(`${node} is not a text node`)
+    }
+
+    node.textContent = text
+}
+
+export function setAttribute(element: Element, attributes: string, value: string) {
+    element.setAttribute(attributes, value)
+}

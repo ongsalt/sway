@@ -1,4 +1,4 @@
-import { effect, signal } from "tuan";
+import { effect, signal } from "sway";
 
 export function autoRetracking() {
     const a = signal(0);

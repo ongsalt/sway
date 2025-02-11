@@ -1,5 +1,5 @@
-import * as $ from "tuan/runtime"
-import { signal, computed, effect } from "tuan"
+import * as $ from "sway/runtime"
+import { signal, computed, effect } from "sway"
 
 export const signalRegistry = new WeakMap()
 

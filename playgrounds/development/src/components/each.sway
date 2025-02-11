@@ -1,5 +1,5 @@
 <script>
-    import { signal, computed, effect } from "tuan";
+    import { signal, computed, effect } from "sway";
 
     const items = signal([1, 2, 3]);
     let current = 4;

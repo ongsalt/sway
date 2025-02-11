@@ -9,7 +9,7 @@ export type IfEffect = ($$render: RenderDelegationFn) => void
 
 // Should anchor be a node
 function _if(anchor: Node, ifEffect: IfEffect) {
-    const endAnchor = comment("end-if");
+    const endAnchor = comment();
     append(anchor, endAnchor)
 
     let key: boolean | undefined;
@@ -18,6 +18,7 @@ function _if(anchor: Node, ifEffect: IfEffect) {
         if (key !== newKey) {
             if (key !== undefined) {
                 // console.log("remove previous one")
+                // wait... if there is a component under this we need to call its cleanup fns
                 sweep(anchor, endAnchor)
             }
             if (init) {

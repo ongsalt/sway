@@ -1,10 +1,10 @@
 import { defineConfig } from "vite"
-import tuan from "vite-plugin-tuan"
+import sway from "vite-plugin-sway"
 import Inspect from "vite-plugin-inspect"
 
 export default defineConfig({
     plugins: [
-        tuan(),
+        sway(),
         Inspect()
     ]
 })

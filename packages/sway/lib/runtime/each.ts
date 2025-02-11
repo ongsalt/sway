@@ -1,5 +1,5 @@
 import { getTransformation } from "./array";
-import { RuntimeEachScope, tuanContext } from "./scope";
+import { RuntimeEachScope, swayContext } from "./scope";
 import { append, comment, remove, sweep } from "./dom";
 import { CleanupFn, templateEffect } from "./signal";
 import { identity } from "./utils";
@@ -15,14 +15,14 @@ export function each<Item>(
     children: (anchor: Node, value: Item, index: number) => void,
     keyFn: KeyFn<Item> = identity // use object reference as key
 ) {
-    const endAnchor = comment("end-each");
+    const endAnchor = comment();
     append(anchor, endAnchor)
 
     let currentKeys: Key[] = []
     let childAnchors: Comment[] = []
 
     function createAnchor(index: number) {
-        const anchor = comment("each-child")
+        const anchor = comment()
         // We need a way to put anchor at any arbitary index
         if (index >= childAnchors.length) {
             append(endAnchor, anchor, true)
@@ -49,12 +49,33 @@ export function each<Item>(
 
         const newKeys = items.map(keyFn)
         const diff = getTransformation(currentKeys, newKeys);
-        // apply diff
-        // console.log({
-        //     currentKeys,
-        //     newKeys,
-        //     diff
-        // })
+
+        /*
+            need a way to notify index update to all (changed) child
+            it would be easier if we treat those child as a component
+            but then we can make index i signal and
+                - just make the user use index.value
+                - tranpile all index call to index.value
+                    we then need to do some weird shit in transpiling phase
+                - [already did] make Signal::toString behave the same as signal.value.toString()
+            the same go with item
+                - if the user use destructuring we then need to tranpile whatever it is to item.props
+                - maybe we could do $$item.{index, value} and make $$item deeply reactive
+                - $.bind expect a writable signal or should i make it detect a reactive object?
+            
+            wait we still cant do binding for properties yet: `obj.path.to.prop` 
+            so we need to generate a PROXY $.proxy(obj, `path.to.prop`) the return some
+            stupid object that is compatible with Signal<T> to use with binding
+            note that obj need to be deeply reactive
+            {
+                set(value) {
+                    obj[`path`][`to`][`prop`] = value
+                }
+                get() {
+                    return obj[`path`][`to`][`prop`] 
+                }
+            } 
+        */
 
         for (const op of diff) {
             if (op.type === "insert") {

@@ -1,3 +1,4 @@
+// unused bruh
 export class WeakArray<T extends WeakKey> {
     items: WeakRef<T>[] = []
 

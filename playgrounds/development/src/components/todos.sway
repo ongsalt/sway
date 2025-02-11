@@ -1,22 +1,21 @@
 <script>
-    import { signal, computed, effect } from "tuan";
+    import { signal, computed, effect } from "sway";
 
-    let id = 0;
+    let id = 12768;
 
     const todos = signal([
         {
             id: id++,
             title: "Title",
             description: "lorem",
-            createdAt: new Date()
+            createdAt: new Date(),
         },
     ]);
 
-    function remove(index) {
+    function remove(todo) {
         return () => {
-            todos.value.splice(index, 1);
-            todos.value = [...todos.value];
-            console.log(`Removing ${index}`);
+            todos.value = todos.value.filter((it) => it !== todo);
+            console.log(`Removing ${todo}`);
         };
     }
 
@@ -30,16 +29,19 @@
                 id: id++,
                 title: title.value,
                 description: description.value,
-                createdAt: new Date()
+                createdAt: new Date(),
             },
         ];
-        title.value = ""
-        description.value = ""
+        title.value = "";
+        description.value = "";
     }
 </script>
 
 <main class="m-8 border rounded-lg shadow-sm p-6 space-y-8">
-    <h1 class="text-2xl">Todo list</h1>
+    <div>
+        <h1 class="text-2xl">Todo list</h1>
+        <p>index is not reactive yet</p>
+    </div>
 
     <div class="gap-2 flex flex-col">
         <label for="title">Title</label>
@@ -71,7 +73,7 @@
             <p class="">{todo.description}</p>
             <p class="opacity-50">{todo.createdAt}</p>
             <button
-                onclick={remove(index)}
+                onclick={remove(todo)}
                 class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
             >
                 Remove

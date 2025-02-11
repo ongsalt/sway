@@ -3,7 +3,7 @@ import { Node } from "estree"
 import { walk } from "estree-walker"
 import { analyze } from "periscopic"
 import { TemplateASTNode, Element, TextNode, ControlFlowNode, IfNode } from "../parse/ast"
-import { AccessorDefinitionStatement, BindingStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, EventListenerAttachingStatement, priority, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, TuanContainerStatement, TuanStatement } from "./statements"
+import { AccessorDefinitionStatement, BindingStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, EventListenerAttachingStatement, priority, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, SwayContainerStatement, SwayStatement } from "./statements"
 import { stringify } from "./html"
 import { generate } from "./codegen"
 
@@ -63,8 +63,8 @@ export class Transformer {
         const roots: TemplateRootStatement[] = []
 
         // fuck `this`
-        const walk = (node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): TuanStatement[] => {
-            const out: TuanStatement[] = []
+        const walk = (node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): SwayStatement[] => {
+            const out: SwayStatement[] = []
             if (node.type === "text") {
                 const isInterpolated = node.texts.some(it => it.type === "interpolation")
 
@@ -353,10 +353,10 @@ export class Transformer {
 
     private transformImport(program: acorn.Program, script: string) {
         const toRemove: Node[] = []
-        const importStatements: TuanStatement[] = [
+        const importStatements: SwayStatement[] = [
             {
                 type: "any",
-                body: "import * as $ from 'tuan/runtime';"
+                body: "import * as $ from 'sway/runtime';"
             }
         ]
 

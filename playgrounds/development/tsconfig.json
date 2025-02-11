@@ -21,5 +21,5 @@
     "noUncheckedSideEffectImports": true,
     "esModuleInterop": true
   },
-  "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.tuan", "scripts/**/*.ts"] // Bruh
+  "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.sway", "scripts/**/*.ts"] // Bruh
 }

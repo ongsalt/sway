@@ -1,14 +1,14 @@
-import { mount } from "tuan"
+import { mount } from "sway"
 
 // "Click to show definitions" is handled by an extension
-import Interpolation from "./components/interpolation.tuan"
-// import Attributes from "./components/attributes.tuan"
+import Interpolation from "./components/interpolation.sway"
+// import Attributes from "./components/attributes.sway"
 // import { autoRetracking } from "./features/auto-retracking"
-import Each from "./components/Each.tuan"
-import Todos from "./components/todos.tuan"
-import NestedControlFlow from "./components/nested-control-flow.tuan"
-import IfElse from "./components/if-else.tuan"
-import Binding from "./components/binding.tuan"
+import Each from "./components/Each.sway"
+import Todos from "./components/todos.sway"
+import NestedControlFlow from "./components/nested-control-flow.sway"
+import IfElse from "./components/if-else.sway"
+import Binding from "./components/binding.sway"
 import { reactiveContext } from "./features/reactive-context"
 // import NestedControlFlow from "./components/nested-control-flow.generated"
 

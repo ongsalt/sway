@@ -18,6 +18,7 @@ export type Computed<T> = {
 let currentEffect: Effect | null = null;
 
 class Signal<T> {
+    readonly $_brand = "signal" as const
     #value: T
     subscribers: Set<Effect>
     skip: Set<Effect>
@@ -30,9 +31,9 @@ class Signal<T> {
         // when signal is out of scope we hope that every thing
         // that reference this is also out of scope
         // so we dont need to do manaul cleanup
-        // tuanContext.currentScope?.cleanups.push(() => {
+        // swayContext.currentScope?.cleanups.push(() => {
         //     console.log("Cleaning up signal")
-            
+
         // })    
     }
 
@@ -48,7 +49,7 @@ class Signal<T> {
         this.#value = newValue
 
         for (const subscriber of this.subscribers) {
-            if (!this.skip.has(subscriber)) {   
+            if (!this.skip.has(subscriber)) {
                 subscriber.run()
             }
         }
@@ -62,6 +63,10 @@ class Signal<T> {
 
     addSubscriber(subscriber: Effect) {
         this.subscribers.add(subscriber)
+    }
+
+    toString() {
+        return this.#value // bruhhhhhh
     }
 }
 
@@ -116,6 +121,7 @@ class Effect {
     }
 }
 
+export { Signal as SignalImpl, Effect as EffectImpl }
 // public interfaces
 
 export function signal<T>(initial: T): WritableSignal<T> {

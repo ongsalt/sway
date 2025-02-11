@@ -1,5 +1,5 @@
 <script>
-    import { signal } from "tuan";
+    import { signal } from "sway";
 
     const count = signal(1);
     const a = signal(1);
