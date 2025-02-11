@@ -34,7 +34,6 @@ export function append(anchor: Node, fragment: Node | Node[] | DocumentFragment,
         parent.insertBefore(fragment, currentAnchor);
     } else if (Array.isArray(fragment)) {
         for (const node of fragment) {
-            // console.log("got node list???")
             parent.insertBefore(node, currentAnchor);
         }
     } else {
@@ -47,19 +46,23 @@ export function comment(data = '') {
 }
 
 export function remove(node: Node) {
+    if (node instanceof Element) { // TODO: make ts shut up 
+        node.$$cleanups?.forEach(cleanup => cleanup())
+    }
     node.parentNode!.removeChild(node)
-    // node.
 }
 
 export function mount(component: Component, root: HTMLElement) {
     const anchor = comment()
     root.appendChild(anchor)
-    component({ anchor })
 
+    // Start component context????
+    // compiler then need to generate code for this 
+    // $.push() & $.pop() ??
+    component({ anchor })
     // should return unmount()
 }
 
-// TODO: cleanup
 export function listen<E extends Element>(element: E, type: keyof HTMLElementEventMap, listener: EventListenerOrEventListenerObject) {
     element.addEventListener(type, listener)
     if (!element.$$cleanups) {

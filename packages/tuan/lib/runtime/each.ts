@@ -1,8 +1,9 @@
-import { CleanupFn, templateEffect, trackEffect } from "./signal";
 import { getTransformation } from "./array";
-import { RuntimeEachContext, tuanContext } from "./context";
+import { RuntimeEachScope, tuanContext } from "./scope";
 import { append, comment, remove, sweep } from "./dom";
-import { identity } from "./utilities";
+import { CleanupFn, templateEffect } from "./signal";
+import { identity } from "./utils";
+import { WeakArray } from "./weak-ref";
 
 // any thing that can be compared
 type Key = any
@@ -14,58 +15,33 @@ export function each<Item>(
     children: (anchor: Node, value: Item, index: number) => void,
     keyFn: KeyFn<Item> = identity // use object reference as key
 ) {
-    const previous = tuanContext.currentScope;
-    const scope: RuntimeEachContext = {
-        type: "each",
-        previous,
-        cleanups: [],
-        children: []
-    }
-
     const endAnchor = comment("end-each");
     append(anchor, endAnchor)
 
-    type ChildContext = {
-        cleanups: CleanupFn[],
-        anchor: Comment
-    }
-
     let currentKeys: Key[] = []
-    let childContexts: ChildContext[] = []
+    let childAnchors: Comment[] = []
 
     function createAnchor(index: number) {
-        const c = comment("each")
+        const anchor = comment("each-child")
         // We need a way to put anchor at any arbitary index
-        if (index >= childContexts.length) {
-            append(endAnchor, c, true)
+        if (index >= childAnchors.length) {
+            append(endAnchor, anchor, true)
         } else {
-            append(childContexts[index].anchor, c, true)
+            append(childAnchors[index], anchor, true)
         }
-        return c
+        childAnchors.splice(index, 0, anchor)
+        return anchor
     }
 
     function render(index: number, item: Item) {
         const anchor = createAnchor(index)
-
-        let disposeEffect = trackEffect(() => {
-            tuanContext.currentScope = scope
-            children(anchor, item, index)
-            tuanContext.currentScope = previous;
-        })
-        const context: ChildContext = {
-            cleanups: [disposeEffect!],
-            anchor
-        }
-
-        childContexts.splice(index, 0, context)
+        children(anchor, item, index)
     }
 
     function yeet(index: number) {
-        const childContext = childContexts[index]
-        childContext.cleanups.forEach(fn => fn())
-        sweep(childContext.anchor, childContexts[index + 1]?.anchor ?? endAnchor)
-        remove(childContext.anchor)
-        childContexts.splice(index, 1)
+        sweep(childAnchors[index], childAnchors[index + 1] ?? endAnchor)
+        remove(childAnchors[index])
+        childAnchors.splice(index, 1)
     }
 
     templateEffect(() => {

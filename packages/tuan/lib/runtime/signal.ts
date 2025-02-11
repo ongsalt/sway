@@ -1,110 +1,130 @@
 
 export type Subscriber = () => void
-export type Signal<T> = {
+export type InternalSignal<T> = {
+    value: T,
+    subscribers: Set<Subscriber>
+}
+
+type WritableSignal<T> = {
     value: T
 }
+export type { WritableSignal as Signal }
+
 
 export type Computed<T> = {
     readonly value: T
 }
 
+let currentEffect: Effect | null = null;
 
-// Should be set in if/each context
-// TODO: think about component
-export let effectDisposers: Set<() => void> | null = null;
-export const effectCleanups = new Map<EffectFn, CleanupFn>()
-let currentSubscriber: Subscriber | null = null;
+class Signal<T> {
+    #value: T
+    subscribers: Set<Effect>
+    skip: Set<Effect>
 
-export function signal<T>(initial: T) {
-    let value = initial
-    let subscribers = new Set<Subscriber>()
+    constructor(initial: T) {
+        this.#value = initial
+        this.subscribers = new Set<Effect>()
+        this.skip = new Set<Effect>()
 
-    return {
-        get value() {
-            if (currentSubscriber) {
-                subscribers.add(currentSubscriber)
+        // when signal is out of scope we hope that every thing
+        // that reference this is also out of scope
+        // so we dont need to do manaul cleanup
+        // tuanContext.currentScope?.cleanups.push(() => {
+        //     console.log("Cleaning up signal")
+            
+        // })    
+    }
 
-                // We need to wait until currentSubscriber is finished to get cleanup function
-                if (effectDisposers) {
-                    // just captured this to shutup ts, idk if this is really needed
-                    const c = currentSubscriber;
-                    effectDisposers.add(() => {
-                        const cleanup = effectCleanups.get(c);
-                        if (cleanup) {
-                            cleanup()
-                            effectCleanups.delete(c);
-                        }
-                        subscribers.delete(c);
-                    })
-                }
-            }
-            return value
-        },
+    get value() {
+        if (currentEffect) {
+            currentEffect.track(this)
+        }
+        return this.#value
+    }
 
-        set value(newValue) {
-            if (value === newValue) return;
-            value = newValue
-            const previous = subscribers
-            subscribers = new Set()
-            for (const subscriber of previous) {
-                subscriber()
+    set value(newValue) {
+        if (this.#value === newValue) return; // ???
+        this.#value = newValue
+
+        for (const subscriber of this.subscribers) {
+            if (!this.skip.has(subscriber)) {   
+                subscriber.run()
             }
         }
+        this.skip.clear()
     }
-}
 
-export function reactive<T extends object>(object: T) {
-    let subscribers = new Set<Subscriber>()
+    removeSubscriber(subscriber: Effect) {
+        this.skip.add(subscriber)
+        this.subscribers.delete(subscriber)
+    }
 
-    return new Proxy(object, {
-        get(target, p, receiver) {
-            if (currentSubscriber) {
-                subscribers.add(currentSubscriber)
-                // We need to wait until currentSubscriber is finished to get cleanup function
-                if (effectDisposers) {
-                    // just captured this to shutup ts, idk if this is really needed
-                    const c = currentSubscriber;
-                    effectDisposers.add(() => {
-                        const cleanup = effectCleanups.get(c);
-                        if (cleanup) {
-                            cleanup()
-                            effectCleanups.delete(c);
-                        }
-                        subscribers.delete(c);
-                    })
-                }
-            }
-
-            // Such a dirty way to implement
-            return Reflect.get(target, p, receiver)
-        },
-        set(target, p, newValue, receiver) {
-            // Do something if target is "value"
-            const ok = Reflect.set(target, p, newValue, receiver)
-
-            return ok
-        },
-    })
+    addSubscriber(subscriber: Effect) {
+        this.subscribers.add(subscriber)
+    }
 }
 
 export type CleanupFn = () => unknown
 export type EffectFn = () => (CleanupFn | void)
 
-export function effect(fn: EffectFn) {
-    const e = () => {
-        const previousSubscriber = currentSubscriber
-        currentSubscriber = e
-        const cleanup = fn()
-        if (typeof cleanup === "function") {
-            // TODO: think about this
-            // You can return a function from $effect, which will run immediately before the effect re-runs, and before it is destroyed
-            // register cleanup somehow
-            effectCleanups.set(e, cleanup)
-        }
-        currentSubscriber = previousSubscriber
+class Effect {
+    private userCleanup: CleanupFn | undefined
+    private dependencies: Set<Signal<any>>
+    private children: Set<Effect>
+
+    constructor(private fn: EffectFn) {
+        this.dependencies = new Set()
+        this.children = new Set()
     }
 
-    e()
+    track(signal: Signal<any>) {
+        this.dependencies.add(signal)
+        signal.addSubscriber(this)
+    }
+
+    addChild(effect: Effect) {
+        this.children.add(effect)
+    }
+
+    dispose() {
+        this.dependencies.forEach(it => it.removeSubscriber(this))
+        this.dependencies.clear()
+        this.children.forEach(it => it.dispose())
+        this.children.clear()
+        if (this.userCleanup) {
+            // should not be tracked
+            this.userCleanup()
+            this.userCleanup = undefined
+        }
+    }
+
+    run() {
+        this.dispose()
+        const previous = currentEffect
+        if (previous) {
+            previous.addChild(this)
+        }
+        currentEffect = this
+        const userCleanup = this.fn()
+        if (typeof userCleanup === "function") {
+            // add to cleanups
+            // TODO: think about this
+            this.userCleanup = userCleanup
+        }
+        currentEffect = previous;
+    }
+}
+
+// public interfaces
+
+export function signal<T>(initial: T): WritableSignal<T> {
+    return new Signal(initial)
+}
+
+export function effect(fn: EffectFn) {
+    // every signals used own this
+    new Effect(fn).run();
 }
 
 // TODO: writable computed
@@ -127,18 +147,11 @@ export function templateEffect(fn: EffectFn) {
     effect(fn)
 }
 
-export function trackEffect(fn: () => void) {
-    const previous = effectDisposers;
-    effectDisposers = new Set();
-    fn()
-    const e = effectDisposers;
-    // idk if this kind of capturing will cuase memory leak or not;
-    const dispose = () => {
-        for (const disposeFn of e) {
-            disposeFn()
-        }
-    };
-    effectDisposers = previous;
-    return dispose;
+export function untrack<T>(fn: () => T) {
+    const previous = currentEffect
+    currentEffect = null
+    const value = fn()
+    currentEffect = previous
+    return value
 }
 

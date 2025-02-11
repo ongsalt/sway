@@ -9,9 +9,12 @@ import Todos from "./components/todos.tuan"
 import NestedControlFlow from "./components/nested-control-flow.tuan"
 import IfElse from "./components/if-else.tuan"
 import Binding from "./components/binding.tuan"
+import { reactiveContext } from "./features/reactive-context"
 // import NestedControlFlow from "./components/nested-control-flow.generated"
 
 const appRoot = document.getElementById("app")!
 
 mount(Todos, appRoot)
+
+// reactiveContext()
 

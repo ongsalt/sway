@@ -5,7 +5,7 @@
     const a = signal(1);
     setInterval(() => {
         a.value += 1;
-    }, 1000);
+    }, 10);
 
     const increment = () => {
         count.value += 1;
@@ -38,7 +38,7 @@
 
     <h2 class="text-xl">based on timer</h2>
     <div class="border bg-slate-50 rounded p-4">
-        {#if Math.floor(a.value / 2) % 2 === 0}
+        {#if a.value % 2 === 0}
             <h2>First content</h2>
             <p>We're no strangers to love</p>
             <p>{a.value}</p>
@@ -55,9 +55,4 @@
     </h2>
 
     <p> immediate if children text set </p>
-    <p>
-        {#if count.value % 2 === 0}
-            {count.value}
-        {/if}
-    </p>
 </div>
