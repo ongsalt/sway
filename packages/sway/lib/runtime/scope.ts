@@ -16,7 +16,7 @@ export type RuntimeComponentScope = SharedRuntimeScope & {
     onDestroys: OnDestroyFn[],
 }
 
-// each scope should wrap it own clean up and push it to previous.cleanups 
+// not needed
 export type RuntimeIfScope = SharedRuntimeScope & {
     type: "if",
 }
