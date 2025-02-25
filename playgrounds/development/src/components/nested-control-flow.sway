@@ -10,6 +10,7 @@
 
     const toggle2 = () => {
         show2.value = !show2.value;
+        
     };
 
     const someValue = "Hihi";
@@ -33,6 +34,7 @@
     show: {show.value} <br />
     show2: {show2.value}
 </div>
+
 
 {#if show.value}
     {someValue}

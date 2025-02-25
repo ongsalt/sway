@@ -1,4 +1,5 @@
 import { append, comment, sweep } from "./dom";
+import { RuntimeIfScope, swayContext } from "./scope";
 import { templateEffect } from "./signal";
 
 // TODO: transformer: avoid this type of name collision
@@ -13,24 +14,21 @@ function _if(anchor: Node, ifEffect: IfEffect) {
     append(anchor, endAnchor)
 
     let key: boolean | undefined;
+    const ifScope = new RuntimeIfScope(swayContext.currentScope)
 
     const render: RenderDelegationFn = (init, newKey = true) => {
         if (key !== newKey) {
             if (key !== undefined) {
-                // console.log("remove previous one")
-                // wait... if there is a component under this we need to call its cleanup fns
+                ifScope.dispose()
                 sweep(anchor, endAnchor)
             }
-            if (init) {
-                // console.log(`Init new content`)
-                init!(anchor)
-            }
+            init!(anchor)
         }
         key = newKey;
     }
 
     templateEffect(() => {
-        ifEffect(render)
+        ifScope.run(() => ifEffect(render))
     })
 }
 

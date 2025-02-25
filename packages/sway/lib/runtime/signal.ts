@@ -1,3 +1,5 @@
+import { RuntimeScope, swayContext } from "./scope";
+
 export type Subscriber = EffectImpl
 export interface Signal<T> {
     value: T
@@ -11,59 +13,57 @@ interface Disposable {
     dispose(): void;
 }
 
-export interface SignalController extends Disposable {
-    removeSubscriber(subscriber: EffectImpl): void;
-    addSubscriber(subscriber: EffectImpl): void;
-}
-
 export interface EffectController {
-    track(signal: SignalController): void;
+    track(signal: SignalImpl<any>): void;
     addChild(effect: EffectImpl): void;
     dispose(): void;
 }
 
-let currentEffect: EffectImpl | null = null;
+export let currentEffect: EffectImpl | null = null;
 
 export type CleanupFn = () => unknown
 export type EffectFn = () => (CleanupFn | void)
 
 export class EffectImpl {
+    private parent?: RuntimeScope
     private userCleanup: CleanupFn | undefined
-    private dependencies: Set<SignalController>
-    private children: Set<EffectImpl>
+    private dependencies: Set<SignalImpl<any>>
 
     constructor(private fn: EffectFn) {
+        this.parent = swayContext.currentScope
+        if (this.parent) {
+            // console.log(this.parent, fn)
+            this.parent.effects.add(this)
+        }
         this.dependencies = new Set()
-        this.children = new Set()
     }
 
-    track(signal: SignalController) {
+    track(signal: SignalImpl<any>) {
         this.dependencies.add(signal)
         signal.addSubscriber(this)
     }
 
-    addChild(effect: EffectImpl) {
-        this.children.add(effect)
-    }
+    dispose(fromSelf = false) {
+        if (this.parent && !fromSelf) {
+            this.parent.effects.delete(this)
+        }
 
-    dispose() {
-        this.dependencies.forEach(it => it.removeSubscriber(this))
-        this.dependencies.clear()
-        this.children.forEach(it => it.dispose())
-        this.children.clear()
+        this.dependencies.forEach(it => it.removeSubscriber(this));
+
+        // TODO: do we really need these 2 (ok we need this in case of nested shit)
         if (this.userCleanup) {
             // should not be tracked
             this.userCleanup()
             this.userCleanup = undefined
         }
+
     }
 
     run() {
-        this.dispose()
+        this.dispose(true)
+
         const previous = currentEffect
-        if (previous) {
-            previous.addChild(this)
-        }
+        // TODO: dont allow nested effect
         currentEffect = this
         const userCleanup = this.fn()
         if (typeof userCleanup === "function") {
@@ -71,13 +71,14 @@ export class EffectImpl {
             // TODO: think about this
             this.userCleanup = userCleanup
         }
+        // console.log(this.children)
         currentEffect = previous;
     }
 }
 
 
 /*
-    this own effect.
+    this AND THE SCOPE own effect.
     component scope own this and might call dispose
 
     Disposing:
@@ -85,45 +86,88 @@ export class EffectImpl {
         - signal scope will get gc when the controller is out of scope
           so it's when we destroy the owner component scope 
 */
-export function signal<T>(initial: T): Signal<T> {
-    let value = initial
-    const subscribers = new Set<EffectImpl>()
-    const skip = new Set<EffectImpl>()
 
-    const controller: SignalController = {
-        addSubscriber(subscriber) {
-            subscribers.add(subscriber)
-        },
-        removeSubscriber(subscriber) {
-            skip.add(subscriber)
-            subscribers.delete(subscriber)
-        },
-        dispose() {
-            for (const subscriber of subscribers) {
-                subscriber.dispose()
-            }
-            subscribers.clear()
-        },
+export class SignalImpl<T> {
+    private scope?: RuntimeScope
+    private value: T
+    private subscribers = new Set<EffectImpl>()
+    private skip = new Set<EffectImpl>()
+    private debug?: string
+
+    constructor(initial: T, debug?: string) {
+        this.scope = swayContext.currentScope
+        if (this.scope) {
+            this.scope.signals.add(this)
+        }
+        this.value = initial
+        this.debug = debug
     }
+
+    addSubscriber(subscriber: EffectImpl) {
+        this.subscribers.add(subscriber)
+    }
+
+    removeSubscriber(subscriber: EffectImpl) {
+        this.subscribers.delete(subscriber)
+        this.skip.add(subscriber)
+        if (this.debug) {
+            console.log(`[${this.debug}] Removed per request`, subscriber)
+        }
+    }
+
+    dispose() {
+        if (this.debug) {
+            console.log(`[${this.debug}] Signal Disposed`)
+        }
+        for (const subscriber of this.subscribers) {
+            subscriber.dispose()
+        }
+        this.subscribers.clear()
+
+        if (this.scope) {
+            this.scope.signals.delete(this)
+        }
+    }
+
+    get() {
+        if (currentEffect) {
+            currentEffect.track(this)
+        }
+
+        if (this.debug) {
+            console.log(this.subscribers)
+        }
+
+        return this.value
+    }
+
+    set(newValue: T) {
+        if (this.value === newValue) return; // ???
+        this.value = newValue
+
+        if (this.debug) {
+            console.log(`Updated to ${JSON.stringify(newValue)}`)
+            console.log(this.subscribers)
+        }
+
+        for (const subscriber of this.subscribers) {
+            if (!this.skip.has(subscriber)) {
+                subscriber.run()
+            }
+        }
+        this.skip.clear()
+    }
+}
+
+export function signal<T>(initial: T, debug?: string): Signal<T> {
+    const impl = new SignalImpl(initial, debug)
 
     return {
         get value() {
-            if (currentEffect) {
-                currentEffect.track(controller)
-            }
-            return value
+            return impl.get()
         },
-
         set value(newValue) {
-            if (value === newValue) return; // ???
-            value = newValue
-
-            for (const subscriber of subscribers) {
-                if (!skip.has(subscriber)) {
-                    subscriber.run()
-                }
-            }
-            skip.clear()
+            impl.set(newValue)
         }
     }
 }
@@ -144,30 +188,20 @@ export function computed<T>(fn: () => T) {
     return state as Computed<T>
 }
 
-/*
-    Basic requirement:
-        - should track effect per property
-        - and should not rerun when unrelated property updated
-    Recursive case:
-        - if that prop is an object return a proxy instead
-        - when obj.a is change
-            - new instance of proxy -> return reactive(value)
-            - old obj.a subscriber should be dispose
-            - old obj.a.b subscriber should be dispose (how)
-              if a has b controller then when a is disposing it should dispose b first
-*/
 
 interface ReactiveObjectController {
-    controller: SignalController,
+    controller: SignalImpl<any>,
     subscribers: Set<EffectImpl>
     skip: Set<EffectImpl>
 }
 
+// todo: remove skip 
 export function reactive<T extends object>(target: T, parent?: ReactiveObjectController): T {
     const subscribers = parent?.subscribers ?? new Set<EffectImpl>();
     const skip = parent?.skip ?? new Set<EffectImpl>();
 
-    const controller: SignalController = parent?.controller ?? {
+    // TODO: fix this
+    const controller: SignalImpl<any> = parent?.controller ?? {
         addSubscriber(subscriber) {
             subscribers.add(subscriber)
         },

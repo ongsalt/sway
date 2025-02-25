@@ -1,9 +1,7 @@
-import { getTransformation } from "./array";
-import { RuntimeEachScope, swayContext } from "./scope";
 import { append, comment, remove, sweep } from "./dom";
-import { CleanupFn, templateEffect } from "./signal";
-import { identity } from "./utils";
-import { WeakArray } from "./weak-ref";
+import { signal, Signal, templateEffect } from "./signal";
+import { getTransformation } from "./utils/array";
+import { identity } from "./utils/functions";
 
 // any thing that can be compared
 type Key = any
@@ -12,39 +10,55 @@ type KeyFn<T> = (value: T) => Key
 export function each<Item>(
     anchor: Node,
     collection: () => Item[],
-    children: (anchor: Node, value: Item, index: number) => void,
+    children: (anchor: Node, value: Item, index: Signal<number>) => void,
     keyFn: KeyFn<Item> = identity // use object reference as key
 ) {
     const endAnchor = comment();
     append(anchor, endAnchor)
 
     let currentKeys: Key[] = []
-    let childAnchors: Comment[] = []
+    type ChildrenContext = {
+        anchor: Node,
+        index: Signal<number>
+    }
+    let childrenContexts: ChildrenContext[] = []
 
-    function createAnchor(index: number) {
+    function createContext(index: number): ChildrenContext {
         const anchor = comment()
         // We need a way to put anchor at any arbitary index
-        if (index >= childAnchors.length) {
+        if (index >= childrenContexts.length) {
             append(endAnchor, anchor, true)
         } else {
-            append(childAnchors[index], anchor, true)
+            append(childrenContexts[index].anchor, anchor, true)
         }
-        childAnchors.splice(index, 0, anchor)
-        return anchor
+        const context: ChildrenContext = {
+            anchor,
+            index: signal(index, `index${index}`)
+        }
+        childrenContexts.splice(index, 0, context)
+        return context
     }
 
     function render(index: number, item: Item) {
-        const anchor = createAnchor(index)
-        children(anchor, item, index)
+        const context = createContext(index)
+        // we should start new effect context to prevent auto cleanup
+        children(context.anchor, item, context.index)
     }
 
     function yeet(index: number) {
-        sweep(childAnchors[index], childAnchors[index + 1] ?? endAnchor)
-        remove(childAnchors[index])
-        childAnchors.splice(index, 1)
+        sweep(childrenContexts[index].anchor, childrenContexts[index + 1]?.anchor ?? endAnchor)
+        remove(childrenContexts[index].anchor)
+        childrenContexts.splice(index, 1)
+    }
+
+    function notifyOrderChange() {
+        childrenContexts.forEach((context, index) => {
+            context.index.value = index
+        })
     }
 
     templateEffect(() => {
+        console.log('[each] rerun')
         const items = collection()
 
         const newKeys = items.map(keyFn)
@@ -84,6 +98,9 @@ export function each<Item>(
                 yeet(op.index)
             }
         }
+
+        notifyOrderChange()
+        console.log({ childrenContexts })
 
         currentKeys = newKeys
 

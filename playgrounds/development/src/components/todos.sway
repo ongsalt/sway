@@ -49,14 +49,14 @@
             type="text"
             class="border rounded-md shadow-sm p-2 px-4"
             placeholder="Type something..."
-            bind:value={title}
+            bind:value={title.value}
         />
         <label for="description">Description</label>
         <input
             type="text"
             class="border rounded-md shadow-sm p-2 px-4"
             placeholder="Type something..."
-            bind:value={description}
+            bind:value={description.value}
         />
         <button
             onclick={addTodo}
@@ -68,7 +68,7 @@
 
     {#each todos.value as todo, index}
         <div class="border rounded-md p-4">
-            <span>index: {index}, id: {todo.id}</span>
+            <span>index: {index.value}, id: {todo.id}</span>
             <h2 class="font-bold text-xl">{todo.title}</h2>
             <p class="">{todo.description}</p>
             <p class="opacity-50">{todo.createdAt}</p>

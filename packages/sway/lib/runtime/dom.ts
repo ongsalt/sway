@@ -49,6 +49,7 @@ export function remove(node: Node) {
     if (node instanceof Element) { // TODO: make ts shut up 
         node.$$cleanups?.forEach(cleanup => cleanup())
     }
+    // console.log(node)
     node.parentNode!.removeChild(node)
 }
 
@@ -77,7 +78,7 @@ export function sweep(from: Node, to: Node | null) {
     let current = from.nextSibling;
     while (current != to) {
         const toRemove = current!;
-        current = current!.nextSibling
+        current = current!?.nextSibling
         remove(toRemove)
     }
 }
