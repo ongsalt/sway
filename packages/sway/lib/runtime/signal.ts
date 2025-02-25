@@ -269,7 +269,7 @@ class ReactiveObject<T extends Object> implements State {
                     // TODO: before cleanup check what we really remove
                     // TODO: stop notifying everyone when a single key change
                     // maybe we could do this by add path properties to our subscriber 
-                    return new ReactiveObject(prop, deez, deez.debug).get()
+                    return new ReactiveObject(prop, deez?.parent ?? deez, deez.debug).get()
                 }
 
                 return prop
