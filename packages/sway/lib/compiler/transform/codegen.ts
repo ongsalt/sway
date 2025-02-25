@@ -170,7 +170,14 @@ export function generate(statement: SwayStatement, indentation: number, logging 
 
         case "binding": {
             const { key, node, target } = statement;
-            add(`$.bind(${node}, \`${key}\`, ${target})`)
+            add(`$.bind(${node}, \`${key}\`, ${generate(target, indentation, logging)})`)
+            break
+        }
+
+        case "proxy": {
+            const { obj, key } = statement;
+            // we could inline this actually
+            out += `$.proxy(${obj}, \`${key}\`)`;
             break
         }
 

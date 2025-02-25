@@ -1,10 +1,9 @@
 // TODO: implement this in lexer and parser
 
 import { listen } from "./dom";
-import { Signal, templateEffect } from "./signal";
+import { SwayProxy, templateEffect } from "./signal";
 
-
-export function bind(node: Node, attribute: string, target: Signal<any>) {
+export function bind(node: Node, attribute: string, target: SwayProxy<any>) {
     if (!(node instanceof Element)) {
         throw new Error(`${node} is not an Element.`)
     }
@@ -20,7 +19,7 @@ export function bind(node: Node, attribute: string, target: Signal<any>) {
 }
 
 type TextInputElement = HTMLInputElement | HTMLTextAreaElement
-function bindTextInputValue(element: TextInputElement, target: Signal<any>) {
+function bindTextInputValue(element: TextInputElement, target: SwayProxy<any>) {
     // type inference is kinda shit
     listen(element, "input", (event) => {
         const { value } = element;
@@ -36,7 +35,7 @@ function bindTextInputValue(element: TextInputElement, target: Signal<any>) {
     })
 }
 
-function bindBooleanInputValue(element: HTMLInputElement, target: Signal<boolean>) { // only type="checkbox"
+function bindBooleanInputValue(element: HTMLInputElement, target: SwayProxy<boolean>) { // only type="checkbox"
     if (element.type !== "checkbox") {
         throw new Error(`${element} is not a checkbox.`)
     }

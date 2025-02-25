@@ -125,7 +125,14 @@ export type BindingStatement = {
     type: "binding",
     node: string,
     key: string,
-    target: string,
+    target: ProxyStatement,
+}
+
+// TODO: seperate runtime statement from these
+export type ProxyStatement = {
+    type: "proxy",
+    obj: string,
+    key: string,
 }
 
 export type SwayContainerStatement = ComponentFunctionStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement
@@ -134,7 +141,7 @@ export type SwayStatement = TemplateEffectStatement | AccessorDefinitionStatemen
     | TemplateScopeStatement | UserEffectStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
     | ComponentFunctionStatement | CreateRootStatement | AppendStatement | EventListenerAttachingStatement
-    | BindingStatement
+    | BindingStatement | ProxyStatement
 
 export function priority(statement: SwayStatement) {
     switch (statement.type) {

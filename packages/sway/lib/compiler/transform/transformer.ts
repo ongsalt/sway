@@ -2,10 +2,10 @@ import * as acorn from "acorn"
 import { Node } from "estree"
 import { walk } from "estree-walker"
 import { analyze } from "periscopic"
-import { TemplateASTNode, Element, TextNode, ControlFlowNode, IfNode } from "../parse/ast"
-import { AccessorDefinitionStatement, BindingStatement, ComponentDeclarationStatement, ComponentFunctionStatement, CreateRootStatement, EventListenerAttachingStatement, priority, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement, SwayContainerStatement, SwayStatement } from "./statements"
-import { stringify } from "./html"
+import { ControlFlowNode, Element, TemplateASTNode } from "../parse/ast"
 import { generate } from "./codegen"
+import { stringify } from "./html"
+import { AccessorDefinitionStatement, BindingStatement, ComponentDeclarationStatement, CreateRootStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement } from "./statements"
 
 export type TransformOptions = {
     name: string,
@@ -173,11 +173,22 @@ export class Transformer {
                     if (attribute.whole) {
                         const { accessor } = getOrCreateAccessor()
                         if (attribute.isBinding) {
+                            const segmentedTarget = attribute.expression.split('.')
+                            const targetName = segmentedTarget.slice(0, -1).join('.')
+                            const targetKey = segmentedTarget.at(-1)
+                            if (!targetKey) {
+                                // TODO: better error message
+                                throw new Error("invalid binding")
+                            }
                             const statement: BindingStatement = {
                                 type: "binding",
                                 key: attribute.key,
                                 node: accessor.name,
-                                target: attribute.expression, // todo check if this is a variable
+                                target: {
+                                    type: "proxy",
+                                    obj: targetName,
+                                    key: targetKey,
+                                }, // todo check if this is a variable
                             }
                             out.push(statement)
                         } else {

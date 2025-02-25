@@ -1,4 +1,4 @@
-export type Subscriber = () => void
+export type Subscriber = EffectImpl
 export interface Signal<T> {
     value: T
 }
@@ -7,14 +7,13 @@ export type Computed<T> = {
     readonly value: T
 }
 
-export interface SignalController {
-    removeSubscriber(subscriber: EffectImpl): void;
-    addSubscriber(subscriber: EffectImpl): void;
+interface Disposable {
     dispose(): void;
 }
 
-export interface ReactiveObjectController extends SignalController {
-    addChild(child: ReactiveObjectController): void;
+export interface SignalController extends Disposable {
+    removeSubscriber(subscriber: EffectImpl): void;
+    addSubscriber(subscriber: EffectImpl): void;
 }
 
 export interface EffectController {
@@ -76,8 +75,16 @@ export class EffectImpl {
     }
 }
 
-// public interfaces
 
+/*
+    this own effect.
+    component scope own this and might call dispose
+
+    Disposing:
+        - remove all effect references (pracitcally gc it)
+        - signal scope will get gc when the controller is out of scope
+          so it's when we destroy the owner component scope 
+*/
 export function signal<T>(initial: T): Signal<T> {
     let value = initial
     const subscribers = new Set<EffectImpl>()
@@ -149,71 +156,53 @@ export function computed<T>(fn: () => T) {
             - old obj.a.b subscriber should be dispose (how)
               if a has b controller then when a is disposing it should dispose b first
 */
-export function reactive<T extends object>(target: T): T {
-    type Context = {
-        subscribers: Set<EffectImpl>,
-        skip: Set<EffectImpl>,
-        children: Set<ReactiveObjectController>,
-        dispose: () => void
-    }
-    const contexts = new Map<symbol | string, Context>();
 
-    function createContext(): Context {
-        const subscribers = new Set<EffectImpl>()
-        const skip = new Set<EffectImpl>()
-        const children = new Set<ReactiveObjectController>()
+interface ReactiveObjectController {
+    controller: SignalController,
+    subscribers: Set<EffectImpl>
+    skip: Set<EffectImpl>
+}
 
-        return {
-            subscribers,
-            skip,
-            children,            // should be call from parent
-            dispose() {
-                for (const child of children) {
-                    child.dispose()
-                }
-                children.clear()
+export function reactive<T extends object>(target: T, parent?: ReactiveObjectController): T {
+    const subscribers = parent?.subscribers ?? new Set<EffectImpl>();
+    const skip = parent?.skip ?? new Set<EffectImpl>();
 
-                for (const subscriber of subscribers) {
-                    subscriber.dispose()
-                }
-                subscribers.clear()
+    const controller: SignalController = parent?.controller ?? {
+        addSubscriber(subscriber) {
+            subscribers.add(subscriber)
+        },
+        removeSubscriber(subscriber) {
+            skip.add(subscriber)
+            subscribers.delete(subscriber)
+        },
+        dispose() {
+            for (const subscriber of subscribers) {
+                subscriber.dispose()
             }
-        }
-    }
-
-    function getOrCreateContext(name: string | symbol) {
-        let context = contexts.get(name)
-
-        if (!context) {
-            context = createContext()
-            contexts.set(name, context)
-        }
-
-        return context
+            subscribers.clear()
+        },
     }
 
     return new Proxy(target, {
         get(target, p, receiver) {
             if (currentEffect) {
-                // or do i create controller for every key
-                const context = getOrCreateContext(p)
-                currentEffect.track({
-                    addSubscriber(subscriber) {
-                        context.subscribers.add(subscriber)
-                    },
-                    removeSubscriber(subscriber) {
-                        context.skip.add(subscriber)
-                        context.subscribers.delete(subscriber)
-                    },
-                    dispose() {
-                        context.dispose()
-                    },
-                })
+                // TODO: cache this or else Set would not work
+                currentEffect.track(controller)
             }
-            // build nested proxy here
+
             const prop = Reflect.get(target, p, receiver)
             if (typeof prop === "object" && prop !== null) {
-                return reactive(prop)
+                // will this get cleanup properly
+                // well the subscriber is gonna get auto cleanup so probably yes 
+                // wait does this mean most of our cleanup implementation is redundant???
+                // TODO: before cleanup check what we really remove
+                // TODO: stop notifying everyone when a single key change
+                // maybe we could do this by add path properties to our subscriber 
+                return reactive(prop, {
+                    controller,
+                    skip,
+                    subscribers
+                });
             }
 
             return prop
@@ -225,15 +214,13 @@ export function reactive<T extends object>(target: T): T {
                 return false
             }
 
-            const context = getOrCreateContext(p)
-
             // do i need to tag it
-            for (const subscriber of context.subscribers) {
-                if (!context.skip.has(subscriber)) {
+            for (const subscriber of subscribers) {
+                if (!skip.has(subscriber)) {
                     subscriber.run()
                 }
             }
-            context.skip.clear()
+            skip.clear()
             return true
         },
     })
@@ -259,3 +246,18 @@ export function untrack<T>(fn: () => T) {
     return value
 }
 
+// TODO: parse key `nested.like.this`
+export function proxy<T extends Object, K extends keyof T>(obj: T, key: K): SwayProxy<T[K]> {
+    return {
+        get value() {
+            return obj[key]
+        },
+        set value(v) {
+            obj[key] = v
+        }
+    }
+}
+
+export type SwayProxy<T> = {
+    value: T
+}
