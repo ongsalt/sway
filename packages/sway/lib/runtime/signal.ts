@@ -9,12 +9,14 @@ export type Computed<T> = {
     readonly value: T
 }
 
-interface Disposable {
+export interface State {
+    addSubscriber(subscriber: EffectImpl): void;
+    removeSubscriber(subscriber: EffectImpl): void;
     dispose(): void;
 }
 
 export interface EffectController {
-    track(signal: SignalImpl<any>): void;
+    track(signal: State): void;
     addChild(effect: EffectImpl): void;
     dispose(): void;
 }
@@ -27,7 +29,7 @@ export type EffectFn = () => (CleanupFn | void)
 export class EffectImpl {
     private parent?: RuntimeScope
     private userCleanup: CleanupFn | undefined
-    private dependencies: Set<SignalImpl<any>>
+    private dependencies: Set<State>
 
     constructor(private fn: EffectFn) {
         this.parent = swayContext.currentScope
@@ -38,7 +40,7 @@ export class EffectImpl {
         this.dependencies = new Set()
     }
 
-    track(signal: SignalImpl<any>) {
+    track(signal: State) {
         this.dependencies.add(signal)
         signal.addSubscriber(this)
     }
@@ -87,7 +89,7 @@ export class EffectImpl {
           so it's when we destroy the owner component scope 
 */
 
-export class SignalImpl<T> {
+export class SignalImpl<T> implements State {
     private scope?: RuntimeScope
     private value: T
     private subscribers = new Set<EffectImpl>()
@@ -97,7 +99,7 @@ export class SignalImpl<T> {
     constructor(initial: T, debug?: string) {
         this.scope = swayContext.currentScope
         if (this.scope) {
-            this.scope.signals.add(this)
+            this.scope.states.add(this)
         }
         this.value = initial
         this.debug = debug
@@ -125,7 +127,7 @@ export class SignalImpl<T> {
         this.subscribers.clear()
 
         if (this.scope) {
-            this.scope.signals.delete(this)
+            this.scope.states.delete(this)
         }
     }
 
@@ -160,6 +162,10 @@ export class SignalImpl<T> {
 }
 
 export function signal<T>(initial: T, debug?: string): Signal<T> {
+    // if we pull this object from scope instead of creating new one
+    // i think we can do hot reload like react
+    // but then we need to introduce the rule of hooks
+    // and just do force refresh if something go wrong
     const impl = new SignalImpl(initial, debug)
 
     return {
@@ -188,83 +194,114 @@ export function computed<T>(fn: () => T) {
     return state as Computed<T>
 }
 
+class ReactiveObject<T extends Object> implements State {
+    private scope?: RuntimeScope
+    private parent?: ReactiveObject<any>
+    private value: T
+    private subscribers = new Set<EffectImpl>()
+    private skip = new Set<EffectImpl>()
+    private debug?: string
 
-interface ReactiveObjectController {
-    controller: SignalImpl<any>,
-    subscribers: Set<EffectImpl>
-    skip: Set<EffectImpl>
+    constructor(initial: T, parent?: ReactiveObject<any>, debug?: string) {
+        this.scope = swayContext.currentScope
+        this.parent = parent
+        if (this.scope && !parent) {
+            this.scope.states.add(this)
+        }
+        this.value = initial
+        this.debug = debug
+    }
+
+    addSubscriber(subscriber: EffectImpl) {
+        if (this.parent) {
+            this.parent.addSubscriber(subscriber)
+            return
+        }
+
+        this.subscribers.add(subscriber)
+
+    }
+
+    removeSubscriber(subscriber: EffectImpl) {
+        if (this.parent) {
+            this.parent.removeSubscriber(subscriber)
+            return
+        }
+
+        this.subscribers.delete(subscriber)
+        this.skip.add(subscriber)
+        if (this.debug) {
+            console.log(`[${this.debug}] Removed per request`, subscriber)
+        }
+    }
+
+    dispose() {
+        if (this.parent) {
+            return
+        }
+        if (this.debug) {
+            console.log(`[${this.debug}] Signal Disposed`)
+        }
+        for (const subscriber of this.subscribers) {
+            subscriber.dispose()
+        }
+        this.subscribers.clear()
+
+        if (this.scope) {
+            this.scope.states.delete(this)
+        }
+    }
+
+    get(): T {
+        const deez = this;
+        return new Proxy(deez.value, {
+            get(target, p, receiver) {
+                if (currentEffect) {
+                    // TODO: cache this or else Set would not work
+                    currentEffect.track(deez)
+                }
+
+                const prop = Reflect.get(target, p, receiver)
+                if (typeof prop === "object" && prop !== null) {
+                    // will this get cleanup properly
+                    // well the subscriber is gonna get auto cleanup so probably yes 
+                    // wait does this mean most of our cleanup implementation is redundant???
+                    // TODO: before cleanup check what we really remove
+                    // TODO: stop notifying everyone when a single key change
+                    // maybe we could do this by add path properties to our subscriber 
+                    return new ReactiveObject(prop, deez, deez.debug).get()
+                }
+
+                return prop
+            },
+
+            set(target, p, newValue, receiver) {
+                const ok = Reflect.set(target, p, newValue, receiver)
+                if (!ok) {
+                    return false
+                }
+
+                // do i need to tag it
+                const subscribers = deez.parent?.subscribers ?? deez.subscribers
+                const skip = deez.parent?.skip ?? deez.skip
+                for (const subscriber of subscribers) {
+                    if (!skip.has(subscriber)) {
+                        subscriber.run()
+                    }
+                }
+                skip.clear()
+                return true
+            },
+        })
+    }
 }
 
 // todo: remove skip 
-export function reactive<T extends object>(target: T, parent?: ReactiveObjectController): T {
-    const subscribers = parent?.subscribers ?? new Set<EffectImpl>();
-    const skip = parent?.skip ?? new Set<EffectImpl>();
-
-    // TODO: fix this
-    const controller: SignalImpl<any> = parent?.controller ?? {
-        addSubscriber(subscriber) {
-            subscribers.add(subscriber)
-        },
-        removeSubscriber(subscriber) {
-            skip.add(subscriber)
-            subscribers.delete(subscriber)
-        },
-        dispose() {
-            for (const subscriber of subscribers) {
-                subscriber.dispose()
-            }
-            subscribers.clear()
-        },
-    }
-
-    return new Proxy(target, {
-        get(target, p, receiver) {
-            if (currentEffect) {
-                // TODO: cache this or else Set would not work
-                currentEffect.track(controller)
-            }
-
-            const prop = Reflect.get(target, p, receiver)
-            if (typeof prop === "object" && prop !== null) {
-                // will this get cleanup properly
-                // well the subscriber is gonna get auto cleanup so probably yes 
-                // wait does this mean most of our cleanup implementation is redundant???
-                // TODO: before cleanup check what we really remove
-                // TODO: stop notifying everyone when a single key change
-                // maybe we could do this by add path properties to our subscriber 
-                return reactive(prop, {
-                    controller,
-                    skip,
-                    subscribers
-                });
-            }
-
-            return prop
-        },
-
-        set(target, p, newValue, receiver) {
-            const ok = Reflect.set(target, p, newValue, receiver)
-            if (!ok) {
-                return false
-            }
-
-            // do i need to tag it
-            for (const subscriber of subscribers) {
-                if (!skip.has(subscriber)) {
-                    subscriber.run()
-                }
-            }
-            skip.clear()
-            return true
-        },
-    })
+export function reactive<T extends object>(target: T): T {
+    const impl = new ReactiveObject(target)
+    return impl.get()
 }
 
-
-// In case there is something else to track/cleanup
-// i should track component scope too
-// but how do i dispose a subscriber tho
-// let currentComponent: Component | null = null
 
 export function templateEffect(fn: EffectFn) {
     // should do something with compoennt scope

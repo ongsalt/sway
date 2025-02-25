@@ -16,5 +16,6 @@
         <span class="text-5xl">{obj.nested.text}</span>
     </div>
 
+   
     <input type="text" class="border rounded-md shadow-sm p-2 px-4" placeholder="Type something..." bind:value={obj.nested.text} />
 </main>

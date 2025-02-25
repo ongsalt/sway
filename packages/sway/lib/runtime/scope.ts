@@ -1,4 +1,4 @@
-import { CleanupFn, currentEffect, EffectImpl, SignalImpl } from "./signal"
+import { CleanupFn, currentEffect, EffectImpl, State } from "./signal"
 
 export type RuntimeScope = RuntimeComponentScope | RuntimeEachScope | RuntimeIfScope
 export type OnMountFn = () => (CleanupFn | undefined)
@@ -16,7 +16,7 @@ class AbstractRuntimeScope {
     cleanups: CleanupFn[]
     children: Set<RuntimeScope>
     previous?: RuntimeScope
-    signals: Set<SignalImpl<any>>
+    states: Set<State>
     effects: Set<EffectImpl> // only top level effect
 
     constructor(previous: RuntimeScope | undefined) {
@@ -28,7 +28,7 @@ class AbstractRuntimeScope {
             this.previous = previous
             previous.children.add(this)
         }
-        this.signals = new Set()
+        this.states = new Set()
         this.effects = new Set()
         this.children = new Set()
     }
@@ -41,8 +41,8 @@ class AbstractRuntimeScope {
         this.effects.forEach(it => it.dispose())
         // this.effects.clear()
 
-        this.signals.forEach(it => it.dispose())
-        // this.signals.clear()
+        this.states.forEach(it => it.dispose())
+        // this.states.clear()
 
         this.cleanups.forEach(it => it())
         this.cleanups = [] // why tho
