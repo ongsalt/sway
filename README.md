@@ -17,14 +17,14 @@ svelte-like frontend framework recreation (hopefully)
 - value binding for `input` and `textarea`
     - auto coerce type to number for `<input type="number">`
     - the same go for checkbox
+- deeply reactive object (i will stop export this once i implement `$rune`) 
 
 ## What's not yet
-- deeply reactive object (WIP)
-- dont support property binding yet (`bind:value={a}` is ok but `bind:value={a.b}` is not) (WIP)
-- you also cant do binding under each block yet (WIP)
+- you cant do binding under each block yet (WIP)
 - value binding for `select`
-- do transpiling magic that allow you to use signal without `.value`
-- Dynamic attribute `claass="border {someExpression}"` or `placeholder={anotherExpression}` 
+- do transpiling magic that allow you to use signal without `.value` like runes
+- Component
+- Dynamic attribute `class="border {someExpression}"` or `placeholder={anotherExpression}`
 - typescript support 
     - i dont know if i need to mess with vite or not. ts might work without any change (untested)
 - SSR
