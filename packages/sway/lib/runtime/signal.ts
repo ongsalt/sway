@@ -1,334 +1,355 @@
-import { RuntimeScope, swayContext } from "./scope";
+import { PathMap } from "./utils/map";
 
-export type Subscriber = EffectImpl
-export interface Signal<T> {
-    value: T
-}
+let activeScope: ReactiveScope | null = null;
+let activeComputed: Computed<any> | null = null;
+let activeEffect: Effect | null = null;
 
-export type Computed<T> = {
-    readonly value: T
-}
-
-export interface State {
-    addSubscriber(subscriber: EffectImpl): void;
-    removeSubscriber(subscriber: EffectImpl): void;
-    dispose(): void;
-}
-
-export interface EffectController {
-    track(signal: State): void;
-    addChild(effect: EffectImpl): void;
-    dispose(): void;
-}
-
-export let currentEffect: EffectImpl | null = null;
-
-export type CleanupFn = () => unknown
-export type EffectFn = () => (CleanupFn | void)
-
-export class EffectImpl {
-    private parent?: RuntimeScope
-    private userCleanup: CleanupFn | undefined
-    private dependencies: Set<State>
-
-    constructor(private fn: EffectFn) {
-        this.parent = swayContext.currentScope
-        if (this.parent) {
-            // console.log(this.parent, fn)
-            this.parent.effects.add(this)
-        }
-        this.dependencies = new Set()
-    }
-
-    track(signal: State) {
-        this.dependencies.add(signal)
-        signal.addSubscriber(this)
-    }
-
-    dispose(fromSelf = false) {
-        if (this.parent && !fromSelf) {
-            this.parent.effects.delete(this)
-        }
-
-        this.dependencies.forEach(it => it.removeSubscriber(this));
-
-        // TODO: do we really need these 2 (ok we need this in case of nested shit)
-        if (this.userCleanup) {
-            // should not be tracked
-            this.userCleanup()
-            this.userCleanup = undefined
-        }
-
-    }
-
-    run() {
-        this.dispose(true)
-
-        const previous = currentEffect
-        // TODO: dont allow nested effect
-        currentEffect = this
-        const userCleanup = this.fn()
-        if (typeof userCleanup === "function") {
-            // add to cleanups
-            // TODO: think about this
-            this.userCleanup = userCleanup
-        }
-        // console.log(this.children)
-        currentEffect = previous;
-    }
-}
-
-
-/*
-    this AND THE SCOPE own effect.
-    component scope own this and might call dispose
-
-    Disposing:
-        - remove all effect references (pracitcally gc it)
-        - signal scope will get gc when the controller is out of scope
-          so it's when we destroy the owner component scope 
-*/
-
-export class SignalImpl<T> implements State {
-    private scope?: RuntimeScope
-    private value: T
-    private subscribers = new Set<EffectImpl>()
-    private skip = new Set<EffectImpl>()
-    private debug?: string
-
-    constructor(initial: T, debug?: string) {
-        this.scope = swayContext.currentScope
-        if (this.scope) {
-            this.scope.states.add(this)
-        }
-        this.value = initial
-        this.debug = debug
-    }
-
-    addSubscriber(subscriber: EffectImpl) {
-        this.subscribers.add(subscriber)
-    }
-
-    removeSubscriber(subscriber: EffectImpl) {
-        this.subscribers.delete(subscriber)
-        this.skip.add(subscriber)
-        if (this.debug) {
-            console.log(`[${this.debug}] Removed per request`, subscriber)
-        }
-    }
+class ReactiveScope {
+    computeds: Computed<any>[] = [];
+    effects: Effect[] = [];
 
     dispose() {
-        if (this.debug) {
-            console.log(`[${this.debug}] Signal Disposed`)
+        // or should i make a computed have reference to depended signals
+        for (const computed of this.computeds) {
+            computed.dispose();
         }
-        for (const subscriber of this.subscribers) {
-            subscriber.dispose()
-        }
-        this.subscribers.clear()
+        this.computeds = [];
 
-        if (this.scope) {
-            this.scope.states.delete(this)
+        for (const effect of this.effects) {
+            effect.dispose();
         }
+        this.effects = [];
+
+        // gc go bruh
     }
 
-    get() {
-        if (currentEffect) {
-            currentEffect.track(this)
-        }
-
-        if (this.debug) {
-            console.log(this.subscribers)
-        }
-
-        return this.value
-    }
-
-    set(newValue: T) {
-        if (this.value === newValue) return; // ???
-        this.value = newValue
-
-        if (this.debug) {
-            console.log(`Updated to ${JSON.stringify(newValue)}`)
-            console.log(this.subscribers)
-        }
-
-        for (const subscriber of this.subscribers) {
-            if (!this.skip.has(subscriber)) {
-                subscriber.run()
-            }
-        }
-        this.skip.clear()
+    run(fn: () => void) {
+        const previous = activeScope;
+        activeScope = this;
+        fn();
+        activeScope = previous;
     }
 }
 
-export function signal<T>(initial: T, debug?: string): Signal<T> {
-    // if we pull this object from scope instead of creating new one
-    // i think we can do hot reload like react
-    // but then we need to introduce the rule of hooks
-    // and just do force refresh if something go wrong
-    const impl = new SignalImpl(initial, debug)
+// TODO: Make this deeply reative, maybe by a flag? 
+type ReactiveValue<T> = Signal<T> | Computed<T>;
+class Signal<T> {
+    private _value: T;
+    private computeds = new Set<Computed<any>>;
+    private effects = new Set<Effect>();
 
-    return {
-        get value() {
-            return impl.get()
-        },
-        set value(newValue) {
-            impl.set(newValue)
-        }
-    }
-}
-
-export function effect(fn: EffectFn) {
-    // every signals used own this
-    new EffectImpl(fn).run();
-}
-
-// TODO: writable computed
-export function computed<T>(fn: () => T) {
-    let state = signal<T | null>(null)
-
-    effect(() => {
-        state.value = fn()
-    })
-
-    return state as Computed<T>
-}
-
-class ReactiveObject<T extends Object> implements State {
-    private scope?: RuntimeScope
-    private parent?: ReactiveObject<any>
-    private value: T
-    private subscribers = new Set<EffectImpl>()
-    private skip = new Set<EffectImpl>()
-    private debug?: string
-
-    constructor(initial: T, parent?: ReactiveObject<any>, debug?: string) {
-        this.scope = swayContext.currentScope
-        this.parent = parent
-        if (this.scope && !parent) {
-            this.scope.states.add(this)
-        }
-        this.value = initial
-        this.debug = debug
-    }
-
-    addSubscriber(subscriber: EffectImpl) {
-        if (this.parent) {
-            this.parent.addSubscriber(subscriber)
-            return
-        }
-
-        this.subscribers.add(subscriber)
-
-    }
-
-    removeSubscriber(subscriber: EffectImpl) {
-        if (this.parent) {
-            this.parent.removeSubscriber(subscriber)
-            return
-        }
-
-        this.subscribers.delete(subscriber)
-        this.skip.add(subscriber)
-        if (this.debug) {
-            console.log(`[${this.debug}] Removed per request`, subscriber)
-        }
-    }
-
-    dispose() {
-        if (this.parent) {
-            return
-        }
-        if (this.debug) {
-            console.log(`[${this.debug}] Signal Disposed`)
-        }
-        for (const subscriber of this.subscribers) {
-            subscriber.dispose()
-        }
-        this.subscribers.clear()
-
-        if (this.scope) {
-            this.scope.states.delete(this)
-        }
+    constructor(initial: T) {
+        this._value = initial;
     }
 
     get(): T {
-        const deez = this;
-        return new Proxy(deez.value, {
-            get(target, p, receiver) {
-                if (currentEffect) {
-                    // TODO: cache this or else Set would not work
-                    currentEffect.track(deez)
-                }
+        if (activeComputed) {
+            activeComputed.dependencies.push(this);
+            this.computeds.add(activeComputed);
+        }
+        if (activeEffect) {
+            activeEffect.dependencies.push(this);
+            this.effects.add(activeEffect);
+        }
+        return this._value;
+    }
 
-                const prop = Reflect.get(target, p, receiver)
-                if (typeof prop === "object" && prop !== null) {
-                    // will this get cleanup properly
-                    // well the subscriber is gonna get auto cleanup so probably yes 
-                    // wait does this mean most of our cleanup implementation is redundant???
-                    // TODO: before cleanup check what we really remove
-                    // TODO: stop notifying everyone when a single key change
-                    // maybe we could do this by add path properties to our subscriber 
-                    return new ReactiveObject(prop, deez?.parent ?? deez, deez.debug).get()
-                }
+    set(newValue: T) {
+        this._value = newValue;
+        this.trigger();
+    }
 
-                return prop
-            },
+    trigger() {
+        for (const computed of this.computeds) {
+            computed.markDirty();
+        }
 
-            set(target, p, newValue, receiver) {
-                const ok = Reflect.set(target, p, newValue, receiver)
-                if (!ok) {
-                    return false
-                }
+        const cached = [...this.effects];
+        this.effects.clear();
+        for (const effect of cached) {
+            effect.run();
+        }
+    }
 
-                // do i need to tag it
-                const subscribers = deez.parent?.subscribers ?? deez.subscribers
-                const skip = deez.parent?.skip ?? deez.skip
-                for (const subscriber of subscribers) {
-                    if (!skip.has(subscriber)) {
-                        subscriber.run()
-                    }
-                }
-                skip.clear()
-                return true
-            },
-        })
+    removeComputed(computed: Computed<any>) {
+        this.computeds.delete(computed);
+    }
+
+    removeEffect(effect: Effect) {
+        this.effects.delete(effect);
+    }
+
+}
+
+class Computed<T> {
+    private _value!: T;
+    dependencies: (Signal<any> | Computed<any>)[] = [];
+    computeds: Computed<any>[] = [];
+    dirty: boolean = true;
+
+    constructor(public computation: () => T) {
+        if (activeScope) {
+            activeScope.computeds.push(this);
+        }
+    }
+
+    markDirty() {
+        this.dirty = true;
+        this.computeds.forEach(it => it.markDirty());
+    }
+
+    dispose() {
+        for (const dependency of this.dependencies) {
+            dependency.removeComputed(this);
+        }
+    }
+
+    removeComputed(computed: Computed<any>) {
+        this.computeds = this.computeds.filter(it => it !== computed);
+    }
+
+    private update() {
+        const previous = activeComputed;
+        activeComputed = this;
+        this.dispose();
+        this._value = this.computation();
+        activeComputed = previous;
+    }
+
+    get(): T {
+        if (this.dirty) {
+            this.update();
+        }
+
+        if (activeComputed) {
+            this.computeds.push(activeComputed);
+        }
+
+        return this._value;
     }
 }
 
-// todo: remove skip 
-export function reactive<T extends object>(target: T): T {
-    const impl = new ReactiveObject(target)
-    return impl.get()
+type CleanUp = () => void;
+
+// TODO: cleanup
+class Effect {
+    dependencies: Signal<any>[] = [];
+    cleanup: CleanUp | undefined = undefined;
+
+    constructor(public effect: () => void | CleanUp, public priority: number) {
+        if (activeScope) {
+            activeScope.effects.push(this);
+        }
+    }
+
+    dispose() {
+        if (this.cleanup) {
+            this.cleanup();
+        }
+        for (const signal of this.dependencies) {
+            signal.removeEffect(this);
+        }
+    }
+
+
+    run() {
+        this.dispose();
+        const previous = activeEffect;
+        activeEffect = this;
+        this.cleanup = this.effect() ?? undefined;
+        activeEffect = previous;
+    }
+}
+
+// TODO: refine public APIs 
+export function signal<T>(initial: T): Signal<T> {
+    return new Signal(initial);
+}
+
+export function computed<T>(computation: () => T): Computed<T> {
+    return new Computed(computation);
+}
+
+export function watch<T>(dependencies: ReactiveValue<any>[], computation: () => T): Computed<T> {
+    return new Computed(() => {
+        // track those that were specified
+        dependencies.forEach(it => it.get());
+        // ignore the rest
+        return untrack(() => computation());
+    });
+};
+
+type EffectFn = () => void | CleanUp;
+export function effect(fn: EffectFn, priority = 1) {
+    const effect = new Effect(fn, priority);
+    effect.run();
+    return effect;
 }
 
 
 export function templateEffect(fn: EffectFn) {
-    // should do something with compoennt scope
-    // think about owner
-    effect(fn)
+    return effect(fn, 0);
+}
+
+export function reactiveScope() {
+    return new ReactiveScope();
 }
 
 export function untrack<T>(fn: () => T) {
-    const previous = currentEffect
-    currentEffect = null
-    const value = fn()
-    currentEffect = previous
-    return value
+    const previousEffect = activeEffect;
+    const previousComputed = activeComputed;
+    activeEffect = null;
+    activeComputed = null;
+    const value = fn();
+    activeEffect = previousEffect;
+    activeComputed = previousComputed;
+    return value;
 }
+
+
+type Path = (string | symbol)[];
+
+//     private scope?: RuntimeScope;
+//     private parent?: ReactiveObject<any>;
+//     private value: T;
+//     private subscribers = new PathMap<EffectImpl>();
+//     private skip = new Set<EffectImpl>();
+//     private path: Path;
+//     private debug?: string;
+
+//     constructor(initial: T, parent?: ReactiveObject<any>, path?: Path, debug?: string) {
+//         this.scope = swayContext.currentScope;
+//         this.path = path ?? [];
+//         this.parent = parent;
+//         if (this.scope && !parent) {
+//             this.scope.states.add(this);
+//         }
+//         this.value = initial;
+//         this.debug = debug;
+//     }
+
+//     addSubscriber(subscriber: EffectImpl, path: Path = []) {
+//         if (this.parent) {
+//             this.parent.addSubscriber(subscriber, this.path);
+//             return;
+//         }
+
+//         this.subscribers.add(path, subscriber);
+//     }
+
+//     removeSubscriber(subscriber: EffectImpl) {
+//         if (this.parent) {
+//             this.parent.removeSubscriber(subscriber);
+//             return;
+//         }
+
+//         this.subscribers.delete(subscriber);
+//         this.skip.add(subscriber);
+//         if (this.debug) {
+//             console.log(`[${this.debug}] Removed per request`, subscriber);
+//         }
+//     }
+
+//     dispose() {
+//         if (this.parent) {
+//             return;
+//         }
+//         if (this.debug) {
+//             console.log(`[${this.debug}] Signal Disposed`);
+//         }
+//         for (const subscriber of this.subscribers) {
+//             subscriber.dispose();
+//         }
+//         this.subscribers.clear();
+
+//         if (this.scope) {
+//             this.scope.states.delete(this);
+//         }
+//     }
+
+//     // todo: refactor the recursive part
+//     get(): T {
+//         const deez = this;
+//         return new Proxy(deez.value, {
+//             get(target, p, receiver) {
+//                 if (currentEffect) {
+//                     // TODO: cache this or else Set would not work
+//                     currentEffect.track(deez);
+//                 }
+
+//                 const prop = Reflect.get(target, p, receiver);
+//                 // wtf: Method Date.prototype.toString called on incompatible receiver [object Date]
+//                 if (typeof prop === "object" && prop !== null && !(prop instanceof Date)) {
+
+//                     const proxied = new ReactiveObject(prop, deez?.parent ?? deez, [...deez.path, p], deez.debug).get();
+//                     // console.log(proxied)
+//                     return proxied;
+//                 }
+
+//                 return prop;
+//             },
+
+//             set(target, p, newValue, receiver) {
+//                 const ok = Reflect.set(target, p, newValue, receiver);
+//                 if (!ok) {
+//                     return false;
+//                 }
+
+//                 console.log(`Updated to ${JSON.stringify(newValue)}`);
+
+//                 // do i need to tag it
+//                 const subscribers = deez.parent?.subscribers ?? deez.subscribers;
+//                 const skip = deez.parent?.skip ?? deez.skip;
+//                 // delete all sub effect
+//                 for (const subscriber of subscribers.getAll(deez.path)) {
+//                     if (!skip.has(subscriber)) {
+//                         subscriber.run();
+//                     }
+//                 }
+//                 skip.clear();
+//                 return true;
+//             },
+//         });
+//     }
+
+//     // untested
+//     set(newValue: T) {
+//         if (this.value === newValue) return; // ???
+//         this.value = newValue;
+
+//         if (this.debug) {
+//             console.log(`Updated to ${JSON.stringify(newValue)}`);
+//             console.log(this.subscribers);
+//         }
+
+//         for (const subscriber of this.subscribers) {
+//             if (!this.skip.has(subscriber)) {
+//                 subscriber.run();
+//             }
+//         }
+//         this.skip.clear();
+//     }
+// }
+
+// // todo: remove skip 
+// export function reactive<T extends object>(target: T): T {
+//     const impl = new ReactiveObject(target);
+//     return impl.get();
+// }
+
 
 // TODO: parse key `nested.like.this`
 export function proxy<T extends Object, K extends keyof T>(obj: T, key: K): SwayProxy<T[K]> {
     return {
         get value() {
-            return obj[key]
+            return obj[key];
         },
         set value(v) {
-            obj[key] = v
+            obj[key] = v;
         }
-    }
+    };
 }
 
 export type SwayProxy<T> = {
-    value: T
-}
+    value: T;
+};
