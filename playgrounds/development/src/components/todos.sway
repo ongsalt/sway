@@ -1,39 +1,50 @@
 <script>
-    import { signal, computed, effect } from "sway";
+    import { signal, reactive } from "sway";
 
     let id = 12768;
 
-    const todos = signal([
+    // fuck this im gonna do compiler
+    const todos = reactive([
         {
             id: id++,
-            title: "Title",
             description: "lorem",
             createdAt: new Date(),
+            editing: false,
         },
     ]);
 
     function remove(todo) {
         return () => {
-            todos.value = todos.value.filter((it) => it !== todo);
-            console.log(`Removing ${todo}`);
+
+            // proxy make this comparison pain in the ass
+            // look like we need to 
+            
+            const index = todos.indexOf(todo)
+            todos.splice(index, 1)
+            console.log({
+                todos,
+                index,
+                todo
+            })
+            // console.log(`Removing`, todo);
         };
     }
 
-    const title = signal("");
     const description = signal("");
 
     function addTodo() {
-        todos.value = [
-            ...todos.value,
-            {
-                id: id++,
-                title: title.value,
-                description: description.value,
-                createdAt: new Date(),
-            },
-        ];
-        title.value = "";
+        todos.push({
+            id: id++,
+            description: description.value,
+            createdAt: new Date(),
+            editing: false,
+        });
         description.value = "";
+    }
+
+    function toggleEdit(todo) {
+        todo.editing = !todo.editing;
+        console.log(todo.editing);
     }
 </script>
 
@@ -43,13 +54,6 @@
     </div>
 
     <div class="gap-2 flex flex-col">
-        <label for="title">Title</label>
-        <input
-            type="text"
-            class="border rounded-md shadow-sm p-2 px-4"
-            placeholder="Type something..."
-            bind:value={title.value}
-        />
         <label for="description">Description</label>
         <input
             type="text"
@@ -65,12 +69,28 @@
         </button>
     </div>
 
-    {#each todos.value as todo, index}
+    {#each todos as todo, index}
         <div class="border rounded-md p-4">
             <span>index: {index.value}, id: {todo.id}</span>
-            <h2 class="font-bold text-xl">{todo.title}</h2>
-            <p class="">{todo.description}</p>
+            {#if todo.editing}
+                <div>
+                    <input
+                        type="text"
+                        class="border rounded-md shadow-sm p-2 px-4"
+                        placeholder="Type something..."
+                        bind:value={todo.description}
+                    />
+                </div>
+            {:else}
+                <p class="">{todo.description}</p>
+            {/if}
             <p class="opacity-50">{todo.createdAt}</p>
+            <button
+                onclick={() => toggleEdit(todo)}
+                class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
+            >
+                {todo.editing ? "Done" : "Edit"}
+            </button>
             <button
                 onclick={remove(todo)}
                 class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
@@ -80,3 +100,15 @@
         </div>
     {/each}
 </main>
+
+<div class="border rounded-lg bg-neutral-100 m-8 overflow-clip">
+    <div class="p-4 bg-white border-b shadow-sm flex gap-2">
+        <h3 class="font-medium">JSON</h3>
+        <p class="text-black/60">
+            why tf is this reactive (probably json.stringify internal call)
+        </p>
+    </div>
+    <p class="p-4">
+        {JSON.stringify(todos)}
+    </p>
+</div>

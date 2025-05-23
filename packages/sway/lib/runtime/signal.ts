@@ -4,7 +4,7 @@ let activeScope: ReactiveScope | null = null;
 let activeComputed: Computed<any> | null = null;
 let activeEffect: Effect | null = null;
 
-class ReactiveScope {
+export class ReactiveScope {
     computeds: Computed<any>[] = [];
     effects: Effect[] = [];
 
@@ -24,16 +24,22 @@ class ReactiveScope {
     }
 
     run(fn: () => void) {
-        const previous = activeScope;
+        const previousScope = activeScope;
+        const previousEffect = activeEffect;
+        const previousComputed = activeComputed;
         activeScope = this;
+        activeEffect = null;
+        activeComputed = null;
         fn();
-        activeScope = previous;
+        activeScope = previousScope;
+        activeEffect = previousEffect;
+        activeComputed = previousComputed;
     }
 }
 
 // TODO: Make this deeply reative, maybe by a flag? 
 type ReactiveValue<T> = Signal<T> | Computed<T>;
-class Signal<T> {
+export class Signal<T> {
     private _value: T;
     private computeds = new Set<Computed<any>>;
     private effects = new Set<Effect>();
@@ -81,7 +87,7 @@ class Signal<T> {
 
 }
 
-class Computed<T> {
+export class Computed<T> {
     private _value!: T;
     dependencies: (Signal<any> | Computed<any>)[] = [];
     computeds: Computed<any>[] = [];
@@ -132,7 +138,7 @@ class Computed<T> {
 type CleanUp = () => void;
 
 // TODO: cleanup
-class Effect {
+export class Effect {
     dependencies: Signal<any>[] = [];
     cleanup: CleanUp | undefined = undefined;
 
@@ -155,6 +161,9 @@ class Effect {
     run() {
         this.dispose();
         const previous = activeEffect;
+        if (previous) {
+            console.warn("Nested effect detected. Please use reactiveScope");
+        }
         activeEffect = this;
         this.cleanup = this.effect() ?? undefined;
         activeEffect = previous;

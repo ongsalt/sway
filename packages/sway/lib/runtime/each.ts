@@ -33,7 +33,7 @@ export function each<Item>(
         }
         const context: ChildrenContext = {
             anchor,
-            index: signal(index, `index${index}`)
+            index: signal(index)
         }
         childrenContexts.splice(index, 0, context)
         return context
@@ -53,7 +53,7 @@ export function each<Item>(
 
     function notifyOrderChange() {
         childrenContexts.forEach((context, index) => {
-            context.index.value = index
+            // context.index.value = index
         })
     }
 
@@ -100,7 +100,7 @@ export function each<Item>(
         }
 
         notifyOrderChange()
-        console.log({ childrenContexts })
+        // console.log({ childrenContexts })
 
         currentKeys = newKeys
 

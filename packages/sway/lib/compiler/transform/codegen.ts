@@ -33,9 +33,9 @@ export function generate(statement: SwayStatement, indentation: number, logging 
         case "component-function": {
             const { body, name } = statement;
             add(`export default function ${name}($$context) {`)
-            add(`$.push()`, 2)
+            // add(`$.push()`, 2)
             add(generateMany(body, indentation + 2, logging));
-            add(`$.pop()`, 2)
+            // add(`$.pop()`, 2)
             add(`}`)
             break;
         }

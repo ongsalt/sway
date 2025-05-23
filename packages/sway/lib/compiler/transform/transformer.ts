@@ -1,36 +1,38 @@
-import * as acorn from "acorn"
-import { Node } from "estree"
-import { walk } from "estree-walker"
-import { analyze } from "periscopic"
-import { ControlFlowNode, Element, TemplateASTNode } from "../parse/ast"
-import { generate } from "./codegen"
-import { stringify } from "./html"
-import { AccessorDefinitionStatement, BindingStatement, ComponentDeclarationStatement, CreateRootStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement } from "./statements"
+import * as acorn from "acorn";
+import { Node } from "estree";
+import { walk } from "estree-walker";
+import { analyze } from "periscopic";
+import { ControlFlowNode, Element, TemplateASTNode } from "../parse/ast";
+import { generate } from "./codegen";
+import { stringify } from "./html";
+import { AccessorDefinitionStatement, BindingStatement, ComponentDeclarationStatement, CreateRootStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement } from "./statements";
 
 export type TransformOptions = {
     name: string,
-    ecmaVersion: string
-}
+    ecmaVersion: string,
+    logging: boolean;
+};
 
-type NodePath = string
+type NodePath = string;
 
 export class Transformer {
-    private options: TransformOptions
+    private options: TransformOptions;
 
-    private identifiers!: Set<string>
+    private identifiers!: Set<string>;
     // will be prune if not use
-    private accessors: Map<TemplateASTNode, (AccessorDefinitionStatement | CreateRootStatement)> = new Map()
+    private accessors: Map<TemplateASTNode, (AccessorDefinitionStatement | CreateRootStatement)> = new Map();
 
     constructor(private roots: TemplateASTNode[], options: Partial<TransformOptions> = {}) {
         this.options = {
             name: options.name ?? "Component", // TODO: transform this-kind-of-name to ThisKind
-            ecmaVersion: options.ecmaVersion ?? "2022"
-        }
+            ecmaVersion: options.ecmaVersion ?? "2022",
+            logging: options.logging ?? false
+        };
     }
 
     private transform() {
-        const { importStatements, script } = this.transformScript()
-        const { roots, generated } = this.transformTemplate(script)
+        const { importStatements, script } = this.transformScript();
+        const { roots, generated } = this.transformTemplate(script);
 
         const componentDeclaration: ComponentDeclarationStatement = {
             type: "component-declaration",
@@ -50,9 +52,9 @@ export class Transformer {
                 ]
             },
             after: []
-        }
+        };
 
-        return componentDeclaration
+        return componentDeclaration;
     }
 
     private transformBinding() {
@@ -60,19 +62,19 @@ export class Transformer {
     }
 
     private transformTemplate(userScript: string) {
-        const roots: TemplateRootStatement[] = []
+        const roots: TemplateRootStatement[] = [];
 
         // fuck `this`
         const walk = (node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): SwayStatement[] => {
-            const out: SwayStatement[] = []
+            const out: SwayStatement[] = [];
             if (node.type === "text") {
-                const isInterpolated = node.texts.some(it => it.type === "interpolation")
+                const isInterpolated = node.texts.some(it => it.type === "interpolation");
 
                 // we need to compile node.texts then add an templateEffect
                 if (isInterpolated) {
                     // 1. create accessor
-                    const accessors = this.createAccessor(node, parents)
-                    out.push(...accessors)
+                    const accessors = this.createAccessor(node, parents);
+                    out.push(...accessors);
                     // 2. create templateEffect
                     out.push({
                         type: "template-effect",
@@ -83,17 +85,17 @@ export class Transformer {
                                 texts: node.texts
                             }
                         ]
-                    })
+                    });
                 }
             }
 
             if (node.type === "control-flow") {
                 if (node.kind === "if") {
-                    const anchorAccessors = this.createAccessor(node, parents)
-                    const anchor = anchorAccessors.at(-1)!.name
-                    out.push(...anchorAccessors)
+                    const anchorAccessors = this.createAccessor(node, parents);
+                    const anchor = anchorAccessors.at(-1)!.name;
+                    out.push(...anchorAccessors);
 
-                    const { name, statement } = this.createTemplateRoot(node)
+                    const { name, statement } = this.createTemplateRoot(node);
                     roots.push(statement);
                     const { accessor, name: fragment } = this.createRootFragment(node, name);
 
@@ -107,32 +109,32 @@ export class Transformer {
                             ...node.children.map(it => walk(it, [node])).flat()
                         ],
                         blockName: this.createIdentifier("then"),
-                    }
+                    };
 
                     if (node.else) {
                         const _else = node.else;
-                        const { name, statement } = this.createTemplateRoot(_else)
+                        const { name, statement } = this.createTemplateRoot(_else);
                         const { accessor, name: fragment } = this.createRootFragment(_else, name);
                         roots.push(statement);
 
-                        const statements = _else.children.map(it => walk(it, [_else, node])).flat()
+                        const statements = _else.children.map(it => walk(it, [_else, node])).flat();
 
                         ifScope.else = {
                             blockName: this.createIdentifier("alternative"),
                             fragment,
                             body: [accessor, ...statements]
-                        }
+                        };
                     }
 
-                    out.push(ifScope)
+                    out.push(ifScope);
                 } else if (node.kind === "else") {
-                    throw new Error("this is not possible unless the parser got high or something")
+                    throw new Error("this is not possible unless the parser got high or something");
                 } else { // TODO: each
-                    const anchorAccessors = this.createAccessor(node, parents)
-                    const anchor = anchorAccessors.at(-1)!.name
-                    out.push(...anchorAccessors)
+                    const anchorAccessors = this.createAccessor(node, parents);
+                    const anchor = anchorAccessors.at(-1)!.name;
+                    out.push(...anchorAccessors);
 
-                    const { name, statement } = this.createTemplateRoot(node)
+                    const { name, statement } = this.createTemplateRoot(node);
                     roots.push(statement);
                     const { accessor, name: fragment } = this.createRootFragment(node, name);
 
@@ -149,36 +151,36 @@ export class Transformer {
                             accessor,
                             ...node.children.map(it => walk(it, [node])).flat()
                         ],
-                    }
+                    };
 
-                    out.push(eachScope)
+                    out.push(eachScope);
                 }
             } else if (node.type === "element") {
-                let _accessors: AccessorDefinitionStatement[] | null = null
-                let _accessor: AccessorDefinitionStatement | null = null
+                let _accessors: AccessorDefinitionStatement[] | null = null;
+                let _accessor: AccessorDefinitionStatement | null = null;
                 const getOrCreateAccessor = () => {
                     if (!_accessor) {
-                        _accessors = this.createAccessor(node, parents)
-                        _accessor = _accessors.at(-1)!
-                        out.push(..._accessors)
+                        _accessors = this.createAccessor(node, parents);
+                        _accessor = _accessors.at(-1)!;
+                        out.push(..._accessors);
                     }
                     return {
                         accessor: _accessor,
                         accessors: _accessors
-                    }
-                }
+                    };
+                };
 
                 // if we have attribute binding
                 for (const attribute of node.attributes) {
                     if (attribute.whole) {
-                        const { accessor } = getOrCreateAccessor()
+                        const { accessor } = getOrCreateAccessor();
                         if (attribute.isBinding) {
-                            const segmentedTarget = attribute.expression.split('.')
-                            const targetName = segmentedTarget.slice(0, -1).join('.')
-                            const targetKey = segmentedTarget.at(-1)
+                            const segmentedTarget = attribute.expression.split('.');
+                            const targetName = segmentedTarget.slice(0, -1).join('.');
+                            const targetKey = segmentedTarget.at(-1);
                             if (!targetKey) {
                                 // TODO: better error message
-                                throw new Error("invalid binding")
+                                throw new Error("invalid binding");
                             }
                             const statement: BindingStatement = {
                                 type: "binding",
@@ -189,14 +191,14 @@ export class Transformer {
                                     obj: targetName,
                                     key: targetKey,
                                 }, // todo check if this is a variable
-                            }
-                            out.push(statement)
+                            };
+                            out.push(statement);
                         } else {
 
                             // determine if this is a listener or not
                             // i will just check for on prefix
                             // TODO: handle node.type "component"(?) differently
-                            const isListener = attribute.key.startsWith('on')
+                            const isListener = attribute.key.startsWith('on');
                             if (isListener) {
                                 const statement: EventListenerAttachingStatement = {
                                     type: "event-listener",
@@ -204,8 +206,8 @@ export class Transformer {
                                     event: '"' + attribute.key.slice(2) + '"',
                                     // TODO: validate if this is a function or not
                                     listenerFn: attribute.expression
-                                }
-                                out.push(statement)
+                                };
+                                out.push(statement);
                             } else {
                                 // do the same as below   
                             }
@@ -217,15 +219,15 @@ export class Transformer {
                     }
                 }
 
-                const statements = node.children.map(it => walk(it, [node, ...parents]))
-                out.push(...statements.flat())
+                const statements = node.children.map(it => walk(it, [node, ...parents]));
+                out.push(...statements.flat());
             }
 
-            out.sort((a, b) => priority(a) - priority(b))
+            out.sort((a, b) => priority(a) - priority(b));
             return out;
-        }
+        };
 
-        const componentRoots = this.roots.filter(it => !(it.type === "element" && it.tag === "script"))
+        const componentRoots = this.roots.filter(it => !(it.type === "element" && it.tag === "script"));
 
         const elementRoot: Element = {
             type: "element",
@@ -233,15 +235,15 @@ export class Transformer {
             attributes: [],
             isSelfClosing: false,
             children: componentRoots
-        }
+        };
 
         const rootName = this.createIdentifier("root");
         roots.push({
             type: "template-root",
             name: rootName,
             template: stringify(elementRoot.children)
-        })
-        const { name: rootFragmentName, accessor: rootAccessor } = this.createRootFragment(elementRoot, rootName)
+        });
+        const { name: rootFragmentName, accessor: rootAccessor } = this.createRootFragment(elementRoot, rootName);
 
         let scope: TemplateScopeStatement = {
             type: 'template-scope',
@@ -273,11 +275,11 @@ export class Transformer {
             type: "template-root",
             name,
             template: stringify(node.children)
-        }
+        };
         return {
             name,
             statement
-        }
+        };
         // this.accessors.set(node, root)
     }
 
@@ -287,23 +289,23 @@ export class Transformer {
             type: "create-root",
             name,
             root: rootName
-        }
-        this.accessors.set(rootNode, accessor)
+        };
+        this.accessors.set(rootNode, accessor);
         return {
             name,
             accessor
-        }
+        };
     }
 
     private createIdentifier(name: string) {
-        let _name = name
-        let i = 1
+        let _name = name;
+        let i = 1;
         while (this.identifiers.has(_name)) { // Optimize: cache this
-            _name = `${name}_${i}`
+            _name = `${name}_${i}`;
             i += 1;
         }
-        this.identifiers.add(_name)
-        return _name
+        this.identifiers.add(_name);
+        return _name;
     }
 
     private createAccessor(node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): AccessorDefinitionStatement[] {
@@ -317,11 +319,11 @@ export class Transformer {
 
         // will also create accessor for all intermediate parent
         let parentAccessor = this.accessors.get(immediateParent);
-        let previous: AccessorDefinitionStatement[] = []
+        let previous: AccessorDefinitionStatement[] = [];
         if (!parentAccessor) {
             // console.log(immediateParent, rest)
             previous = this.createAccessor(immediateParent, rest);
-            parentAccessor = previous.at(-1)!
+            parentAccessor = previous.at(-1)!;
         }
 
         // let index = 0;
@@ -340,62 +342,62 @@ export class Transformer {
             // TODO?: count if with else as 2 node
             index: immediateParent.children.findIndex(it => it === node),
             name,
-        }
+        };
         this.accessors.set(node, accessor);
-        return [...previous, accessor]
+        return [...previous, accessor];
     }
 
     private transformScript() {
-        let rawScript = this.parseScript()
+        let rawScript = this.parseScript();
         const program = acorn.parse(rawScript, {
             ecmaVersion: "latest",
             sourceType: "module"
-        })
-        const { globals, map, scope } = analyze(program as Node)
+        });
+        const { globals, map, scope } = analyze(program as Node);
 
-        const { importStatements, script } = this.transformImport(program, rawScript)
+        const { importStatements, script } = this.transformImport(program, rawScript);
         this.identifiers = scope.references;
 
         return {
             importStatements,
             script
-        }
+        };
     }
 
     private transformImport(program: acorn.Program, script: string) {
-        const toRemove: Node[] = []
+        const toRemove: Node[] = [];
         const importStatements: SwayStatement[] = [
             {
                 type: "any",
                 body: "import * as $ from 'sway/runtime';"
             }
-        ]
+        ];
 
         walk(program as Node, {
             enter(node, parent, key, index) {
                 if (node.type === "ImportDeclaration") {
                     // i kinda get why they dont use ts in svelte 5 compiler now
                     // type N = Node & { start: number, end: number }
-                    toRemove.push(node)
+                    toRemove.push(node);
                     importStatements.push({
                         type: "estree",
                         node: node
-                    })
+                    });
                 }
             }
         });
 
         // bruh 
         // TODO: fix this 
-        toRemove.reverse()
-        for (const { start, end } of toRemove as (Node & { start: number, end: number })[]) {
-            script = script.substring(0, start) + script.substring(end)
+        toRemove.reverse();
+        for (const { start, end } of toRemove as (Node & { start: number, end: number; })[]) {
+            script = script.substring(0, start) + script.substring(end);
         }
 
         return {
             script,
             importStatements,
-        }
+        };
     }
 
     // private parseIdentifiers() {
@@ -403,7 +405,7 @@ export class Transformer {
     // }
 
     private parseScript(): string {
-        const script = this.roots.find(it => it.type === "element" && it.tag === "script") as Element | undefined
+        const script = this.roots.find(it => it.type === "element" && it.tag === "script") as Element | undefined;
         if (!script || script.children.length !== 1 || script.children[0].type !== "text") {
             return "";
         }
@@ -411,10 +413,10 @@ export class Transformer {
     }
 
     build() {
-        const root = this.transform()
+        const root = this.transform();
         // output += this.topLevelStatements
         // console.log(root)
-        const output = generate(root, 0, true)
+        const output = generate(root, 0, true);
         // console.log(this.accessors)
         // console.log(output)
         return {
