@@ -48,6 +48,14 @@ export class Signal<T> {
         this._value = initial;
     }
 
+    get value(): T {
+        return this.get();
+    }
+
+    set value(newValue: T) {
+        this.set(newValue);
+    }
+
     get(): T {
         if (activeComputed) {
             activeComputed.dependencies.push(this);
@@ -132,6 +140,10 @@ export class Computed<T> {
         }
 
         return this._value;
+    }
+
+    get value(): T {
+        return this.get();
     }
 }
 
