@@ -9,6 +9,9 @@ export class ReactiveScope {
     effects: Effect[] = [];
 
     dispose() {
+        // console.log(`[ReactiveScope] Disposing ${this.effects.length} effects`)
+
+        // TODO: we should not need to dispose computed
         // or should i make a computed have reference to depended signals
         for (const computed of this.computeds) {
             computed.dispose();

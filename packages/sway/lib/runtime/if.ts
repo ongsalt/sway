@@ -22,15 +22,15 @@ function _if(anchor: Node, ifEffect: IfEffect) {
                 sweep(anchor, endAnchor);
             }
             // templateEffect below should not track init's dependencies 
-            init!(anchor);
+            scope.run(() => {
+                init!(anchor);
+            });
         }
         key = newKey;
     };
 
     templateEffect(() => {
-        scope.run(() => {
-            ifEffect(render);
-        });
+        ifEffect(render);
     });
 }
 

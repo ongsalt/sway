@@ -67,6 +67,7 @@ export function mount(component: Component, root: HTMLElement) {
 
 // TODO: Listener should be inside an effect
 export function listen<E extends Element>(element: E, type: keyof HTMLElementEventMap, listener: EventListenerOrEventListenerObject) {
+    // console.log("ajhufysik")
     element.addEventListener(type, listener);
     if (!element.$$cleanups) {
         element.$$cleanups = [];
