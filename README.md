@@ -43,5 +43,5 @@ svelte-like frontend framework recreation (hopefully)
     - it export signal primitives
     - there are also `sway/compiler` and `sway/runtime`
 - [packages/vite-plugin-sway](packages/vite-plugin-sway) vite plugin for .sway template 
-- [playground/development](playground/development) a vite project to experiment with the framework. If you want to try sway you should play around with package. 
-- [playground/server](playground/server) nothing yet
+- [playgrounds/development](playgrounds/development) a vite project to experiment with the framework. If you want to try sway you should play around with package. 
+- [playgrounds/server](playgrounds/server) nothing yet
