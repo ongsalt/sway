@@ -12,6 +12,7 @@ svelte 5 clone (hopefully)
     - `signal` behave the same as svelte `$state` except you need to use `.value`. (i should say "more like vue" tho)
     - there is also `effect` and `computed`
 - event listener 
+    - but if you do `onclick={createFn(a)}` this wont rerun after `a` is changed. this is to be fixed later
 - `each` syntax shuold be ok now. see [each.ts](packages/sway/lib/runtime/each.ts) for more technical note. 
 - value binding for `input` and `textarea`
     - auto coerce type to number for `<input type="number">`
