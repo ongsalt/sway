@@ -1,4 +1,3 @@
-import { PathMap } from "./utils/map";
 
 let activeScope: ReactiveScope | null = null;
 let activeComputed: Computed<any> | null = null;
@@ -233,143 +232,15 @@ export function untrack<T>(fn: () => T) {
 
 type Path = (string | symbol)[];
 
-//     private scope?: RuntimeScope;
-//     private parent?: ReactiveObject<any>;
-//     private value: T;
-//     private subscribers = new PathMap<EffectImpl>();
-//     private skip = new Set<EffectImpl>();
-//     private path: Path;
-//     private debug?: string;
-
-//     constructor(initial: T, parent?: ReactiveObject<any>, path?: Path, debug?: string) {
-//         this.scope = swayContext.currentScope;
-//         this.path = path ?? [];
-//         this.parent = parent;
-//         if (this.scope && !parent) {
-//             this.scope.states.add(this);
-//         }
-//         this.value = initial;
-//         this.debug = debug;
-//     }
-
-//     addSubscriber(subscriber: EffectImpl, path: Path = []) {
-//         if (this.parent) {
-//             this.parent.addSubscriber(subscriber, this.path);
-//             return;
-//         }
-
-//         this.subscribers.add(path, subscriber);
-//     }
-
-//     removeSubscriber(subscriber: EffectImpl) {
-//         if (this.parent) {
-//             this.parent.removeSubscriber(subscriber);
-//             return;
-//         }
-
-//         this.subscribers.delete(subscriber);
-//         this.skip.add(subscriber);
-//         if (this.debug) {
-//             console.log(`[${this.debug}] Removed per request`, subscriber);
-//         }
-//     }
-
-//     dispose() {
-//         if (this.parent) {
-//             return;
-//         }
-//         if (this.debug) {
-//             console.log(`[${this.debug}] Signal Disposed`);
-//         }
-//         for (const subscriber of this.subscribers) {
-//             subscriber.dispose();
-//         }
-//         this.subscribers.clear();
-
-//         if (this.scope) {
-//             this.scope.states.delete(this);
-//         }
-//     }
-
-//     // todo: refactor the recursive part
-//     get(): T {
-//         const deez = this;
-//         return new Proxy(deez.value, {
-//             get(target, p, receiver) {
-//                 if (currentEffect) {
-//                     // TODO: cache this or else Set would not work
-//                     currentEffect.track(deez);
-//                 }
-
-//                 const prop = Reflect.get(target, p, receiver);
-//                 // wtf: Method Date.prototype.toString called on incompatible receiver [object Date]
-//                 if (typeof prop === "object" && prop !== null && !(prop instanceof Date)) {
-
-//                     const proxied = new ReactiveObject(prop, deez?.parent ?? deez, [...deez.path, p], deez.debug).get();
-//                     // console.log(proxied)
-//                     return proxied;
-//                 }
-
-//                 return prop;
-//             },
-
-//             set(target, p, newValue, receiver) {
-//                 const ok = Reflect.set(target, p, newValue, receiver);
-//                 if (!ok) {
-//                     return false;
-//                 }
-
-//                 console.log(`Updated to ${JSON.stringify(newValue)}`);
-
-//                 // do i need to tag it
-//                 const subscribers = deez.parent?.subscribers ?? deez.subscribers;
-//                 const skip = deez.parent?.skip ?? deez.skip;
-//                 // delete all sub effect
-//                 for (const subscriber of subscribers.getAll(deez.path)) {
-//                     if (!skip.has(subscriber)) {
-//                         subscriber.run();
-//                     }
-//                 }
-//                 skip.clear();
-//                 return true;
-//             },
-//         });
-//     }
-
-//     // untested
-//     set(newValue: T) {
-//         if (this.value === newValue) return; // ???
-//         this.value = newValue;
-
-//         if (this.debug) {
-//             console.log(`Updated to ${JSON.stringify(newValue)}`);
-//             console.log(this.subscribers);
-//         }
-
-//         for (const subscriber of this.subscribers) {
-//             if (!this.skip.has(subscriber)) {
-//                 subscriber.run();
-//             }
-//         }
-//         this.skip.clear();
-//     }
-// }
-
-// // todo: remove skip 
-// export function reactive<T extends object>(target: T): T {
-//     const impl = new ReactiveObject(target);
-//     return impl.get();
-// }
-
-
 // TODO: parse key `nested.like.this`
-export function proxy<T extends Object, K extends keyof T>(obj: T, key: K): SwayProxy<T[K]> {
+export function proxy<T extends Object, K extends keyof T>(obj: Signal<T>, key: K): SwayProxy<T[K]> {
     return {
         get value() {
-            return obj[key];
+            return obj.value[key];
         },
         set value(v) {
-            obj[key] = v;
+            obj.value[key] = v;
+            obj.trigger()
         }
     };
 }
