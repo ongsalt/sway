@@ -176,11 +176,17 @@ export class Transformer {
                         const { accessor } = getOrCreateAccessor();
                         if (attribute.isBinding) {
                             const segmentedTarget = attribute.expression.split('.');
-                            const targetName = segmentedTarget.slice(0, -1).join('.');
-                            const targetKey = segmentedTarget.at(-1);
+                            let targetName = segmentedTarget.slice(0, -1).join('.');
+                            let targetKey = segmentedTarget.at(-1);
+
                             if (!targetKey) {
                                 // TODO: better error message
                                 throw new Error("invalid binding");
+                            }
+                            // 
+                            if (targetName === "") {
+                                targetName = targetKey;
+                                targetKey = undefined;
                             }
                             const statement: BindingStatement = {
                                 type: "binding",

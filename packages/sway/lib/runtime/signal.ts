@@ -39,9 +39,10 @@ export class ReactiveScope {
     }
 }
 
-// TODO: Make this deeply reative, maybe by a flag? 
+// so svelte use (vue-like) reactive by default
+// except when its primitive which will fallback to (vue-lie)shallowRef
 type ReactiveValue<T> = Signal<T> | Computed<T>;
-export class Signal<T> {
+export class Signal<T> implements State<T> {
     private _value: T;
     private computeds = new Set<Computed<any>>;
     private effects = new Set<Effect>();
@@ -58,7 +59,7 @@ export class Signal<T> {
         this.set(newValue);
     }
 
-    get(): T {
+    getRaw(): T {
         if (activeComputed) {
             activeComputed.dependencies.push(this);
             this.computeds.add(activeComputed);
@@ -68,6 +69,19 @@ export class Signal<T> {
             this.effects.add(activeEffect);
         }
         return this._value;
+    }
+
+    // TODO: move this to a proxy function, and only implement the getRaw method
+    //       and make a class not reactive?
+    //       oh, ok: https://svelte.dev/docs/svelte/$state#Deep-state
+    //       State is proxified recursively until Svelte finds something other than an array or simple object (like a class) 
+    get(): T {
+        // TODO: cache this
+        const value = this.getRaw();
+        if (typeof value === "object" && value !== null) {
+            return makeProxy(value, () => this.trigger());
+        }
+        return value;
     }
 
     set(newValue: T) {
@@ -144,6 +158,8 @@ export class Computed<T> {
         return this._value;
     }
 
+    // TODO: write protection?
+
     get value(): T {
         return this.get();
     }
@@ -185,14 +201,27 @@ export class Effect {
 }
 
 // TODO: refine public APIs 
-export function signal<T>(initial: T): Signal<T> {
+export function signal<T>(initial: T): State<T> {
     return new Signal(initial);
+}
+
+export function shallow<T>(initial: T): State<T> {
+    const signal = new Signal(initial);
+    return {
+        get value() {
+            return signal.getRaw();
+        },
+        set value(newValue) {
+            signal.set(newValue);
+        }
+    };
 }
 
 export function computed<T>(computation: () => T): Computed<T> {
     return new Computed(computation);
 }
 
+// wtf
 export function watch<T>(dependencies: ReactiveValue<any>[], computation: () => T): Computed<T> {
     return new Computed(() => {
         // track those that were specified
@@ -208,7 +237,6 @@ export function effect(fn: EffectFn, priority = 1) {
     effect.run();
     return effect;
 }
-
 
 export function templateEffect(fn: EffectFn) {
     return effect(fn, 0);
@@ -232,19 +260,72 @@ export function untrack<T>(fn: () => T) {
 
 type Path = (string | symbol)[];
 
-// TODO: parse key `nested.like.this`
-export function proxy<T extends Object, K extends keyof T>(obj: Signal<T>, key: K): SwayProxy<T[K]> {
+// TODO: parse key `nested.like.this`, we shuold do something with the compiler
+// the compiler know if some identifier is a state or not
+// if not -> it should generate this `select` call 
+export function select<T extends object, K extends keyof T>(obj: Signal<T>, key: K): State<T[K]> {
     return {
         get value() {
             return obj.value[key];
         },
         set value(v) {
             obj.value[key] = v;
-            obj.trigger()
+            obj.trigger();
         }
     };
 }
 
-export type SwayProxy<T> = {
+// TODO: what if the object got detached, this probably cause unnecessary signal triggering
+// TODO: make [Symbol(UNWRAPPED_STATE)]
+function makeProxy<T extends object>(obj: T, trigger: () => unknown): T {
+    return new Proxy(obj, {
+        get(target, prop, receiver) {
+            const value = Reflect.get(target, prop, receiver);
+            // console.log({ target, prop, receiver, value });
+
+            if (typeof value === "object" && value !== null) { // fuck js
+                // fuck class, we gonna ignore that
+                if (Object.getPrototypeOf(value) !== Object.prototype) {
+                    return value;
+                }
+                return makeProxy(value, trigger);
+            }
+            // console.log("not wrap");
+            return value;
+        },
+        set(target, p, newValue) {
+            const success = Reflect.set(target, p, newValue);
+            if (success) {
+                trigger();
+            }
+            return success;
+        },
+    });
+}
+
+export interface State<T> {
     value: T;
 };
+
+export function isState(value: any): value is State<any> {
+    return value instanceof Signal || value instanceof Computed;
+}
+
+
+
+// let previous: T | undefined = undefined;
+// let cachedProxy: T | undefined = undefined;
+// return {
+//     get value() {
+//         // shuold this be untrack? nah
+//         if (previous === signal.value) {
+//             return cachedProxy!;
+//         }
+//         previous = signal.value;
+//         cachedProxy = makeProxy(signal.value, () => signal.trigger());
+//         return cachedProxy;
+//     },
+//     set value(v) {
+//         signal.value = v;
+//     }
+// };

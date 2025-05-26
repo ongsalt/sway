@@ -4,7 +4,7 @@ import * as escodegen from "escodegen";
 
 
 export function generateMany(statements: SwayStatement[], indentation: number, logging = false) {
-    return statements.map(it => generate(it, indentation, logging)).join('')
+    return statements.map(it => generate(it, indentation, logging)).join('');
 }
 
 export function generate(statement: SwayStatement, indentation: number, logging = false): string {
@@ -15,7 +15,7 @@ export function generate(statement: SwayStatement, indentation: number, logging 
 
     function log(statement: SwayStatement, message = "") {
         if (logging) {
-            add(`/* ${statement.type}: ${message} */`)
+            add(`/* ${statement.type}: ${message} */`);
         }
     }
 
@@ -32,19 +32,19 @@ export function generate(statement: SwayStatement, indentation: number, logging 
 
         case "component-function": {
             const { body, name } = statement;
-            add(`export default function ${name}($$context) {`)
+            add(`export default function ${name}($$context) {`);
             // add(`$.push()`, 2)
             add(generateMany(body, indentation + 2, logging));
             // add(`$.pop()`, 2)
-            add(`}`)
+            add(`}`);
             break;
         }
 
         case "accessor-definition": {
             const { mode, name, parent, index } = statement;
             // well well well...
-            const fn = mode === "children" ? "children" : "sibling"
-            add(`const ${name} = $.${fn}(${parent}, ${index});`)
+            const fn = mode === "children" ? "children" : "sibling";
+            add(`const ${name} = $.${fn}(${parent}, ${index});`);
             break;
         }
 
@@ -54,137 +54,143 @@ export function generate(statement: SwayStatement, indentation: number, logging 
                 format: {
 
                 }
-            }) + '\n\n'
-            break
+            }) + '\n\n';
+            break;
         }
 
         case "user-script":
         case "any": {
             add(statement.body);
             add('\n');
-            break
+            break;
         }
 
         case "template-scope": {
             const { body } = statement;
-            return generateMany(body, indentation, logging)
+            return generateMany(body, indentation, logging);
         }
 
         case "template-effect": {
-            const { body } = statement
-            add('$.templateEffect(() => {')
-            add(generateMany(body, indentation + 2, logging))
-            add('});')
-            break
+            const { body } = statement;
+            add('$.templateEffect(() => {');
+            add(generateMany(body, indentation + 2, logging));
+            add('});');
+            break;
         }
 
         case "text-setting": {
-            const { accessor, texts } = statement
-            const code = generateTextInterpolation(texts)
-            add(`$.setText(${accessor}, ${code})`)
-            break
+            const { accessor, texts } = statement;
+            const code = generateTextInterpolation(texts);
+            add(`$.setText(${accessor}, ${code})`);
+            break;
         }
 
         case "if": {
             const { condition, anchor, body, blockName, fragment, else: _else } = statement;
-            add('')
-            add('{')
+            add('');
+            add('{');
 
-            add(`const ${blockName} = ($$anchor) => {`, 2)
-            add(generateMany(body, indentation + 4, logging))
-            add(`$.append($$anchor, ${fragment});`, 4)
-            add(`};`, 2)
+            add(`const ${blockName} = ($$anchor) => {`, 2);
+            add(generateMany(body, indentation + 4, logging));
+            add(`$.append($$anchor, ${fragment});`, 4);
+            add(`};`, 2);
 
             if (_else) {
                 const { blockName, body, fragment } = _else;
-                add(`const ${blockName} = ($$anchor) => {`, 2)
-                add(generateMany(body, indentation + 4, logging))
-                add(`$.append($$anchor, ${fragment});`, 4)
-                add(`};`, 2)
+                add(`const ${blockName} = ($$anchor) => {`, 2);
+                add(generateMany(body, indentation + 4, logging));
+                add(`$.append($$anchor, ${fragment});`, 4);
+                add(`};`, 2);
             }
 
-            add('')
-            add(`$.if(${anchor}, ($$render) => {`, 2)
-            add(`if (${condition}) $$render(${blockName})`, 4)
+            add('');
+            add(`$.if(${anchor}, ($$render) => {`, 2);
+            add(`if (${condition}) $$render(${blockName})`, 4);
             if (_else) {
-                add(` else $$render(${_else.blockName}, false);`)
+                add(` else $$render(${_else.blockName}, false);`);
             }
-            add(`});`, 2)
+            add(`});`, 2);
 
-            add('}')
-            break
+            add('}');
+            break;
         }
 
         case "template-root": {
-            const { name, template } = statement
-            add(`const ${name} = $.template(\`${template}\`);`)
-            break
+            const { name, template } = statement;
+            add(`const ${name} = $.template(\`${template}\`);`);
+            break;
         }
 
         case "create-root": {
-            const { name, root } = statement
-            add(`const ${name} = ${root}();`)
-            break
+            const { name, root } = statement;
+            add(`const ${name} = ${root}();`);
+            break;
         }
 
         case "append": {
-            const { anchor, node } = statement
-            add(`$.append(${anchor}, ${node});`)
-            break
+            const { anchor, node } = statement;
+            add(`$.append(${anchor}, ${node});`);
+            break;
         }
 
         case "event-listener": {
-            const { event, listenerFn, node } = statement
+            const { event, listenerFn, node } = statement;
             // shuold we move this under an effect?
             // or remove component context and add fragmentContext??
-            add(`$.listen(${node}, ${event}, ${listenerFn});`)
-            break
+            add(`$.listen(${node}, ${event}, ${listenerFn});`);
+            break;
         }
 
         case "each": {
-            const { body, anchor, iteratable, as, key, index, fragment } = statement
-            let asAndIndex = ''
+            const { body, anchor, iteratable, as, key, index, fragment } = statement;
+            let asAndIndex = '';
             if (as) {
                 asAndIndex += as;
                 if (index) {
-                    asAndIndex += `, ${index}`
+                    asAndIndex += `, ${index}`;
                 }
             }
 
-            add(`$.each(${anchor}, () => ${iteratable}, ($$anchor, ${asAndIndex}) => {`)
-            add(generateMany(body, indentation + 2, logging))
-            add(`$.append($$anchor, ${fragment});`, 2)
+            add(`$.each(${anchor}, () => ${iteratable}, ($$anchor, ${asAndIndex}) => {`);
+            add(generateMany(body, indentation + 2, logging));
+            add(`$.append($$anchor, ${fragment});`, 2);
             if (key) {
-                add(`}, (${asAndIndex}) => ${key});`)
+                add(`}, (${asAndIndex}) => ${key});`);
             } else {
-                add(`});`)
+                add(`});`);
             }
-            break
+            break;
         }
 
         case "attribute-updating": {
-            const { isFunction, key, target, type } = statement
+            const { isFunction, key, target, type } = statement;
             // throw new Error("Unimplemented (codegen)")
-            break
+            break;
         }
 
         case "binding": {
             const { key, node, target } = statement;
-            add(`$.bind(${node}, \`${key}\`, ${generate(target, indentation, logging)})`)
-            break
+            add(`$.bind(${node}, \`${key}\`, ${generate(target, indentation, logging)})`);
+            break;
         }
 
         case "proxy": {
             const { obj, key } = statement;
-            // we could inline this actually
-            out += `$.proxy(${obj}, \`${key}\`)`;
-            break
+            if (!key) {
+                // TODO: check if the object is a state or not
+                out += obj;
+            } else {
+                // we could inline this actually
+                // TODO: bruh, naming
+                out += `$.select(${obj}, \`${key}\`)`;
+            }
+            break;
         }
 
         default: {
             // return new Error("smdjfnuik")
-            throw new Error("Unimplemented (codegen)")
-            add(`/* ${statement.type} is not implement yet. */`)
+            throw new Error("Unimplemented (codegen)");
+            add(`/* ${statement.type} is not implement yet. */`);
         }
     }
 
@@ -192,17 +198,17 @@ export function generate(statement: SwayStatement, indentation: number, logging 
 }
 
 export function generateTextInterpolation(texts: TextOrInterpolation[]): string {
-    let code = '`'
+    let code = '`';
     // console.log(texts)
     for (const { body, type } of texts) {
         if (type === "static") {
-            code += body
+            code += body;
         } else {
-            code += '${'
-            code += body
-            code += '}'
+            code += '${';
+            code += body;
+            code += '}';
         }
     }
-    code += '`'
-    return code
+    code += '`';
+    return code;
 }
