@@ -50,9 +50,9 @@ export function each<Item>(
     }
 
     function yeet(index: number) {
-        childrenContexts[index].scope.dispose();
         sweep(childrenContexts[index].anchor, childrenContexts[index + 1]?.anchor ?? endAnchor);
         remove(childrenContexts[index].anchor);
+        childrenContexts[index].scope.dispose();
         childrenContexts.splice(index, 1);
     }
 

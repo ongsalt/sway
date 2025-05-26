@@ -190,9 +190,10 @@ export class Effect {
 
     run() {
         this.dispose();
+        // we should cache this 
         const previous = activeEffect;
         if (previous) {
-            console.warn("Nested effect detected. Please use reactiveScope");
+            console.warn(`Nested effect detected. Please use reactiveScope`, this);
         }
         activeEffect = this;
         this.cleanup = this.effect() ?? undefined;
@@ -263,14 +264,32 @@ type Path = (string | symbol)[];
 // TODO: parse key `nested.like.this`, we shuold do something with the compiler
 // the compiler know if some identifier is a state or not
 // if not -> it should generate this `select` call 
-export function select<T extends object, K extends keyof T>(obj: Signal<T>, key: K): State<T[K]> {
+export function select<T extends object, K extends keyof T>(obj: State<T> | T, key: K): State<T[K]> {
+    // TODO: shut up ts
+    if (isProxied(obj)) {
+        return {
+            get value() {
+                return obj[key];
+            },
+            set value(v) {
+                obj[key] = v;
+            }
+        };
+    }
+    if (!isState(obj)) {
+        throw new Error("Value is not a proxy or a state");
+    }
     return {
         get value() {
             return obj.value[key];
         },
         set value(v) {
             obj.value[key] = v;
-            obj.trigger();
+            if (obj instanceof Signal) {
+                obj.trigger();
+            } else {
+                console.warn(`Write to a computed detected: ${v}`);
+            }
         }
     };
 }
@@ -280,6 +299,10 @@ export function select<T extends object, K extends keyof T>(obj: Signal<T>, key:
 function makeProxy<T extends object>(obj: T, trigger: () => unknown): T {
     return new Proxy(obj, {
         get(target, prop, receiver) {
+            // TODO: fine grained notifying (per key, recursively)
+            if (prop === PROXIED_SYMBOL) {
+                return true;
+            }
             const value = Reflect.get(target, prop, receiver);
             // console.log({ target, prop, receiver, value });
 
@@ -303,14 +326,18 @@ function makeProxy<T extends object>(obj: T, trigger: () => unknown): T {
     });
 }
 
+const PROXIED_SYMBOL = Symbol("SWAY_PROXIED");
 export interface State<T> {
     value: T;
 };
 
+export function isProxied(value: any) {
+    return !!value[PROXIED_SYMBOL];
+}
+
 export function isState(value: any): value is State<any> {
     return value instanceof Signal || value instanceof Computed;
 }
-
 
 
 // let previous: T | undefined = undefined;

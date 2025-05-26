@@ -50,6 +50,7 @@
 
     function toggleEdit(todo) {
         todo.editing = !todo.editing;
+        // TODO: make this NOT run immediately 
         console.log(todo.editing);
     }
 </script>
