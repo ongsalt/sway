@@ -15,23 +15,28 @@
 
     function remove(todo) {
         return () => {
-
             // proxy make this comparison pain in the ass
             // look like we need to replace `indexOf` and shitton of collection impl
-            
-            const index = todos.value.indexOf(todo)
-            todos.value.splice(index, 1)
+
+            const index = todos.value.indexOf(todo);
+            todos.value.splice(index, 1);
             console.log({
                 todos,
                 index,
-                todo
-            })
+                todo,
+            });
             // console.log(`Removing`, todo);
         };
     }
 
-    const description = signal("");
+    function remove2(index) {
+        return () => {
+            console.log(`removing todo ${index}: ${todos.value[index]}`)
+            todos.value.splice(index, 1)
+        };
+    }
 
+    const description = signal("");
 
     function addTodo() {
         todos.value.push({
@@ -93,7 +98,7 @@
                 {todo.editing ? "Done" : "Edit"}
             </button>
             <button
-                onclick={remove(todo)}
+                onclick={remove2(index)}
                 class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
             >
                 Remove
@@ -110,6 +115,6 @@
         </p>
     </div>
     <p class="p-4">
-        {JSON.stringify(todos)}
+        {JSON.stringify(todos.value)}
     </p>
 </div>
