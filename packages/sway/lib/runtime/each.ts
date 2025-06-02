@@ -3,10 +3,40 @@ import { effectScope, EffectScope, signal, Signal, templateEffect } from "./reac
 import { getTransformation } from "./utils/array";
 import { identity } from "./utils/functions";
 
+/*
+basically this
+- svelte prevent us from doing `each ... as { name , id }` and use input binding on `name`
+  which is very reasonable BUT they did allow it pre rune mode.
+
+<script>
+    let cats = $state([
+        { id: 'J---aiyznGQ', name: 'Keyboard Cat' },
+        { id: 'z_AbfPXTKms', name: 'Maru' },
+        { id: 'OUtn3pvWmpg', name: 'Henri The Existential Cat' },
+        { id: 'asd', name: 'Doraemon' },
+        { id: 'heil', name: 'Kitler' },
+    ]);
+
+    let lenght = $state(7)
+</script>
+
+<h1>cats</h1>
+<input bind:value={lenght}/>
+<ul>
+    {#each cats.filter(it => it.id.length < lenght) as cat, i}
+        <li>
+            <input bind:value={cat.name}/>
+        </li>
+    {/each}
+</ul>
+
+*/
+
 // any thing that can be compared
 type Key = any;
 type KeyFn<T> = (value: T) => Key;
 
+// look kinda pain in the ass to do this
 export function each<Item>(
     anchor: Node,
     collection: () => Item[],

@@ -19,11 +19,13 @@ wow doing signal is fun
 - value binding for `input` and `textarea`
     - auto coerce type to number for `<input type="number">`
     - the same go for checkbox
-- deeply reactive object
 - Dynamic attribute `class="border {someExpression}"` or `placeholder={anotherExpression}`
 
 ## What's not yet
+- a reactive proxy like vue `reactive`
+- make binding update value using getter and setter instead of a `Signal` 
 - you cant do binding under each block yet (WIP)
+- wrap event handlers inside an effect
 - value binding for `select`
 - ~~do transpiling magic that allow you to use signal without `.value` like runes~~
 - Component
