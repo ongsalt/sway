@@ -1,25 +1,25 @@
 // TODO: implement this in lexer and parser
 
 import { listen } from "./dom";
-import { State, templateEffect } from "./signal";
+import { Signal, templateEffect } from "./reactivity";
 
-export function bind(node: Node, attribute: string, target: State<any>) {
+export function bind(node: Node, attribute: string, target: Signal<any>) {
     if (!(node instanceof Element)) {
         throw new Error(`${node} is not an Element.`)
     }
     const isInput = node instanceof HTMLInputElement;
     const isTextArea = node instanceof HTMLTextAreaElement;
     if ((isInput || isTextArea) && attribute === "value") {
-        bindTextInputValue(node as TextInputElement, target)
-    } else if (isInput && attribute === "checked" && node?.type !== "checkbox") {
-        bindBooleanInputValue(node, target);
+        bindTextInput(node as TextInputElement, target)
+    } else if (isInput && attribute === "checked" && node?.type === "checkbox") {
+        bindCheckbox(node, target);
     } else {
         throw new Error(`${node} is not bindable.`)
     }
 }
 
 type TextInputElement = HTMLInputElement | HTMLTextAreaElement
-function bindTextInputValue(element: TextInputElement, target: State<any>) {
+function bindTextInput(element: TextInputElement, target: Signal<any>) {
     // type inference is kinda shit
     listen(element, "input", (event) => {
         const { value } = element;
@@ -35,7 +35,7 @@ function bindTextInputValue(element: TextInputElement, target: State<any>) {
     })
 }
 
-function bindBooleanInputValue(element: HTMLInputElement, target: State<boolean>) { // only type="checkbox"
+function bindCheckbox(element: HTMLInputElement, target: Signal<boolean>) { // only type="checkbox"
     if (element.type !== "checkbox") {
         throw new Error(`${element} is not a checkbox.`)
     }

@@ -1,4 +1,3 @@
-// import { CleanupFn } from "./signal";
 import { Component } from "../types";
 
 type CleanupFn = () => unknown;

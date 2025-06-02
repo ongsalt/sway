@@ -1,5 +1,5 @@
 import { append, comment, sweep } from "./dom";
-import { templateEffect, reactiveScope, watch } from "./signal";
+import { templateEffect, effectScope } from "./reactivity";
 
 // TODO: transformer: avoid this type of name collision
 
@@ -13,12 +13,12 @@ function _if(anchor: Node, ifEffect: IfEffect) {
     append(anchor, endAnchor);
 
     let key: boolean | undefined;
-    const scope = reactiveScope();
+    const scope = effectScope();
 
     const render: RenderDelegationFn = (init, newKey = true) => {
         if (key !== newKey) {
             if (key !== undefined) {
-                scope.dispose();
+                scope.destroy();
                 sweep(anchor, endAnchor);
             }
             // templateEffect below should not track init's dependencies 

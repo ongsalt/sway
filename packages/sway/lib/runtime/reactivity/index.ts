@@ -1,6 +1,17 @@
 import { createComputed, createEffect, createEffectScope, createSignal, destroy, get, set, withScope } from "./internal";
 
-export function signal<T>(initial: T) {
+// not the same as in internal.ts
+export interface Readable<T = any> {
+    readonly value: T;
+}
+
+export type Computed<T = any> = Readable<T>;
+
+export interface Signal<T = any> extends Readable<T> {
+    value: T;
+}
+
+export function signal<T>(initial: T): Signal<T> {
     const s = createSignal(initial);
     return {
         get value(): T {
@@ -12,7 +23,7 @@ export function signal<T>(initial: T) {
     };
 }
 
-export function computed<T>(fn: () => T) {
+export function computed<T>(fn: () => T): Computed<T> {
     const c = createComputed(fn);
     return {
         get value(): T {
@@ -22,13 +33,22 @@ export function computed<T>(fn: () => T) {
 }
 
 // TODO: cleanup
-export function effect(fn: () => unknown) {
-    const e = createEffect(fn);
+export function effect(fn: () => unknown, priority = 3) {
+    const e = createEffect(fn, priority);
 
     return () => destroy(e);
 }
 
-export function effectScope(root = false) {
+export function templateEffect(fn: () => unknown) {
+    return effect(fn, 2);
+}
+
+export interface EffectScope {
+    run: <T>(fn: () => T) => T;
+    destroy: () => void;
+}
+
+export function effectScope(root = false): EffectScope {
     const scope = createEffectScope(root);
 
     return {

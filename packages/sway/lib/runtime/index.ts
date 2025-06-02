@@ -1,4 +1,4 @@
-export * from "./signal"
+export * from "./reactivity"
 
 export { append, children, comment, mount, sibling, listen, setAttribute, setText } from "./dom"
 export { if, type RenderFn } from "./if"

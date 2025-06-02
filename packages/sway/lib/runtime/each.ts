@@ -1,5 +1,5 @@
 import { append, comment, remove, sweep } from "./dom";
-import { isState, reactiveScope, ReactiveScope, signal, State, templateEffect } from "./signal";
+import { effectScope, EffectScope, signal, Signal, templateEffect } from "./reactivity";
 import { getTransformation } from "./utils/array";
 import { identity } from "./utils/functions";
 
@@ -10,7 +10,7 @@ type KeyFn<T> = (value: T) => Key;
 export function each<Item>(
     anchor: Node,
     collection: () => Item[],
-    children: (anchor: Node, value: Item, index: State<number>) => void,
+    children: (anchor: Node, value: Item, index: Signal<number>) => void,
     keyFn: KeyFn<Item> = identity // use object reference as key
 ) {
     const endAnchor = comment();
@@ -19,8 +19,8 @@ export function each<Item>(
     let currentKeys: Key[] = [];
     type ChildrenContext = {
         anchor: Node,
-        index: State<number>,
-        scope: ReactiveScope;
+        index: Signal<number>,
+        scope: EffectScope;
     };
     let childrenContexts: ChildrenContext[] = [];
 
@@ -35,7 +35,7 @@ export function each<Item>(
         const context: ChildrenContext = {
             anchor,
             index: signal(index),
-            scope: reactiveScope()
+            scope: effectScope()
         };
         childrenContexts.splice(index, 0, context);
         return context;
@@ -52,7 +52,7 @@ export function each<Item>(
     function yeet(index: number) {
         sweep(childrenContexts[index].anchor, childrenContexts[index + 1]?.anchor ?? endAnchor);
         remove(childrenContexts[index].anchor);
-        childrenContexts[index].scope.dispose();
+        childrenContexts[index].scope.destroy();
         childrenContexts.splice(index, 1);
     }
 
@@ -72,9 +72,9 @@ export function each<Item>(
 
         // we at least for now, cant determine if items is writable or not
         // so fuck it, everything is writable now
-        // and now that state return a proxy by default now
+        // and now that Signal return a proxy by default now
         // but now object reference comparison is fucked up
-        
+
         // then binding is fucking broken
 
         const newKeys = items.map(keyFn);
