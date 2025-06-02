@@ -14,6 +14,8 @@ this time we gonna
 
 */
 
+import { DedupBucketPQ } from "../utils/queue";
+
 interface Source<T = any> {
     // get(): T;
     value: T;
@@ -58,7 +60,7 @@ type ReactiveNode = Subscriber | Source | ReactiveScope;
 // TODO: scope
 let activeScope: EffectScope | null = null;
 let activeSubscriber: Subscriber | null = null;
-const batch = new Set<Effect>();
+const batch = new DedupBucketPQ<Effect>();
 let batchNumber = 0;
 
 export function createEffectScope(root = false): EffectScope {
@@ -150,7 +152,7 @@ function notifyEffect(effect: Effect) {
     // we should start a new batch after a set call
     // TODO: schedule these then batchNumber += 1
     //       so a state set in an effect will run after this 
-    batch.add(effect);
+    batch.insert(effect, effect.priority);
 }
 
 function notifyComputed(computed: Computed, depth = 0) {
@@ -207,10 +209,9 @@ function flush() {
     // TODO: sort this by priority
     // sorted set based on a link listed for this? 
     // console.log(`batchNumber: ${batchNumber}`);
-    for (const effect of batch) {
+    for (const effect of batch.flush()) {
         updateEffect(effect);
     }
-    batch.clear();
     // batchNumber += 1;
 }
 
