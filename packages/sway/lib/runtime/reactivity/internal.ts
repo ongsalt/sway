@@ -16,24 +16,24 @@ this time we gonna
 
 import { DedupBucketPQ } from "../utils/queue";
 
-interface Source<T = any> {
+export interface Source<T = any> {
     // get(): T;
     value: T;
     subscribers: Set<Subscriber>; // performance? who care
 }
 
-interface Subscriber {
+export interface Subscriber {
     // TODO: flag
     dirty: boolean;
     sources: Set<Source<any>>;
 }
 
-interface Signal<T = any> extends Source<T> {
+export interface Signal<T = any> extends Source<T> {
     // previousValue: T // why vue do this tho
     // set(value: T): void;
 }
 
-interface Computed<T = any> extends Source<T>, Subscriber {
+export interface Computed<T = any> extends Source<T>, Subscriber {
     fn: () => T;
 
     // depth: number;
@@ -42,14 +42,14 @@ interface Computed<T = any> extends Source<T>, Subscriber {
 }
 
 // effect shuold also Own all subscriber inside it 
-interface Effect extends Subscriber, EffectScope {
+export interface Effect extends Subscriber, EffectScope {
     fn: () => (void | (() => void));
     priority: number;
     cleanup?: () => void;
 }
 
 // or effect owner?
-interface EffectScope {
+export interface EffectScope {
     children: Set<Subscriber | EffectScope>;
     parent: EffectScope | null;
 }

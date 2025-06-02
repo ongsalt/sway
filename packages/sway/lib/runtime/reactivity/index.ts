@@ -32,7 +32,7 @@ export function computed<T>(fn: () => T): Computed<T> {
     };
 }
 
-// TODO: cleanup
+// TODO: cleanup fn
 export function effect(fn: () => unknown, priority = 3) {
     const e = createEffect(fn, priority);
 
