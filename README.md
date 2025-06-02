@@ -23,10 +23,11 @@ wow doing signal is fun
 
 ## What's not yet
 - a reactive proxy like vue `reactive`
+    - proxy is pain tho
 - make binding update value using getter and setter instead of a `Signal` 
 - you cant do binding under each block yet (WIP)
 - wrap event handlers inside an effect
-- value binding for `select`
+- async computed 💀💀💀 and some kind of suspense buondary
 - ~~do transpiling magic that allow you to use signal without `.value` like runes~~
 - Component
 - typescript support 
@@ -37,6 +38,7 @@ wow doing signal is fun
     - think about vite integration or may be we could offload this to `sway/kit` lmao
 - a router (or `sway/kit`, beside from ssr thing this look quite fun to make, especially ts magic for PageData)
 - [realworld](https://github.com/gothinkster/realworld) (frontend only)
+- value binding for `select`
 
 ### Unlikely to implement
 - `:else` block under `#each` 
