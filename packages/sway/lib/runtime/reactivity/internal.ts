@@ -285,3 +285,18 @@ export function destroy(node: ReactiveNode) {
     }
 }
 
+export function untrack<T>(fn: () => T) {
+    const p1 = activeScope;
+    const p2 = activeSubscriber;
+    activeScope = null;
+    activeSubscriber = null;
+    try {
+        return fn();
+    } catch (e) {
+        console.error("untrack", e);
+        throw e;
+    } finally {
+        activeScope = p1;
+        activeSubscriber = p2;
+    }
+}

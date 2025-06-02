@@ -21,7 +21,6 @@ export function computed<T>(fn: () => T) {
     };
 }
 
-
 // TODO: cleanup
 export function effect(fn: () => unknown) {
     const e = createEffect(fn);
@@ -29,11 +28,13 @@ export function effect(fn: () => unknown) {
     return () => destroy(e);
 }
 
-export function effectScope() {
-    const scope = createEffectScope();
+export function effectScope(root = false) {
+    const scope = createEffectScope(root);
 
     return {
         run: <T>(fn: () => T) => withScope(scope, fn),
         destroy: () => destroy(scope),
     };
 };
+
+export { untrack } from "./internal";
