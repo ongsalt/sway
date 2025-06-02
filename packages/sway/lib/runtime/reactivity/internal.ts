@@ -38,40 +38,37 @@ interface Computed<T = any> extends Source<T>, Subscriber {
 }
 
 // effect shuold also Own all subscriber inside it 
-interface Effect extends Subscriber {
+interface Effect extends Subscriber, EffectScope {
     fn: () => any;
     priority: number;
-
-    // scope member
-    members: Set<Subscriber>;
 }
 
 // or effect owner?
 interface EffectScope {
-    members: Set<Subscriber>;
+    children: Set<Subscriber | EffectScope>;
+    parent: EffectScope | null;
 }
 
 type ReactiveScope = EffectScope | Effect;
 type ReactiveNode = Subscriber | Source | ReactiveScope;
 
-// TODO: create test for reactivity
-
+// TODO: scope
 let activeScope: EffectScope | null = null;
 let activeSubscriber: Subscriber | null = null;
 const batch = new Set<Effect>();
 let batchNumber = 0;
 
-export function createEffectScope(): EffectScope {
-    const members = new Set<Subscriber>();
+export function createEffectScope(root = false): EffectScope {
     const scope: EffectScope = {
-        members,
+        children: new Set(),
+        parent: root ? null : activeScope
     };
 
-    return scope;
-}
+    if (scope.parent) {
+        scope.parent.children.add(scope);
+    }
 
-export function disposeScope(scope: EffectScope) {
-    scope.members.forEach(s => destroy(s));
+    return scope;
 }
 
 export function withScope<T>(scope: EffectScope, fn: () => T) {
@@ -80,7 +77,6 @@ export function withScope<T>(scope: EffectScope, fn: () => T) {
     try {
         return fn();
     } catch (e) {
-        // TODO: capture stack
         throw e;
     } finally {
         activeScope = previous;
@@ -97,18 +93,23 @@ export function createSignal<T>(value: T): Signal<T> {
     };
 }
 
-// TODO: cleanup hell
+// TODO: return a cleanup fn
 export function createEffect(fn: () => any, priority = 1): Effect {
-    // WE NEED TO RUN IT
     const effect: Effect = {
         dirty: false,
         fn,
         sources: new Set(),
         priority,
-        members: new Set()
+        children: new Set(),
+        parent: activeScope
     };
 
-    // oh i didnt
+    if (effect.parent) {
+        effect.parent.children.add(effect);
+    }
+
+    // add self to owner scope
+
     updateEffect(effect);
     return effect;
 }
@@ -221,7 +222,6 @@ export function get<T>(source: Source<T>) {
     if ("dirty" in source) {
         const c = source as Computed;
         if (c.dirty) {
-            // retrack
             updateComputed(c);
         }
     }
@@ -239,6 +239,10 @@ export function set<T>(signal: Signal<T>, value: T) {
 }
 
 export function destroy(node: ReactiveNode) {
+    if ("cleanup" in node) {
+        node.cleanup();
+    }
+
     if ("subscribers" in node) {
         for (const subscriber of node.subscribers) {
             unlink(node, subscriber);
@@ -251,10 +255,12 @@ export function destroy(node: ReactiveNode) {
         }
     }
 
-    if ("members" in node) {
-        for (const subscriber of node.members) {
+    if ("children" in node) {
+        for (const subscriber of node.children) {
             destroy(subscriber);
         }
+        // remove self from parent node
+        node.parent?.children.delete(node);
     }
 }
 
