@@ -35,12 +35,15 @@ interface Computed<T = any> extends Source<T>, Subscriber {
     fn: () => T;
 
     // depth: number;
+
+    parent: EffectScope | null; // we technically dont need to do this, but gc
 }
 
 // effect shuold also Own all subscriber inside it 
 interface Effect extends Subscriber, EffectScope {
-    fn: () => any;
+    fn: () => (void | (() => void));
     priority: number;
+    cleanup?: () => void;
 }
 
 // or effect owner?
@@ -108,8 +111,6 @@ export function createEffect(fn: () => any, priority = 1): Effect {
         effect.parent.children.add(effect);
     }
 
-    // add self to owner scope
-
     updateEffect(effect);
     return effect;
 }
@@ -118,14 +119,21 @@ export function createComputed<T>(computation: () => T): Computed<T> {
     const subscribers = new Set<Subscriber>();
     const sources = new Set<Source>();
 
-    return {
+    const computed: Computed<T> = {
         value: undefined as T, // TODO: well well well
         sources,
         dirty: true,
         subscribers,
         fn: computation,
+        parent: activeScope
         // depth: 0
     };
+
+    if (computed.parent) {
+        computed.parent.children.add(computed);
+    }
+
+    return computed;
 }
 
 function notify(subscriber: Subscriber, depth = 0) {
@@ -162,8 +170,10 @@ function updateEffect(effect: Effect) {
     }
 
     // it will be auto link again when rerun
+    runCleanup(effect);
+
     try {
-        effect.fn();
+        effect.cleanup = effect.fn() as any; // fuck ts
         effect.dirty = false;
     } catch (e) {
         console.error("[Effect]", e);
@@ -195,7 +205,7 @@ function updateComputed(computed: Computed) {
 
 function flush() {
     // TODO: sort this by priority
-    // use a link listed for this?
+    // sorted set based on a link listed for this? 
     // console.log(`batchNumber: ${batchNumber}`);
     for (const effect of batch) {
         updateEffect(effect);
@@ -238,9 +248,19 @@ export function set<T>(signal: Signal<T>, value: T) {
     flush();
 }
 
+function runCleanup(effect: Effect) {
+    try {
+        effect.cleanup?.();
+    } catch (e) {
+        console.error("[destroy Effect cleanup]", e);
+    } finally {
+        effect.cleanup = undefined;
+    }
+}
+
 export function destroy(node: ReactiveNode) {
     if ("cleanup" in node) {
-        node.cleanup();
+        runCleanup(node);
     }
 
     if ("subscribers" in node) {
