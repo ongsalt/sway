@@ -34,7 +34,7 @@ interface Signal<T = any> extends Source<T> {
 interface Computed<T = any> extends Source<T>, Subscriber {
     fn: () => T;
 
-    depth: number;
+    // depth: number;
 }
 
 // effect shuold also Own all subscriber inside it 
@@ -52,7 +52,7 @@ interface EffectScope {
 }
 
 type ReactiveScope = EffectScope | Effect;
-type ReactiveNode = Subscriber | Source;
+type ReactiveNode = Subscriber | Source | ReactiveScope;
 
 // TODO: create test for reactivity
 
@@ -108,8 +108,8 @@ export function createEffect(fn: () => any, priority = 1): Effect {
         members: new Set()
     };
 
+    // oh i didnt
     updateEffect(effect);
-
     return effect;
 }
 
@@ -123,7 +123,7 @@ export function createComputed<T>(computation: () => T): Computed<T> {
         dirty: true,
         subscribers,
         fn: computation,
-        depth: 0
+        // depth: 0
     };
 }
 
@@ -146,7 +146,7 @@ function notifyEffect(effect: Effect) {
 
 function notifyComputed(computed: Computed, depth = 0) {
     computed.dirty = true;
-    computed.depth = Math.max(computed.depth, depth);
+    // computed.depth = Math.max(computed.depth, depth);
     for (const subscriber of computed.subscribers) {
         notify(subscriber);
     }
@@ -172,9 +172,10 @@ function updateEffect(effect: Effect) {
 }
 
 function updateComputed(computed: Computed) {
+    // console.log("updating")
     const previous = activeSubscriber;
     activeSubscriber = computed;
-    computed.depth = 0; // reset it
+    // computed.depth = 0; // reset it
 
     for (const source of computed.sources) {
         unlink(source, computed);
@@ -247,6 +248,12 @@ export function destroy(node: ReactiveNode) {
     if ("sources" in node) {
         for (const source of node.sources) {
             unlink(source, node);
+        }
+    }
+
+    if ("members" in node) {
+        for (const subscriber of node.members) {
+            destroy(subscriber);
         }
     }
 }

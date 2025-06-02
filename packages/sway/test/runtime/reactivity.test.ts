@@ -70,3 +70,7 @@ test("Complex graph", () => {
     set(a, 12);
     expect(res).toBe(268);
 });
+
+// idk how to test how many time the computed tun tho
+// i mean i can console.log it but i dont want to export too many thing
+// btw, the test above trigger a computed rerun total of 9 times which is good
