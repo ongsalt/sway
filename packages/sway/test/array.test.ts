@@ -1,5 +1,5 @@
 import { expect, it, test } from "vitest"
-import { findLargestSortedIntersection, getTransformation, Operation, stalinSort } from "../lib/runtime/array"
+import { findLargestSortedIntersection, getTransformation, Operation, stalinSort } from "../lib/runtime/utils/array"
 
 it("should detect insertion and deletion", () => {
     const before = [1, 2, 3, 4, 5];

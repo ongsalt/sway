@@ -1,5 +1,72 @@
-import { expect, it, test } from "vitest"
+import { createSignal, createEffect, createComputed, get, set } from "../../lib/runtime/reactivity/internal";
 
-it("should do something", () => {
+import { expect, it, test } from "vitest";
 
-})
+test("Computed", () => {
+    const counter = createSignal(0);
+    const doubled = createComputed(() => get(counter) * 2);
+
+    expect(get(doubled)).toBe(0);
+    set(counter, 1);
+    expect(get(doubled)).toBe(2);
+});
+
+test("Effect", () => {
+    const counter = createSignal(8);
+    let res = 0;
+    createEffect(() => {
+        res = get(counter);
+    });
+    set(counter, 42);
+
+    expect(res).toBe(42);
+});
+
+test("Computed and Effect", () => {
+    const counter = createSignal(32);
+    const doubled = createComputed(() => get(counter) * 2);
+    let res = 0;
+    let runCount = 0;
+
+    createEffect(() => {
+        runCount += 1;
+        res = get(counter) + get(doubled);
+        // console.log(res);
+    });
+
+    set(counter, 3);
+    set(counter, 12);
+
+    expect(res).toBe(36);
+    expect(runCount).toBe(3);
+});
+
+/*
+     A
+    / \
+   B-->C
+    \ /
+     D
+*/
+test("Complex graph", () => {
+    const a = createSignal(0);
+    const b = createComputed(() => get(a) * 4 + 1);
+    const c = createComputed(() => get(a) * 3 + get(b));
+    const d = createComputed(() => 2 * (get(b) + get(c)));
+
+    // a             |  3, 12
+    // b = 4a + 1    | 13, 49
+    // c = 3a + b    | 22, 85
+    // d = 2(b + c)  | 70, 268
+    let res = 0;
+
+    createEffect(() => {
+        res = get(d);
+        // console.log(res);
+    });
+
+    set(a, 3);
+    expect(res).toBe(70);
+    set(a, 12);
+    expect(res).toBe(268);
+});
