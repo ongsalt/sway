@@ -1,10 +1,10 @@
 <script>
-    import { signal } from "sway";
+    import { signal, effect, reactive } from "sway";
 
     let id = 12768;
 
     // fuck this im gonna do compiler
-    const todos = signal([
+    const todos = reactive([
         {
             id: id++,
             description: "lorem",
@@ -18,8 +18,8 @@
             // proxy make this comparison pain in the ass
             // look like we need to replace `indexOf` and shitton of collection impl
 
-            const index = todos.value.indexOf(todo);
-            todos.value.splice(index, 1);
+            const index = todos.indexOf(todo);
+            todos.splice(index, 1);
             console.log({
                 todos,
                 index,
@@ -31,28 +31,35 @@
 
     function remove2(index) {
         return () => {
-            console.log(`removing todo ${index}: ${todos.value[index]}`)
-            todos.value.splice(index, 1)
+            console.log(`removing todo ${index}: ${todos[index]}`);
+            todos.splice(index, 1);
         };
     }
 
     const description = signal("");
 
     function addTodo() {
-        todos.value.push({
+        todos.push({
             id: id++,
             description: description.value,
             createdAt: new Date(),
             editing: false,
         });
+        // console.log(todos)
         description.value = "";
     }
 
     function toggleEdit(todo) {
         todo.editing = !todo.editing;
-        // TODO: make this NOT run immediately 
+        // TODO: make this NOT run immediately
         console.log(todo.editing);
     }
+
+    effect(() => {
+        for (const a of todos) {
+        }
+        console.log("[iterator] rerun");
+    });
 </script>
 
 <main class="m-8 border rounded-lg shadow-sm p-6 space-y-8">
@@ -66,7 +73,7 @@
             type="text"
             class="border rounded-md shadow-sm p-2 px-4"
             placeholder="Type something..."
-            bind:value={description}
+            bind:value={description.value}
         />
         <button
             onclick={addTodo}
@@ -76,7 +83,7 @@
         </button>
     </div>
 
-    {#each todos.value as todo, index}
+    {#each todos as todo, index}
         <div class="border rounded-md p-4">
             <span>index: {index.value}, id: {todo.id}</span>
             {#if todo.editing}
@@ -116,6 +123,6 @@
         </p>
     </div>
     <p class="p-4">
-        {JSON.stringify(todos.value)}
+        {JSON.stringify(todos)}
     </p>
 </div>

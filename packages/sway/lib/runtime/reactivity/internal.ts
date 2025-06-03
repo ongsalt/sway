@@ -240,6 +240,14 @@ export function get<T>(source: Source<T>) {
     return source.value;
 }
 
+export function trigger(signal: Signal<any>) {
+    // start a batch
+    for (const subscriber of signal.subscribers) {
+        notify(subscriber);
+    }
+    flush();
+}
+
 export function set<T>(signal: Signal<T>, value: T) {
     signal.value = value;
     // start a batch

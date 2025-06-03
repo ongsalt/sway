@@ -1,4 +1,4 @@
-import { createSignal, destroy, get, set, Source } from "./internal";
+import { createSignal, destroy, get, set, Source, trigger } from "./internal";
 
 export const RAW_VALUE = Symbol("raw-value");
 export const RELEASE = Symbol("release");
@@ -24,9 +24,14 @@ if not nothing happen but gc wont happen
 
 
 */
+
+const ARRAY_ROOT = Symbol("array-root");
+const arrayMutMethodNames: (keyof any[])[] = ["fill", "pop", "push", "reverse", "shift", "sort", "splice", "unshift"];
+
 export function createProxy<T extends object>(obj: T) {
     // only allow plain object, uss normal signal instead
-    if (Object.getPrototypeOf(obj) !== Object.prototype && !Array.isArray(obj)) {
+    const isArray = Array.isArray(obj);
+    if (Object.getPrototypeOf(obj) !== Object.prototype && !isArray) {
         return obj;
     }
 
@@ -36,6 +41,10 @@ export function createProxy<T extends object>(obj: T) {
 
     // im sorry for looking into svelte impl of these
     const sources = new Map<string | symbol, Source>();
+
+    if (isArray) {
+        sources.set(ARRAY_ROOT, createSignal(sources));
+    }
 
     function release() {
         for (const source of sources.values()) {
@@ -51,6 +60,29 @@ export function createProxy<T extends object>(obj: T) {
             if (p === RELEASE) {
                 return release;
             }
+
+            // if its array function then we create a wrapper that will then trigger()
+            if (isArray) {
+                const s = sources.get(ARRAY_ROOT)!;
+                const value = Reflect.get(target, p, receiver);
+                if (arrayMutMethodNames.includes(p as any)) {
+                    // todo: filter only mutating method
+                    const method = (value as (...args: any[]) => any).bind(target);
+                    return (...args: any[]) => {
+                        const ret = method(...args);
+                        // console.log(p)
+                        trigger(s);
+                        return ret;
+                    };
+                } else {
+                    get(s); // track it
+                    if (typeof value === "function" && value !== null) {
+                        return value.bind(target);
+                    }
+                    return value;
+                }
+            }
+
 
             let s = sources.get(p);
             if (!s) {
@@ -78,10 +110,7 @@ export function createProxy<T extends object>(obj: T) {
                 // should we track a property of a function tho
                 // if its an proxy then release its properties subscriber
                 const value = s.value;
-                if (isProxy(value)) {
-                    // @ts-ignore it WILL always be a fn 
-                    value[RELEASE]();
-                }
+                destroyProxy(value);
                 set(s, newValue);
                 return true;
             }
@@ -97,6 +126,13 @@ export function createProxy<T extends object>(obj: T) {
 
         // },
     });
+}
+
+export function destroyProxy(value: object) {
+    if (isProxy(value)) {
+        // @ts-ignore it WILL always be a fn 
+        value[RELEASE]();
+    }
 }
 
 

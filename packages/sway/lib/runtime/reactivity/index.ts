@@ -1,5 +1,5 @@
 import { createComputed, createEffect, createEffectScope, createSignal, destroy, get, set, withScope } from "./internal";
-import { createProxy } from "./proxy";
+import { createProxy, destroyProxy, RELEASE } from "./proxy";
 
 // not the same as in internal.ts
 export interface Readable<T = any> {
@@ -19,7 +19,31 @@ const SIGNAL = Symbol("signal");
 const COMPUTED = Symbol("computed");
 const REACTIVE = Symbol("reactive");
 
-export function signal<T>(initial: T): Signal<T> {
+// TODO: this failed (array)
+export function signal<T>(initial: T) {
+    const s = createSignal(initial);
+    let proxy: T | null = null;
+    return {
+        get value(): T {
+            const value = get(s);
+            if (typeof value === "object" && value !== null && proxy === null) {
+                proxy = createProxy(value);
+                return proxy;
+            }
+            return value;
+        },
+        set value(v: T) {
+            if (typeof s.value === "object" && s.value !== null) {
+                destroyProxy(s.value);
+            }
+            proxy = null;
+            set(s, v);
+        },
+        [SIGNAL]: SIGNAL
+    } as Signal<T>;
+}
+
+export function shallowSignal<T>(initial: T): Signal<T> {
     const s = createSignal(initial);
     return {
         get value(): T {
