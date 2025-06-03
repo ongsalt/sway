@@ -76,7 +76,7 @@ export function createProxy<T extends object>(obj: T) {
                 // should we track a property of a function tho
                 // if its an proxy then release its properties subscriber
                 const value = s.value;
-                if (typeof value === "object" && value !== null && isProxy(value)) {
+                if (isProxy(value)) {
                     // @ts-ignore it WILL always be a fn 
                     value[RELEASE]();
                 }
@@ -98,7 +98,15 @@ export function createProxy<T extends object>(obj: T) {
 }
 
 
-export function isProxy(obj: object) {
-    return RAW_VALUE in obj;
+export function isProxy(value: any): value is object & Record<typeof RAW_VALUE, any> {
+    return typeof value === "object" && value !== null && RAW_VALUE in value;
+}
+
+export function getRawValue<T>(value: T): T {
+    if (!isProxy(value)) {
+        return value;
+    }
+
+    return value[RAW_VALUE] as T;
 }
 
