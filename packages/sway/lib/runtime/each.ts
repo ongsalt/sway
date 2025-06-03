@@ -1,7 +1,9 @@
 import { append, comment, remove, sweep } from "./dom";
 import { effectScope, EffectScope, signal, Signal, templateEffect } from "./reactivity";
+import { createProxy } from "./reactivity/proxy";
 import { getTransformation } from "./utils/array";
 import { identity } from "./utils/functions";
+import { isObject } from "./utils/object";
 
 /*
 basically this
@@ -94,7 +96,11 @@ export function each<Item>(
 
     templateEffect(() => {
         console.log('[each] rerun');
-        const items = collection();
+        const items: Item[] = [];
+        const _items = collection();
+        for (let i = 0; i < _items.length; i++) {
+            items.push(_items[i]); // this is to create linked proxy 
+        }
 
         // we cant reassign to item???
         // ok svelte also do not allow this
@@ -105,8 +111,7 @@ export function each<Item>(
         // and now that Signal return a proxy by default now
         // but now object reference comparison is fucked up
 
-        // then binding is fucking broken
-
+        // todo: dont key thing unless explicitly stated
         const newKeys = items.map(keyFn);
         const diff = getTransformation(currentKeys, newKeys);
 

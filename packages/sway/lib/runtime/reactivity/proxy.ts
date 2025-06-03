@@ -66,7 +66,8 @@ export function createProxy<T extends object>(obj: T) {
                 // arghhh this is pain in the ass
                 // vue do wrap every fucking array method
                 // svelte use its compiler...
-                // both of this is pain in the ass 
+                // 😭😭😭😭
+                // for binding under `each` im gonna just do it in `each` 
                 const s = sources.get(ARRAY_ROOT)!;
                 const value = Reflect.get(target, p, receiver);
                 if (arrayMutMethods.includes(p as any)) {
@@ -78,8 +79,6 @@ export function createProxy<T extends object>(obj: T) {
                         return ret;
                     };
                 }
-
-                // ok a fucking iterator dont return a proxy 😭😭😭
 
                 // other method or lenght
                 if (p in Array.prototype) {
@@ -93,7 +92,7 @@ export function createProxy<T extends object>(obj: T) {
                 // [index] accessing
                 get(s);
                 // then do the same
-                console.log(`Fallthrough ${String(p)}`);
+                // console.log(`Fallthrough ${String(p)}`);
             }
 
             let s = sources.get(p);
