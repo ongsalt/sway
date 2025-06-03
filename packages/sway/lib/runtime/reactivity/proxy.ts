@@ -51,15 +51,21 @@ export function createProxy<T extends object>(obj: T) {
             }
 
             let s = sources.get(p);
-            if (s) {
-                return get(s);
+            if (!s) {
+                const original = Reflect.get(target, p, receiver);
+                if (typeof original === "object" && original !== null) {
+                    s = createSignal(createProxy(original));
+                } else {
+                    s = createSignal(original);
+                }
+                sources.set(p, s);
             }
 
-            const original = Reflect.get(target, p, receiver);
-            s = createSignal(original);
-            sources.set(p, s);
-
-            return get(s);
+            const value = get(s);
+            if (typeof value === "function" && value !== null) {
+                return value.bind(target);
+            }
+            return value;
         },
 
         set(target, p, newValue, receiver) {
