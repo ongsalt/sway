@@ -8,13 +8,13 @@ import { mount } from "sway"
 // import Todos from "./components/todos.generated"
 // import NestedControlFlow from "./components/nested-control-flow.sway"
 import Binding from "./components/binding.sway"
-// import DeepReactivity from "./components/deep-reactivity.sway"
+import DeepReactivity from "./components/deep-reactivity.sway"
 
 const appRoot = document.getElementById("app")!
 
-// mount(DeepReactivity, appRoot)
+mount(DeepReactivity, appRoot)
 // mount(Todos, appRoot)
-mount(Binding,appRoot)
+// mount(Binding,appRoot)
 
 // reactiveContext()
 

@@ -1,4 +1,5 @@
 import { createComputed, createEffect, createEffectScope, createSignal, destroy, get, set, withScope } from "./internal";
+import { createProxy } from "./proxy";
 
 // not the same as in internal.ts
 export interface Readable<T = any> {
@@ -16,6 +17,7 @@ export interface Signal<T = any> extends Readable<T> {
 
 const SIGNAL = Symbol("signal");
 const COMPUTED = Symbol("computed");
+const REACTIVE = Symbol("reactive");
 
 export function signal<T>(initial: T): Signal<T> {
     const s = createSignal(initial);
@@ -45,6 +47,10 @@ export function effect(fn: () => unknown, priority = 3) {
     const e = createEffect(fn, priority);
 
     return () => destroy(e);
+}
+
+export function reactive<T extends object>(obj: T): T {
+    return createProxy(obj);
 }
 
 export function templateEffect(fn: () => unknown) {
