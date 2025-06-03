@@ -20,14 +20,14 @@ wow doing signal is fun
     - auto coerce type to number for `<input type="number">`
     - the same go for checkbox
 - Dynamic attribute `class="border {someExpression}"` or `placeholder={anotherExpression}`
+- a reactive proxy like vue `reactive`
+- make binding update value using getter and setter instead of a `Signal` 
 
 ## What's not yet
-- a reactive proxy like vue `reactive`
-    - proxy is pain tho
-- make binding update value using getter and setter instead of a `Signal` 
+- deep reactivity for `signal<T>()`
 - you cant do binding under each block yet (WIP)
 - wrap event handlers inside an effect
-- async computed 💀💀💀 and some kind of suspense buondary
+- async computed 💀💀💀 and some kind of suspense boundary
 - ~~do transpiling magic that allow you to use signal without `.value` like runes~~
 - Component
 - typescript support 
