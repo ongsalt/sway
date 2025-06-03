@@ -184,13 +184,13 @@ export function generate(statement: SwayStatement, indentation: number, logging 
         }
 
         case "proxy": {
+            // TODO: remove this
             const { obj, key } = statement;
             if (!key) {
                 // TODO: check if the object is a state or not
                 out += obj;
             } else {
                 // we could inline this actually
-                // TODO: bruh, naming
                 out += `$.select(${obj}, \`${key}\`)`;
             }
             break;

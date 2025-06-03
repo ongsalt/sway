@@ -1,0 +1,30 @@
+<script>
+    import { signal, reactive, computed } from "sway";
+
+    let cats = reactive([
+        { id: "J---aiyznGQ", name: "Keyboard Cat" },
+        { id: "z_AbfPXTKms", name: "Maru" },
+        { id: "OUtn3pvWmpg", name: "Henri The Existential Cat" },
+        { id: "asd", name: "Doraemon" },
+        { id: "heil", name: "Kitler" },
+    ]);
+
+    const filteredCat = computed(() =>
+        cats.filter((it) => it.id.length < lenght.value),
+    );
+
+    let lenght = signal(7);
+
+    console.log(filteredCat.value);
+</script>
+
+<h1>cats</h1>
+<input bind:value={lenght.value} class="border p-1" />
+<ul class="p-8">
+    {#each filteredCat.value as cat, i}
+        <li>
+            <span>{i.value}</span>
+            <input bind:value={cat.name} class="border p-1" />
+        </li>
+    {/each}
+</ul>

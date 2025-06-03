@@ -23,7 +23,6 @@ export interface Source<T = any> {
 }
 
 export interface Subscriber {
-    // TODO: flag
     dirty: boolean;
     sources: Set<Source<any>>;
 }
@@ -98,7 +97,6 @@ export function createSignal<T>(value: T): Signal<T> {
     };
 }
 
-// TODO: return a cleanup fn
 export function createEffect(fn: () => any, priority = 1): Effect {
     const effect: Effect = {
         dirty: false,
@@ -206,8 +204,6 @@ function updateComputed(computed: Computed) {
 }
 
 function flush() {
-    // TODO: sort this by priority
-    // sorted set based on a link listed for this? 
     // console.log(`batchNumber: ${batchNumber}`);
     for (const effect of batch.flush()) {
         updateEffect(effect);

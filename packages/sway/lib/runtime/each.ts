@@ -32,6 +32,7 @@ basically this
     {/each}
 </ul>
 
+well we cant parse that yet
 */
 
 // any thing that can be compared
@@ -95,16 +96,12 @@ export function each<Item>(
     }
 
     templateEffect(() => {
-        console.log('[each] rerun');
         const items: Item[] = [];
         const _items = collection();
         for (let i = 0; i < _items.length; i++) {
             items.push(_items[i]); // this is to create linked proxy 
         }
-
-        // we cant reassign to item???
-        // ok svelte also do not allow this
-        // TODO: throw an error
+        console.log(`[each] rerun`, _items);
 
         // we at least for now, cant determine if items is writable or not
         // so fuck it, everything is writable now

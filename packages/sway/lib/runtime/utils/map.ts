@@ -72,7 +72,6 @@ function flatten<Value>(nestedMap: NestedMap<any, Value>): Set<Value> {
 //     }
 // }
 
-// TODO: optimize this
 type Item<T> = { path: (string | symbol)[], value: T }
 export class PathMap<Value> {
     inner: Item<Value>[] = []

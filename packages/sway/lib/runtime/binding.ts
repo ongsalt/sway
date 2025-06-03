@@ -1,5 +1,3 @@
-// TODO: implement this in lexer and parser
-
 import { listen } from "./dom";
 import { Signal, templateEffect } from "./reactivity";
 

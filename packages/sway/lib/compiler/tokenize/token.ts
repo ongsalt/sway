@@ -61,7 +61,6 @@ export type InterpolationToken = {
     body: string
 }
 
-// TODO: think of better name
 export type DynamicToken = InterpolationToken | ControlFlowToken
 
 export type TextNodeToken = {

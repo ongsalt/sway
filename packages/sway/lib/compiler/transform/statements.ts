@@ -63,7 +63,6 @@ export type TemplateIfStatement = {
     };
 };
 
-// TODO: think about 2way binding in each
 export type TemplateEachStatement = {
     type: "each",
     anchor: string,

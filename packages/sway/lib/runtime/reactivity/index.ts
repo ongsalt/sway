@@ -19,7 +19,6 @@ const SIGNAL = Symbol("signal");
 const COMPUTED = Symbol("computed");
 const REACTIVE = Symbol("reactive");
 
-// TODO: this failed (array)
 export function signal<T>(initial: T) {
     const s = createSignal(initial);
     let proxy: T | null = null;
@@ -60,13 +59,13 @@ export function computed<T>(fn: () => T): Computed<T> {
     const c = createComputed(fn);
     return {
         get value(): T {
+            // TODO: track reading and make this readonly: shallow proxy?
             return get(c);
         },
         [COMPUTED]: COMPUTED
     };
 }
 
-// TODO: cleanup fn
 export function effect(fn: () => unknown, priority = 3) {
     const e = createEffect(fn, priority);
 

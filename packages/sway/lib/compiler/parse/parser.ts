@@ -215,7 +215,6 @@ export class Parser {
     }
 
 
-    // TODO: handle void element - https://developer.mozilla.org/en-US/docs/Glossary/Void_element
     private openingTag() {
         this.consumeToken("tag-open")
         const res = this.tagBody()

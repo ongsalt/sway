@@ -71,7 +71,6 @@ export function createProxy<T extends object>(obj: T) {
                 const s = sources.get(ARRAY_ROOT)!;
                 const value = Reflect.get(target, p, receiver);
                 if (arrayMutMethods.includes(p as any)) {
-                    // todo: filter only mutating method
                     const method = (value as (...args: any[]) => any).bind(target);
                     return (...args: any[]) => {
                         const ret = method(...args);

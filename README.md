@@ -21,11 +21,13 @@ wow doing signal is fun
     - the same go for checkbox
 - Dynamic attribute `class="border {someExpression}"` or `placeholder={anotherExpression}`
 - a reactive proxy like vue `reactive`
-- make binding update value using getter and setter instead of a `Signal` 
+- pass getter and setter instead of a `Signal` to a binding 
+- deep reactivity
 
 ## What's not yet
-- deep reactivity for `signal<T>()`
-- you cant do binding under each block yet (WIP)
+- complex expression here `#each {expression} as something, index`
+    - `#each cats.filter(it => it.id.length < lenght) as cat, i`
+    - currently, this is parse failure 
 - wrap event handlers inside an effect
 - async computed 💀💀💀 and some kind of suspense boundary
 - ~~do transpiling magic that allow you to use signal without `.value` like runes~~

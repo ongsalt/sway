@@ -9,12 +9,14 @@ import Todos from "./components/todos.sway"
 // import NestedControlFlow from "./components/nested-control-flow.sway";
 // import Binding from "./components/binding.sway";
 // import DeepReactivity from "./components/deep-reactivity.sway";
+import EachFiltered from "./components/each-filtered.sway"
 
 const appRoot = document.getElementById("app")!;
 
 // mount(DeepReactivity, appRoot)
-mount(Todos, appRoot)
+// mount(Todos, appRoot)
 // mount(Binding,appRoot)
 // mount(NestedControlFlow, appRoot);
+mount(EachFiltered, appRoot)
 // reactiveContext()
 
