@@ -5,11 +5,17 @@ export interface Readable<T = any> {
     readonly value: T;
 }
 
-export type Computed<T = any> = Readable<T>;
+export interface Computed<T = any> extends Readable<T> {
+    [COMPUTED]: typeof COMPUTED;
+}
 
 export interface Signal<T = any> extends Readable<T> {
     value: T;
+    [SIGNAL]: typeof SIGNAL;
 }
+
+const SIGNAL = Symbol("signal");
+const COMPUTED = Symbol("computed");
 
 export function signal<T>(initial: T): Signal<T> {
     const s = createSignal(initial);
@@ -19,7 +25,8 @@ export function signal<T>(initial: T): Signal<T> {
         },
         set value(v: T) {
             set(s, v);
-        }
+        },
+        [SIGNAL]: SIGNAL
     };
 }
 
@@ -29,6 +36,7 @@ export function computed<T>(fn: () => T): Computed<T> {
         get value(): T {
             return get(c);
         },
+        [COMPUTED]: COMPUTED
     };
 }
 

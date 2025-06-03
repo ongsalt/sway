@@ -125,7 +125,16 @@ export type BindingStatement = {
     type: "binding",
     node: string,
     key: string,
-    target: ProxyStatement,
+    binding: Binding;
+};
+
+export type Binding = {
+    kind: "functions",
+    setter: string, // user code
+    getter: string;
+} | {
+    kind: "variables",
+    name: string;
 };
 
 // TODO: seperate runtime statement from these

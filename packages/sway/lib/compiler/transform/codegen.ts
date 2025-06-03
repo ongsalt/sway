@@ -164,13 +164,22 @@ export function generate(statement: SwayStatement, indentation: number, logging 
 
         case "attribute-updating": {
             const { isFunction, key, target, type } = statement;
-            // throw new Error("Unimplemented (codegen)")
+            throw new Error(`Unimplemented (${type}): ${statement}`)
             break;
         }
 
         case "binding": {
-            const { key, node, target } = statement;
-            add(`$.bind(${node}, \`${key}\`, ${generate(target, indentation, logging)})`);
+            const { key, node, binding } = statement;
+            let getter: string;
+            let setter: string;
+            if (binding.kind === "variables") {
+                getter = `() => ${binding.name}`;
+                setter = `($$value) => (${binding.name} = $$value)`;
+            } else {
+                getter = binding.getter;
+                setter = binding.setter;
+            }
+            add(`$.bind(${node}, \`${key}\`, ${getter}, ${setter})`);
             break;
         }
 

@@ -5,7 +5,8 @@ import { analyze } from "periscopic";
 import { ControlFlowNode, Element, TemplateASTNode } from "../parse/ast";
 import { generate } from "./codegen";
 import { stringify } from "./html";
-import { AccessorDefinitionStatement, BindingStatement, ComponentDeclarationStatement, CreateRootStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement } from "./statements";
+import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, CreateRootStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement } from "./statements";
+import * as escodegen from "escodegen";
 
 export type TransformOptions = {
     name: string,
@@ -175,28 +176,13 @@ export class Transformer {
                     if (attribute.whole) {
                         const { accessor } = getOrCreateAccessor();
                         if (attribute.isBinding) {
-                            const segmentedTarget = attribute.expression.split('.');
-                            let targetName = segmentedTarget.slice(0, -1).join('.');
-                            let targetKey = segmentedTarget.at(-1);
-
-                            if (!targetKey) {
-                                // TODO: better error message
-                                throw new Error("invalid binding");
-                            }
-                            // 
-                            if (targetName === "") {
-                                targetName = targetKey;
-                                targetKey = undefined;
-                            }
+                            // parse this
+                            // if attribute.expression 
                             const statement: BindingStatement = {
                                 type: "binding",
                                 key: attribute.key,
                                 node: accessor.name,
-                                target: {
-                                    type: "proxy",
-                                    obj: targetName,
-                                    key: targetKey,
-                                }, // todo check if this is a variable
+                                binding: this.parseBinding(attribute.expression)
                             };
                             out.push(statement);
                         } else {
@@ -410,6 +396,52 @@ export class Transformer {
 
     // }
 
+    private parseBinding(rawExpression: string): Binding {
+        const { body } = acorn.parse(rawExpression, {
+            ecmaVersion: "latest",
+            sourceType: "module",
+        });
+
+        if (body.length !== 1) {
+            // TODO: better error handling, at line
+            throw new Error(`Invalid binding: ${rawExpression}`);
+        }
+
+        const statement = body[0];
+        if (statement.type !== "ExpressionStatement") {
+            throw new Error(`Invalid binding: binding must be expression: ${rawExpression}`);
+        }
+
+        const expression = statement.expression;
+        // bind:value={signal.value}
+        if (expression.type === "MemberExpression") {
+            return {
+                kind: "variables",
+                name: rawExpression
+            };
+        }
+
+        // bind:value={getter, setter}
+        if (expression.type === "SequenceExpression") {
+            if (expression.expressions.length !== 2) {
+                throw new Error(`Invalid binding: binding must be in this form: {getter, setter} | ${rawExpression}`);
+            }
+            const splitter = expression.expressions[0].end;
+            const getter = rawExpression.slice(0, splitter);
+            const setter = rawExpression.slice(splitter + 1);
+            // we dont type check it, TODO: might do later tho
+            return {
+                kind: "functions",
+                getter,
+                setter
+                // getter: escodegen.generate(getter)
+                // setter: escodegen.generate(setter)
+            };
+        }
+
+        throw new Error(`Invalid binding: unsupport expression type ${expression.type} | ${rawExpression}`);
+    }
+
     private parseScript(): string {
         const script = this.roots.find(it => it.type === "element" && it.tag === "script") as Element | undefined;
         if (!script || script.children.length !== 1 || script.children[0].type !== "text") {
@@ -422,7 +454,7 @@ export class Transformer {
         const root = this.transform();
         // output += this.topLevelStatements
         // console.log(root)
-        const output = generate(root, 0, true);
+        const output = generate(root, 0, this.options.logging);
         // console.log(this.accessors)
         // console.log(output)
         return {
