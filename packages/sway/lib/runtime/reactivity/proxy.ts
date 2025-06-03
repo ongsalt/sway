@@ -26,7 +26,7 @@ if not nothing happen but gc wont happen
 */
 
 const ARRAY_ROOT = Symbol("array-root");
-const arrayMutMethodNames: (keyof any[])[] = ["fill", "pop", "push", "reverse", "shift", "sort", "splice", "unshift"];
+const arrayMutMethods: (keyof any[])[] = ["fill", "pop", "push", "reverse", "shift", "sort", "splice", "unshift"];
 
 export function createProxy<T extends object>(obj: T) {
     // only allow plain object, uss normal signal instead
@@ -63,26 +63,38 @@ export function createProxy<T extends object>(obj: T) {
 
             // if its array function then we create a wrapper that will then trigger()
             if (isArray) {
+                // arghhh this is pain in the ass
+                // vue do wrap every fucking array method
+                // svelte use its compiler...
+                // both of this is pain in the ass 
                 const s = sources.get(ARRAY_ROOT)!;
                 const value = Reflect.get(target, p, receiver);
-                if (arrayMutMethodNames.includes(p as any)) {
+                if (arrayMutMethods.includes(p as any)) {
                     // todo: filter only mutating method
                     const method = (value as (...args: any[]) => any).bind(target);
                     return (...args: any[]) => {
                         const ret = method(...args);
-                        // console.log(p)
                         trigger(s);
                         return ret;
                     };
-                } else {
+                }
+
+                // ok a fucking iterator dont return a proxy 😭😭😭
+
+                // other method or lenght
+                if (p in Array.prototype) {
                     get(s); // track it
                     if (typeof value === "function" && value !== null) {
                         return value.bind(target);
                     }
                     return value;
                 }
-            }
 
+                // [index] accessing
+                get(s);
+                // then do the same
+                console.log(`Fallthrough ${String(p)}`);
+            }
 
             let s = sources.get(p);
             if (!s) {

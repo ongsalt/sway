@@ -3,7 +3,6 @@
 
     let id = 12768;
 
-    // fuck this im gonna do compiler
     const todos = reactive([
         {
             id: id++,
@@ -12,22 +11,6 @@
             editing: false,
         },
     ]);
-
-    function remove(todo) {
-        return () => {
-            // proxy make this comparison pain in the ass
-            // look like we need to replace `indexOf` and shitton of collection impl
-
-            const index = todos.indexOf(todo);
-            todos.splice(index, 1);
-            console.log({
-                todos,
-                index,
-                todo,
-            });
-            // console.log(`Removing`, todo);
-        };
-    }
 
     function remove2(index) {
         return () => {
@@ -52,7 +35,7 @@
     function toggleEdit(todo) {
         todo.editing = !todo.editing;
         // TODO: make this NOT run immediately
-        console.log(todo.editing);
+        console.log(todo);
     }
 
     effect(() => {
