@@ -26,9 +26,11 @@ if not nothing happen but gc wont happen
 */
 export function createProxy<T extends object>(obj: T) {
     // only allow plain object, uss normal signal instead
-    if (Object.getPrototypeOf(obj) !== Object.prototype) {
+    if (Object.getPrototypeOf(obj) !== Object.prototype && !Array.isArray(obj)) {
         return obj;
     }
+
+    // well if we do Function.bind then we can probably accept any class
 
     // how do we do array tho
 
