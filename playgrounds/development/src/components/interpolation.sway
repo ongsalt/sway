@@ -2,21 +2,23 @@
     import { signal, computed, effect } from "sway";
 
     let counter = signal(0);
-    let doubled = computed(() => counter.value * 2)
-    
+    let doubled = computed(() => counter.value * 2);
+
     setInterval(() => {
-        counter.value += 1
-    }, 200)
+        counter.value += 1;
+    }, 200);
 
     effect(() => {
-        console.log(`count: ${counter.value}`)
-    })
+        console.log(`count: ${counter.value}`);
+    });
 </script>
 
 <main class="m-8 border rounded p-4 space-y-2">
-    <h1 class="text-2xl"> Counter </h1>
+    <h1 class="text-2xl">Counter</h1>
     <p class="">Count {counter.value}</p>
     Inline tripled {counter.value * 3}
     <p class="">Doubled {doubled.value}</p>
-    <button class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white "> increment </button>
+    <button class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white">
+        increment
+    </button>
 </main>

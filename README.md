@@ -32,6 +32,7 @@ wow doing signal is fun
 - Component
 - typescript support 
     - i dont know if i need to mess with vite or not. ts might work without any change (untested)
+    - type definitions of stuff exported form `sway` is for some reason all any when used in `.sway` file
 - SSR
     - i need to create a new transformer and maybe a new parser too
     - hydration look like pain in the ass
