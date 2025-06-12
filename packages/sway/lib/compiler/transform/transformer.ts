@@ -5,7 +5,7 @@ import { analyze } from "periscopic";
 import { ControlFlowNode, Element, TemplateASTNode } from "../parse/ast";
 import { generate } from "./codegen";
 import { stringify } from "./html";
-import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, CreateRootStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement } from "./statements";
+import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, TemplateInitStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateDefinitionStatement, TemplateScopeStatement } from "./statements";
 
 export type TransformOptions = {
     name: string,
@@ -21,7 +21,7 @@ export class Transformer {
 
     private identifiers!: Set<string>;
     // will be prune if not use
-    private accessors: Map<TemplateASTNode, (AccessorDefinitionStatement | CreateRootStatement)> = new Map();
+    private accessors: Map<TemplateASTNode, (AccessorDefinitionStatement | TemplateInitStatement)> = new Map();
 
     constructor(private roots: TemplateASTNode[], options: Partial<TransformOptions> = {}) {
         this.options = {
@@ -63,7 +63,7 @@ export class Transformer {
     }
 
     private transformTemplate(userScript: string) {
-        const roots: TemplateRootStatement[] = [];
+        const statements: TemplateDefinitionStatement[] = [];
 
         // fuck `this`
         const walk = (node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): SwayStatement[] => {
@@ -96,9 +96,9 @@ export class Transformer {
                     const anchor = anchorAccessors.at(-1)!.name;
                     out.push(...anchorAccessors);
 
-                    const { name, statement } = this.createTemplateRoot(node);
-                    roots.push(statement);
-                    const { accessor, name: fragment } = this.createRootFragment(node, name);
+                    const { name, statement } = this.createTemplateDefinition(node);
+                    statements.push(statement);
+                    const { accessor, name: fragment } = this.createTemplateInit(node, name);
 
                     const ifScope: TemplateIfStatement = {
                         type: "if",
@@ -114,16 +114,16 @@ export class Transformer {
 
                     if (node.else) {
                         const _else = node.else;
-                        const { name, statement } = this.createTemplateRoot(_else);
-                        const { accessor, name: fragment } = this.createRootFragment(_else, name);
-                        roots.push(statement);
+                        const { name, statement } = this.createTemplateDefinition(_else);
+                        const { accessor, name: fragment } = this.createTemplateInit(_else, name);
+                        statements.push(statement);
 
-                        const statements = _else.children.map(it => walk(it, [_else, node])).flat();
+                        const s = _else.children.map(it => walk(it, [_else, node])).flat();
 
                         ifScope.else = {
                             blockName: this.createIdentifier("alternative"),
                             fragment,
-                            body: [accessor, ...statements]
+                            body: [accessor, ...s]
                         };
                     }
 
@@ -135,9 +135,9 @@ export class Transformer {
                     const anchor = anchorAccessors.at(-1)!.name;
                     out.push(...anchorAccessors);
 
-                    const { name, statement } = this.createTemplateRoot(node);
-                    roots.push(statement);
-                    const { accessor, name: fragment } = this.createRootFragment(node, name);
+                    const { name, statement } = this.createTemplateDefinition(node);
+                    statements.push(statement);
+                    const { accessor, name: fragment } = this.createTemplateInit(node, name);
 
                     // TODO: parse as and index
                     const eachScope: TemplateEachStatement = {
@@ -208,7 +208,7 @@ export class Transformer {
                                     body: [
                                         {
                                             type: "attribute-updating",
-                                            target: accessor.name,
+                                            accessor: accessor.name,
                                             texts: [
                                                 {
                                                     type: "interpolation",
@@ -231,7 +231,7 @@ export class Transformer {
                                 body: [
                                     {
                                         type: "attribute-updating",
-                                        target: accessor.name,
+                                        accessor: accessor.name,
                                         key: attribute.key,
                                         texts: attribute.texts
                                     }
@@ -251,7 +251,7 @@ export class Transformer {
 
         const componentRoots = this.roots.filter(it => !(it.type === "element" && it.tag === "script"));
 
-        const elementRoot: Element = {
+        const pseudoRoot: Element = {
             type: "element",
             tag: "$$root",
             attributes: [],
@@ -259,13 +259,9 @@ export class Transformer {
             children: componentRoots
         };
 
-        const rootName = this.createIdentifier("root");
-        roots.push({
-            type: "template-root",
-            name: rootName,
-            template: stringify(elementRoot.children)
-        });
-        const { name: rootFragmentName, accessor: rootAccessor } = this.createRootFragment(elementRoot, rootName);
+        const { name, statement } = this.createTemplateDefinition(pseudoRoot);
+        statements.push(statement);
+        const { name: rootFragmentName, accessor: rootAccessor } = this.createTemplateInit(pseudoRoot, name);
 
         let scope: TemplateScopeStatement = {
             type: 'template-scope',
@@ -275,7 +271,7 @@ export class Transformer {
                     type: "user-script",
                     body: userScript
                 },
-                ...walk(elementRoot, [elementRoot]),
+                ...walk(pseudoRoot, [pseudoRoot]),
                 {
                     type: "append",
                     anchor: "$$context.anchor",
@@ -286,15 +282,15 @@ export class Transformer {
 
 
         return {
-            roots,
+            roots: statements,
             generated: scope
         };
     }
 
-    private createTemplateRoot(node: (ControlFlowNode | Element)) {
-        const name = this.createIdentifier("root");
-        const statement: TemplateRootStatement = {
-            type: "template-root",
+    private createTemplateDefinition(node: (ControlFlowNode | Element)) {
+        const name = this.createIdentifier("template");
+        const statement: TemplateDefinitionStatement = {
+            type: "template-definition",
             name,
             template: stringify(node.children)
         };
@@ -305,12 +301,12 @@ export class Transformer {
         // this.accessors.set(node, root)
     }
 
-    private createRootFragment(rootNode: (ControlFlowNode | Element), rootName: string) {
-        const name = this.createIdentifier("fragment");
-        const accessor: CreateRootStatement = {
-            type: "create-root",
+    private createTemplateInit(rootNode: (ControlFlowNode | Element), templateName: string) {
+        const name = this.createIdentifier("root");
+        const accessor: TemplateInitStatement = {
+            type: "template-init",
             name,
-            root: rootName
+            templateName
         };
         this.accessors.set(rootNode, accessor);
         return {

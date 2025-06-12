@@ -1,4 +1,5 @@
 import { TextOrInterpolation } from "../parse/ast";
+import { assertUnreachable } from "../utils";
 import { SwayStatement } from "./statements";
 import * as escodegen from "escodegen";
 
@@ -86,9 +87,9 @@ export function generate(statement: SwayStatement, indentation: number, logging 
         }
 
         case "attribute-updating": {
-            const { key, target, texts } = statement;
+            const { key, accessor, texts } = statement;
             const code = generateTextInterpolation(texts);
-            add(`$.setAttribute(${target}, \`${key}\`, ${code})`);
+            add(`$.setAttribute(${accessor}, \`${key}\`, ${code})`);
             break;
         }
 
@@ -122,14 +123,14 @@ export function generate(statement: SwayStatement, indentation: number, logging 
             break;
         }
 
-        case "template-root": {
+        case "template-definition": {
             const { name, template } = statement;
             add(`const ${name} = $.template(\`${template}\`);`);
             break;
         }
 
-        case "create-root": {
-            const { name, root } = statement;
+        case "template-init": {
+            const { name, templateName: root } = statement;
             add(`const ${name} = ${root}();`);
             break;
         }
@@ -184,23 +185,8 @@ export function generate(statement: SwayStatement, indentation: number, logging 
             break;
         }
 
-        case "proxy": {
-            // TODO: remove this
-            const { obj, key } = statement;
-            if (!key) {
-                // TODO: check if the object is a state or not
-                out += obj;
-            } else {
-                // we could inline this actually
-                out += `$.select(${obj}, \`${key}\`)`;
-            }
-            break;
-        }
-
         default: {
-            // return new Error("smdjfnuik")
-            throw new Error("Unimplemented (codegen)");
-            add(`/* ${statement.type} is not implement yet. */`);
+            assertUnreachable(statement);
         }
     }
 

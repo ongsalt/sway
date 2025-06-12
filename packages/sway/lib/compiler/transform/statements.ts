@@ -11,11 +11,6 @@ export type AnyStatement = {
     body: string;
 };
 
-export type UserEffectStatement = {
-    type: "user-effect",
-    body: string;
-};
-
 export type UserScriptStatement = {
     type: "user-script",
     body: string;
@@ -23,7 +18,7 @@ export type UserScriptStatement = {
 
 export type AttributeUpdatingStatement = {
     type: "attribute-updating",
-    target: string,
+    accessor: string,
     key: string, // textContent, class, ...
     texts: TextOrInterpolation[],
 };
@@ -73,16 +68,16 @@ export type TemplateEachStatement = {
     body: SwayStatement[];
 };
 
-export type TemplateRootStatement = {
-    type: "template-root",
+export type TemplateDefinitionStatement = {
+    type: "template-definition",
     name: string,
     template: string,
 };
 
-export type CreateRootStatement = {
-    type: "create-root",
+export type TemplateInitStatement = {
+    type: "template-init",
     name: string,
-    root: string,
+    templateName: string,
 };
 
 export type AccessorDefinitionStatement = {
@@ -135,20 +130,14 @@ export type Binding = {
     name: string;
 };
 
-// TODO: seperate runtime statement from these
-export type ProxyStatement = {
-    type: "proxy",
-    obj: string,
-    key: string | undefined,
-};
 
 export type SwayContainerStatement = ComponentFunctionStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement;
 
-export type SwayStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateRootStatement
-    | TemplateScopeStatement | UserEffectStatement | TextSettingStatement | AttributeUpdatingStatement
+export type SwayStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateDefinitionStatement
+    | TemplateScopeStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
-    | ComponentFunctionStatement | CreateRootStatement | AppendStatement | EventListenerAttachingStatement
-    | BindingStatement | ProxyStatement;
+    | ComponentFunctionStatement | TemplateInitStatement | AppendStatement | EventListenerAttachingStatement
+    | BindingStatement;
 
 export function priority(statement: SwayStatement) {
     switch (statement.type) {
