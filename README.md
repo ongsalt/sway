@@ -2,8 +2,6 @@
 ### 🌟☄️🌸🎼
 svelte 5 clone (hopefully)
 
-wow doing signal is fun
-
 ## What's done
 - Templating syntax: literally svelte, you can even use svelte lsp.
     - you can do interpolation e.g. `{count.value}`.

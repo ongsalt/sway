@@ -85,6 +85,13 @@ export function generate(statement: SwayStatement, indentation: number, logging 
             break;
         }
 
+        case "attribute-updating": {
+            const { key, target, texts } = statement;
+            const code = generateTextInterpolation(texts);
+            add(`$.setAttribute(${target}, \`${key}\`, ${code})`);
+            break;
+        }
+
         case "if": {
             const { condition, anchor, body, blockName, fragment, else: _else } = statement;
             add('');
@@ -159,12 +166,6 @@ export function generate(statement: SwayStatement, indentation: number, logging 
             } else {
                 add(`});`);
             }
-            break;
-        }
-
-        case "attribute-updating": {
-            const { isFunction, key, target, type } = statement;
-            throw new Error(`Unimplemented (${type}): ${statement}`)
             break;
         }
 

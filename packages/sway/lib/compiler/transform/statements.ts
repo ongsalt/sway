@@ -25,8 +25,7 @@ export type AttributeUpdatingStatement = {
     type: "attribute-updating",
     target: string,
     key: string, // textContent, class, ...
-    isFunction: false, // onclick
-    valueExpression: string,
+    texts: TextOrInterpolation[],
 };
 
 export type TextSettingStatement = {

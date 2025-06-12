@@ -6,7 +6,6 @@ import { ControlFlowNode, Element, TemplateASTNode } from "../parse/ast";
 import { generate } from "./codegen";
 import { stringify } from "./html";
 import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, CreateRootStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateRootStatement, TemplateScopeStatement } from "./statements";
-import * as escodegen from "escodegen";
 
 export type TransformOptions = {
     name: string,
@@ -16,6 +15,7 @@ export type TransformOptions = {
 
 type NodePath = string;
 
+// i should rewrite this shit
 export class Transformer {
     private options: TransformOptions;
 
@@ -202,11 +202,41 @@ export class Transformer {
                                 out.push(statement);
                             } else {
                                 // do the same as below   
+                                const { accessor } = getOrCreateAccessor();
+                                out.push({
+                                    type: "template-effect",
+                                    body: [
+                                        {
+                                            type: "attribute-updating",
+                                            target: accessor.name,
+                                            texts: [
+                                                {
+                                                    type: "interpolation",
+                                                    body: attribute.expression,
+                                                }
+                                            ],
+                                            key: attribute.key
+                                        }
+                                    ]
+                                });
                             }
                         }
                     } else {
-                        if (attribute.texts.some(it => it.type === "interpolation")) {
-                            // TODO: 
+                        const isInterpolated = attribute.texts.some(it => it.type === "interpolation");
+
+                        if (isInterpolated) {
+                            const { accessor } = getOrCreateAccessor();
+                            out.push({
+                                type: "template-effect",
+                                body: [
+                                    {
+                                        type: "attribute-updating",
+                                        target: accessor.name,
+                                        key: attribute.key,
+                                        texts: attribute.texts
+                                    }
+                                ]
+                            });
                         }
                     }
                 }

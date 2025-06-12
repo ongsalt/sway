@@ -1,5 +1,5 @@
 import { Component } from "../types";
-import { templateEffect } from "./reactivity";
+import { effectScope, templateEffect } from "./reactivity";
 
 type CleanupFn = () => unknown;
 declare global {
@@ -58,11 +58,13 @@ export function mount(component: Component, root: HTMLElement) {
     const anchor = comment();
     root.appendChild(anchor);
 
-    // Start component context????
-    // compiler then need to generate code for this 
-    // $.push() & $.pop() ??
-    component({ anchor });
-    // should return unmount()
+    let bindings;
+    const scope = effectScope();
+    scope.run(() => {
+        bindings = component({ anchor });
+    });
+
+    return { bindings }
 }
 
 // TODO: Listener should be inside an effect
