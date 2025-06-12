@@ -21,7 +21,7 @@ export function bind<T>(node: Node, attribute: string, getter: () => T, setter: 
 type TextInputElement = HTMLInputElement | HTMLTextAreaElement;
 function bindTextInput(element: TextInputElement, getter: () => string, setter: (value: string) => unknown) {
     // type inference is kinda shit
-    listen(element, "input", (event) => {
+    listen(element, "input", () => (event) => {
         const { value } = element;
         if (element.type === "number" || element.type === "range") {
             parseFloat(value);
@@ -40,7 +40,7 @@ function bindCheckbox(element: HTMLInputElement, getter: () => boolean, setter: 
         throw new Error(`${element} is not a checkbox.`);
     }
 
-    listen(element, "input", (event) => {
+    listen(element, "input", () => (event) => {
         setter(element.checked);
     });
 

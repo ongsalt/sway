@@ -93,9 +93,6 @@
 <div class="border rounded-lg bg-neutral-100 m-8 overflow-clip">
     <div class="p-4 bg-white border-b shadow-sm flex gap-2">
         <h3 class="font-medium">JSON</h3>
-        <p class="text-black/60">
-            why tf is this reactive (probably json.stringify internal call)
-        </p>
     </div>
     <p class="p-4">
         {JSON.stringify(todos)}
