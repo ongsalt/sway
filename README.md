@@ -15,7 +15,8 @@ wow doing signal is fun
     - there is also `effect` and `computed`
 - event listener 
     - but if you do `onclick={createFn(a)}` this wont rerun after `a` is changed. this is to be fixed later
-- `each` syntax shuold be ok now. see [each.ts](packages/sway/lib/runtime/each.ts) for more technical note. 
+- `each` syntax should be ok now. see [each.ts](packages/sway/lib/runtime/each.ts) for more technical note. 
+    - BUT each item will be a `Signal` so you need to call .value on it 
 - value binding for `input` and `textarea`
     - auto coerce type to number for `<input type="number">`
     - the same go for checkbox

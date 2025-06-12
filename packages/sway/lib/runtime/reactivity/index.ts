@@ -95,3 +95,4 @@ export function effectScope(root = false): EffectScope {
 };
 
 export { untrack } from "./internal";
+export { getRawValue as raw } from "./proxy";

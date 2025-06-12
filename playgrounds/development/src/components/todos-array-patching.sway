@@ -1,21 +1,21 @@
 <script>
-    import { signal, effect, reactive } from "sway";
+    import { signal, effect, reactive, raw } from "sway";
 
     let id = 12768;
 
-    const todos = signal([
+    const todos = reactive([
         {
             id: id++,
             description: "lorem",
-            createdAt: new Date(),
             editing: false,
         },
     ]);
 
     function remove2(index) {
         return () => {
-            const removed = todos.splice(index, 1);
+            const [removed] = todos.splice(index, 1);
             console.log(`removing todo number ${index}`, removed);
+            // console.log("raw", raw(todos))
         };
     }
 
@@ -25,7 +25,6 @@
         todos.push({
             id: id++,
             description: description.value,
-            createdAt: new Date(),
             editing: false,
         });
         // console.log(todos)
@@ -66,7 +65,7 @@
         </button>
     </div>
 
-    {#each todos.value as todo, index}
+    {#each todos as todo, index}
         <div class="border rounded-md p-4">
             <span>index: {index.value}, id: {todo.id}</span>
             {#if todo.editing}
@@ -81,7 +80,6 @@
             {:else}
                 <p class="">{todo.description}</p>
             {/if}
-            <p class="opacity-50">{todo.createdAt}</p>
             <button
                 onclick={() => toggleEdit(todo)}
                 class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"

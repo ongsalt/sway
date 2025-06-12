@@ -28,23 +28,26 @@ if not nothing happen but gc wont happen
 const ARRAY_ROOT = Symbol("array-root");
 const arrayMutMethods: (keyof any[])[] = ["fill", "pop", "push", "reverse", "shift", "sort", "splice", "unshift"];
 
-export function createProxy<T extends object>(obj: T) {
-    // only allow plain object, uss normal signal instead
+export function createProxy<T>(obj: T): T {
+    if (typeof obj !== "object" || obj === null) {
+        return obj;
+    }
+    // only allow plain object, anything else should use normal signal instead
     const isArray = Array.isArray(obj);
     if (Object.getPrototypeOf(obj) !== Object.prototype && !isArray) {
         return obj;
     }
 
+    if (isArray) {
+        // @ts-ignore oh pls shut up
+        return createArrayProxy(obj);
+    }
+
     // well if we do Function.bind then we can probably accept any class
 
-    // how do we do array tho
-
-    // im sorry for looking into svelte impl of these
+    // im sorry for looking at svelte impl of these
     const sources = new Map<string | symbol, Source>();
 
-    if (isArray) {
-        sources.set(ARRAY_ROOT, createSignal(sources));
-    }
 
     function release() {
         for (const source of sources.values()) {
@@ -59,39 +62,6 @@ export function createProxy<T extends object>(obj: T) {
             }
             if (p === RELEASE) {
                 return release;
-            }
-
-            // if its array function then we create a wrapper that will then trigger()
-            if (isArray) {
-                // arghhh this is pain in the ass
-                // vue do wrap every fucking array method
-                // svelte use its compiler...
-                // 😭😭😭😭
-                // for binding under `each` im gonna just do it in `each` 
-                const s = sources.get(ARRAY_ROOT)!;
-                const value = Reflect.get(target, p, receiver);
-                if (arrayMutMethods.includes(p as any)) {
-                    const method = (value as (...args: any[]) => any).bind(target);
-                    return (...args: any[]) => {
-                        const ret = method(...args);
-                        trigger(s);
-                        return ret;
-                    };
-                }
-
-                // other method or lenght
-                if (p in Array.prototype) {
-                    get(s); // track it
-                    if (typeof value === "function" && value !== null) {
-                        return value.bind(target);
-                    }
-                    return value;
-                }
-
-                // [index] accessing
-                get(s);
-                // then do the same
-                // console.log(`Fallthrough ${String(p)}`);
             }
 
             let s = sources.get(p);
@@ -128,13 +98,131 @@ export function createProxy<T extends object>(obj: T) {
             return true;
         },
 
-        // defineProperty(target, property, attributes) {
+        has(target, p) {
+            if (p === RAW_VALUE || p === RELEASE) {
+                return true;
+            }
 
-        // },
+            return Reflect.has(target, p);
+        },
+    });
+}
 
-        // deleteProperty(target, p) {
+export function createArrayProxy<T>(arr: T[]): T[] {
+    // only allow array, TODO: validate it at run time
 
-        // },
+    const sources = new Map<string | symbol, Source>();
+
+    // console.log dont read any of the props, so we cant track it unless we are doing codegen
+    const arrayRoot = createSignal(arr);
+    sources.set(ARRAY_ROOT, arrayRoot);
+
+    function invalidateArrayIndex() {
+        const toInvalidate = [...sources.keys()].filter(it => {
+            if (typeof it === "symbol") {
+                return false;
+            }
+            try {
+                return !Number.isNaN(parseInt(it));
+            } catch {
+                return false;
+            }
+        });
+
+        // TODO: cache [index] subscribers list
+        // TODO: fine grained marking
+
+        trigger(arrayRoot!);
+        for (const key of toInvalidate) {
+            set(sources.get(key)!, createProxy(arr[key as any]));
+        }
+    }
+
+    function release() {
+        for (const source of sources.values()) {
+            destroy(source);
+        }
+    }
+
+    return new Proxy(arr, {
+        get(target, p, receiver) {
+            if (p === RAW_VALUE) {
+                return arr; // what is the different from target
+            }
+            if (p === RELEASE) {
+                return release;
+            }
+
+
+            // arghhh this is pain in the ass
+            // vue do wrap every fucking array method
+            // how tf does svelte do this
+            // 😭😭😭😭
+            const rawValue = Reflect.get(target, p, receiver);
+            // instead of bind to the og array should we throw in new array of proxies instead
+            if (arrayMutMethods.includes(p as any)) {
+                // TODO: we should bind value to array of proxies instead
+                const method = (rawValue as (...args: any[]) => any).bind(target);
+                return (...args: any[]) => {
+                    const ret = method(...args);
+                    // we also need to invalidate [index] subscriber
+                    invalidateArrayIndex();
+                    return ret;
+                };
+            }
+
+            // other method or lenght
+            if (p in Array.prototype) {
+                get(arrayRoot!); // track it
+                if (typeof rawValue === "function" && rawValue !== null) {
+                    return rawValue.bind(target);
+                }
+                return rawValue;
+            }
+
+
+            // indexing
+            let s = sources.get(p);
+            if (!s) {
+                const original = Reflect.get(target, p, receiver);
+                if (typeof original === "object" && original !== null) {
+                    s = createSignal(createProxy(original));
+                } else {
+                    s = createSignal(original);
+                }
+                sources.set(p, s);
+            }
+
+            const value = get(s);
+            if (typeof value === "function" && value !== null) {
+                return value.bind(target);
+            }
+            return value;
+        },
+
+        set(target, p, newValue, receiver) {
+            Reflect.set(target, p, newValue, receiver);
+
+            let s = sources.get(p);
+            if (s) {
+                // should we track a property of a function tho
+                // if its an proxy then release its properties subscriber
+                const value = s.value;
+                destroyProxy(value);
+                set(s, newValue);
+                return true;
+            }
+
+            return true;
+        },
+
+        has(target, p) {
+            if (p === RAW_VALUE || p === RELEASE) {
+                return true;
+            }
+
+            return Reflect.has(target, p);
+        },
     });
 }
 
@@ -152,6 +240,7 @@ export function isProxy(value: any): value is object & Record<typeof RAW_VALUE, 
 
 export function getRawValue<T>(value: T): T {
     if (!isProxy(value)) {
+        console.log("not a proxy");
         return value;
     }
 

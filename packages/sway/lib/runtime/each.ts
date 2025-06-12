@@ -1,9 +1,8 @@
 import { append, comment, remove, sweep } from "./dom";
 import { effectScope, EffectScope, signal, Signal, templateEffect } from "./reactivity";
-import { createProxy } from "./reactivity/proxy";
+import { getRawValue } from "./reactivity/proxy";
 import { getTransformation } from "./utils/array";
 import { identity } from "./utils/functions";
-import { isObject } from "./utils/object";
 
 /*
 basically this
@@ -91,7 +90,9 @@ export function each<Item>(
 
     function notifyOrderChange() {
         childrenContexts.forEach((context, index) => {
-            context.index.value = index;
+            if (context.index.value !== index) {
+                context.index.value = index;
+            }
         });
     }
 
@@ -111,6 +112,11 @@ export function each<Item>(
         // todo: dont key thing unless explicitly stated
         const newKeys = items.map(keyFn);
         const diff = getTransformation(currentKeys, newKeys);
+        // console.log({
+        //     diff,
+        //     currentKeys,
+        //     newKeys
+        // });
 
         // TODO: in fact we could have just swap the data props
         //       and keep the node only if key is provided

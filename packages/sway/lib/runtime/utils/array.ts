@@ -6,9 +6,7 @@ export type Operation<T> =
     | { type: 'move', fromIndex: number, toIndex: number };
 
 
-// priority: amount of node that stay the same (minimize change) > dom updating
-// we should do stalin sort
-// what tf was i thinking then
+
 // but lmao its work (at least for now)
 export function stalinSort<T>(input: T[], compare: (left: T, right: T) => number): T[] {
     if (input.length === 1) {
@@ -83,3 +81,5 @@ export function getTransformation<T>(previous: T[], after: T[]): Operation<T>[] 
     return operations;
 }
 
+
+1929901041449
