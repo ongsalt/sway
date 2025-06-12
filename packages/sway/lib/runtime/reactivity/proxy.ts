@@ -1,3 +1,4 @@
+import { ar } from "vitest/dist/chunks/reporters.nr4dxCkA.js";
 import { createSignal, destroy, get, set, Source, trigger } from "./internal";
 
 export const RAW_VALUE = Symbol("raw-value");
@@ -134,7 +135,18 @@ export function createArrayProxy<T>(arr: T[]): T[] {
 
         trigger(arrayRoot!);
         for (const key of toInvalidate) {
-            set(sources.get(key)!, createProxy(arr[key as any]));
+            const s = sources.get(key)!;
+            if (key in arr) {
+                set(s, createProxy(arr[key as any]));
+            } else {
+                destroy(s);
+            }
+        }
+        // we should not lazily create this
+        const l = sources.get("lenght");
+        if (l) {
+            console.log({ l });
+            set(l, arr.length);
         }
     }
 

@@ -99,6 +99,7 @@ export function each<Item>(
     templateEffect(() => {
         const items: Item[] = [];
         const _items = collection();
+
         for (let i = 0; i < _items.length; i++) {
             items.push(_items[i]); // this is to create linked proxy 
         }
@@ -112,11 +113,11 @@ export function each<Item>(
         // todo: dont key thing unless explicitly stated
         const newKeys = items.map(keyFn);
         const diff = getTransformation(currentKeys, newKeys);
-        // console.log({
-        //     diff,
-        //     currentKeys,
-        //     newKeys
-        // });
+        console.log({
+            diff,
+            currentKeys,
+            newKeys
+        });
 
         // TODO: in fact we could have just swap the data props
         //       and keep the node only if key is provided
@@ -129,7 +130,6 @@ export function each<Item>(
         }
 
         notifyOrderChange();
-        // console.log({ childrenContexts })
 
         currentKeys = newKeys;
 
