@@ -14,9 +14,7 @@ wow doing signal is fun
     - `signal` behave the same as svelte `$state` except you need to use `.value`. (i should say "more like vue" tho)
     - there is also `effect` and `computed`
 - event listener 
-    - but if you do `onclick={createFn(a)}` this wont rerun after `a` is changed. this is to be fixed later
 - `each` syntax should be ok now. see [each.ts](packages/sway/lib/runtime/each.ts) for more technical note. 
-    - BUT each item will be a `Signal` so you need to call .value on it 
 - value binding for `input` and `textarea`
     - auto coerce type to number for `<input type="number">`
     - the same go for checkbox
@@ -26,11 +24,14 @@ wow doing signal is fun
 - deep reactivity
 
 ## What's not yet
-- complex expression here `#each {expression} as something, index`
+- think about each binding: should we make each item a signal or not.
+- parse more complex expression here `#each {expression} as something, index`
     - `#each cats.filter(it => it.id.length < lenght) as cat, i`
     - currently, this is parse failure 
-- wrap event handlers inside an effect
-- async computed 💀💀💀 and some kind of suspense boundary
+- Async stuff
+    - await block
+    - some kind of react-like suspense boundary
+    - async derived 💀💀💀 
 - ~~do transpiling magic that allow you to use signal without `.value` like runes~~
 - Component
 - typescript support 

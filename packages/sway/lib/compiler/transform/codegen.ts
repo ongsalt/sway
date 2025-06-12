@@ -137,7 +137,7 @@ export function generate(statement: SwayStatement, indentation: number, logging 
             const { event, listenerFn, node } = statement;
             // shuold we move this under an effect?
             // or remove component context and add fragmentContext??
-            add(`$.listen(${node}, ${event}, ${listenerFn});`);
+            add(`$.listen(${node}, ${event}, () => ${listenerFn});`);
             break;
         }
 

@@ -1,5 +1,5 @@
 <script>
-    import { signal, effect, reactive, raw } from "sway";
+    import { reactive, signal } from "sway";
 
     let id = 12768;
 
@@ -36,12 +36,6 @@
         // TODO: make this NOT run immediately
         console.log(todo);
     }
-
-    effect(() => {
-        // for (const a of todos) {
-        // }
-        console.log("[iterator] rerun");
-    });
 </script>
 
 <main class="m-8 border rounded-lg shadow-sm p-6 space-y-8">

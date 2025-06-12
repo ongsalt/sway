@@ -40,11 +40,13 @@ export interface Computed<T = any> extends Source<T>, Subscriber {
     parent: EffectScope | null; // we technically dont need to do this, but gc
 }
 
+export type Cleanup = () => any;
+export type EffectFn = () => (void | Cleanup);
 // effect shuold also Own all subscriber inside it 
 export interface Effect extends Subscriber, EffectScope {
-    fn: () => (void | (() => void));
+    fn: EffectFn;
     priority: number;
-    cleanup?: () => void;
+    cleanups: Cleanup[];
 }
 
 // or effect owner?
@@ -97,14 +99,15 @@ export function createSignal<T>(value: T): Signal<T> {
     };
 }
 
-export function createEffect(fn: () => any, priority = 1): Effect {
+export function createEffect(fn: EffectFn, priority = 1): Effect {
     const effect: Effect = {
         dirty: false,
         fn,
         sources: new Set(),
         priority,
         children: new Set(),
-        parent: activeScope
+        parent: activeScope,
+        cleanups: []
     };
 
     if (effect.parent) {
@@ -173,7 +176,10 @@ function updateEffect(effect: Effect) {
     runCleanup(effect);
 
     try {
-        effect.cleanup = effect.fn() as any; // fuck ts
+        const cleanup = effect.fn(); // fuck ts
+        if (cleanup) {
+            effect.cleanups.push(cleanup);
+        }
         effect.dirty = false;
     } catch (e) {
         console.error("[Effect]", e);
@@ -255,16 +261,16 @@ export function set<T>(signal: Signal<T>, value: T) {
 
 function runCleanup(effect: Effect) {
     try {
-        effect.cleanup?.();
+        effect.cleanups.forEach(fn => fn());
     } catch (e) {
         console.error("[destroy Effect cleanup]", e);
     } finally {
-        effect.cleanup = undefined;
+        effect.cleanups = [];
     }
 }
 
 export function destroy(node: ReactiveNode) {
-    if ("cleanup" in node) {
+    if ("cleanups" in node) {
         runCleanup(node);
     }
 

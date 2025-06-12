@@ -1,4 +1,4 @@
-import { createComputed, createEffect, createEffectScope, createSignal, destroy, get, set, withScope } from "./internal";
+import { createComputed, createEffect, createEffectScope, createSignal, destroy, EffectFn, get, set, withScope } from "./internal";
 import { createProxy, destroyProxy, RELEASE } from "./proxy";
 
 // not the same as in internal.ts
@@ -66,7 +66,7 @@ export function computed<T>(fn: () => T): Computed<T> {
     };
 }
 
-export function effect(fn: () => unknown, priority = 3) {
+export function effect(fn: EffectFn, priority = 3) {
     const e = createEffect(fn, priority);
 
     return () => destroy(e);
@@ -76,7 +76,7 @@ export function reactive<T extends object>(obj: T): T {
     return createProxy(obj);
 }
 
-export function templateEffect(fn: () => unknown) {
+export function templateEffect(fn: EffectFn) {
     return effect(fn, 2);
 }
 

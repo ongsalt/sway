@@ -1,4 +1,5 @@
 import { Component } from "../types";
+import { templateEffect } from "./reactivity";
 
 type CleanupFn = () => unknown;
 declare global {
@@ -65,14 +66,15 @@ export function mount(component: Component, root: HTMLElement) {
 }
 
 // TODO: Listener should be inside an effect
-export function listen<E extends Element>(element: E, type: keyof HTMLElementEventMap, listener: EventListenerOrEventListenerObject) {
-    // console.log("ajhufysik")
-    element.addEventListener(type, listener);
-    if (!element.$$cleanups) {
-        element.$$cleanups = [];
-    }
-    element.$$cleanups.push(() => element.removeEventListener(type, listener));
-    // console.log(element)
+export function listen<E extends Element>(element: E, type: keyof HTMLElementEventMap, createListener: () => EventListenerOrEventListenerObject) {
+    templateEffect(() => {
+        const listener = createListener();
+        element.addEventListener(type, listener);
+
+        return () => {
+            element.removeEventListener(type, listener);
+        };
+    });
 }
 
 // exclusive

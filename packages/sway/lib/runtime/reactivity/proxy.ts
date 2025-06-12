@@ -130,9 +130,7 @@ export function createArrayProxy<T>(arr: T[]): T[] {
             }
         });
 
-        // TODO: cache [index] subscribers list
         // TODO: fine grained marking
-
         trigger(arrayRoot!);
         for (const key of toInvalidate) {
             const s = sources.get(key)!;
@@ -145,7 +143,6 @@ export function createArrayProxy<T>(arr: T[]): T[] {
         // we should not lazily create this
         const l = sources.get("lenght");
         if (l) {
-            console.log({ l });
             set(l, arr.length);
         }
     }
@@ -173,7 +170,7 @@ export function createArrayProxy<T>(arr: T[]): T[] {
             const rawValue = Reflect.get(target, p, receiver);
             // instead of bind to the og array should we throw in new array of proxies instead
             if (arrayMutMethods.includes(p as any)) {
-                // TODO: we should bind value to array of proxies instead
+                // TODO: bind value to array of proxies instead
                 const method = (rawValue as (...args: any[]) => any).bind(target);
                 return (...args: any[]) => {
                     const ret = method(...args);
