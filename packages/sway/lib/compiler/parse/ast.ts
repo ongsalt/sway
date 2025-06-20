@@ -6,59 +6,83 @@ export type Attribute = {
         {
             whole: true, // for key={}
             isBinding: boolean,
-            expression: string
+            expression: string;
         } | {
             whole: false, // for key="something-{}"
-            texts: TextOrInterpolation[]
+            texts: TextOrInterpolation[];
         }
-    )
+    );
 
 export type TextOrInterpolation = {
-    type: "static" | "interpolation"
-    body: string
-}
+    type: "static" | "interpolation";
+    body: string;
+};
 
 export type TextNode = {
     type: "text",
-    texts: TextOrInterpolation[]
-}
+    parent?: Parent;
+    texts: TextOrInterpolation[];
+};
 
 // we gonna make if/else block behave like a node
 export type IfNode = {
-    type: "control-flow"
+    type: "control-flow";
+    parent?: Parent;
     kind: "if",
-    condition: string
+    condition: string;
     children: TemplateASTNode[],
-    else?: ElseNode
-}
+    else?: ElseNode;
+};
 
 // just for the transformer
 export type ElseNode = {
-    type: "control-flow"
+    type: "control-flow";
+    parent?: IfNode;
     kind: "else",
     children: TemplateASTNode[],
-}
+};
 
 export type EachNode = {
-    type: "control-flow"
+    type: "control-flow";
+    parent?: Parent;
     kind: "each",
     iteratable: string,
-    children: TemplateASTNode[]
+    children: TemplateASTNode[];
     index?: string,
     as?: string,
-    key?: string
-}
-export type ControlFlowNode = IfNode | EachNode | ElseNode
+    key?: string;
+};
 
-export type Element = {
+export type ControlFlowNode = IfNode | EachNode | ElseNode;
+
+export type ElementNode = {
     type: "element",
+    parent?: Parent;
     tag: string,
     isSelfClosing: boolean,
     children: TemplateASTNode[],
-    attributes: Attribute[]
-}
+    attributes: Attribute[];
+};
 
-export type TemplateASTNode = Element | ControlFlowNode | TextNode
+export type ComponentNode = {
+    type: "component",
+    parent?: Parent;
+    name: string,
+    isSelfClosing: boolean,
+    children: TemplateASTNode[],
+    props: Attribute[];
+};
+
+export type TemplateASTNode = ComponentNode | ElementNode | ControlFlowNode | TextNode;
+export type TemplateASTNodeWithRoot = ComponentNode | ElementNode | ControlFlowNode | TextNode | TemplateAST;
+export type Parent = ElementNode | ControlFlowNode | TemplateAST | ComponentNode;
+
+export type TemplateAST = {
+    type: "root";
+    script?: ElementNode;
+    children: TemplateASTNode[];
+    style?: ElementNode;
+};
 
 // TS MAGIC
 // claude wrote this

@@ -2,10 +2,10 @@ import * as acorn from "acorn";
 import { Node } from "estree";
 import { walk } from "estree-walker";
 import { analyze } from "periscopic";
-import { ControlFlowNode, Element, TemplateASTNode } from "../../parse/ast";
-import { generate } from "./codegen";
-import { stringify } from "./html";
+import { ControlFlowNode, ElementNode, TemplateASTNode } from "../../parse/ast";
+import { generate, stringify } from "./codegen";
 import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, TemplateInitStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateDefinitionStatement, TemplateScopeStatement } from "./statements";
+
 
 export type TransformOptions = {
     name: string,
@@ -66,7 +66,7 @@ export class Transformer {
         const statements: TemplateDefinitionStatement[] = [];
 
         // fuck `this`
-        const walk = (node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): SwayStatement[] => {
+        const walk = (node: TemplateASTNode, parents: (ElementNode | ControlFlowNode)[]): SwayStatement[] => {
             const out: SwayStatement[] = [];
             if (node.type === "text") {
                 const isInterpolated = node.texts.some(it => it.type === "interpolation");
@@ -251,7 +251,7 @@ export class Transformer {
 
         const componentRoots = this.roots.filter(it => !(it.type === "element" && it.tag === "script"));
 
-        const pseudoRoot: Element = {
+        const pseudoRoot: ElementNode = {
             type: "element",
             tag: "$$root",
             attributes: [],
@@ -287,7 +287,7 @@ export class Transformer {
         };
     }
 
-    private createTemplateDefinition(node: (ControlFlowNode | Element)) {
+    private createTemplateDefinition(node: (ControlFlowNode | ElementNode)) {
         const name = this.createIdentifier("template");
         const statement: TemplateDefinitionStatement = {
             type: "template-definition",
@@ -301,7 +301,7 @@ export class Transformer {
         // this.accessors.set(node, root)
     }
 
-    private createTemplateInit(rootNode: (ControlFlowNode | Element), templateName: string) {
+    private createTemplateInit(rootNode: (ControlFlowNode | ElementNode), templateName: string) {
         const name = this.createIdentifier("root");
         const accessor: TemplateInitStatement = {
             type: "template-init",
@@ -326,7 +326,7 @@ export class Transformer {
         return _name;
     }
 
-    private createAccessor(node: TemplateASTNode, parents: (Element | ControlFlowNode)[]): AccessorDefinitionStatement[] {
+    private createAccessor(node: TemplateASTNode, parents: (ElementNode | ControlFlowNode)[]): AccessorDefinitionStatement[] {
         const [immediateParent, ...rest] = parents;
 
         // Actually we could use any name
@@ -469,7 +469,7 @@ export class Transformer {
     }
 
     private parseScript(): string {
-        const script = this.roots.find(it => it.type === "element" && it.tag === "script") as Element | undefined;
+        const script = this.roots.find(it => it.type === "element" && it.tag === "script") as ElementNode | undefined;
         if (!script || script.children.length !== 1 || script.children[0].type !== "text") {
             return "";
         }

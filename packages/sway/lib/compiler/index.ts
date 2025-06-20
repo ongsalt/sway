@@ -12,5 +12,7 @@ export function compile(source: string, options: CompilerOptions = {}) {
         ...options
     });
 
+    // console.log(output)
+
     return output;
 }

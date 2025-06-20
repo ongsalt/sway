@@ -88,16 +88,12 @@ export type AccessorDefinitionStatement = {
     index?: number;
 };
 
-export type ComponentFunctionStatement = {
-    type: "component-function",
-    name: string,
-    body: SwayStatement[];
-};
 
 export type ComponentDeclarationStatement = {
     type: "component-declaration",
     before: SwayStatement[],
-    fn: ComponentFunctionStatement,
+    name: string,
+    body: SwayStatement[];
     after: SwayStatement[],
 };
 
@@ -131,12 +127,12 @@ export type Binding = {
 };
 
 
-export type SwayContainerStatement = ComponentFunctionStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement;
+export type SwayContainerStatement = TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement;
 
 export type SwayStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateDefinitionStatement
     | TemplateScopeStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
-    | ComponentFunctionStatement | TemplateInitStatement | AppendStatement | EventListenerAttachingStatement
+    | TemplateInitStatement | AppendStatement | EventListenerAttachingStatement
     | BindingStatement;
 
 export function priority(statement: SwayStatement) {

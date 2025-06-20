@@ -8,6 +8,6 @@ export type Result<T, E = undefined> = {
     error?: undefined
 }
 
-export function unreachable(x: never): never {
-    throw new Error("Didn't expect to get here");
+export function unreachable(message?: string): never {
+    throw new Error(`[Unreachable] ${message}`);
 }

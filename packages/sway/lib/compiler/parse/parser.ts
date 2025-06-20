@@ -1,6 +1,6 @@
 import { Token, EachToken, IfOrElifToken, InterpolationToken, LiteralToken, SymbolToken, TextNodeToken, TokenWithoutLineNumber } from "./token";
 import { Result } from "../utils";
-import { TemplateASTNode, Attribute, ControlFlowNode, EachNode, Element, Fn, IfNode, InferConstTuple, TextNode } from "./ast";
+import { TemplateASTNode, Attribute, ControlFlowNode, EachNode, ElementNode, Fn, IfNode, InferConstTuple, TextNode, TemplateAST, ComponentNode } from "./ast";
 import { ParserError } from "./error";
 
 export class Parser {
@@ -107,8 +107,42 @@ export class Parser {
         return res.value;
     }
 
-    parse(): TemplateASTNode[] {
-        return this.nodes();
+    private appendParent(node: TemplateASTNode) {
+        if (node.type === "text") {
+            return;
+        }
+        if (node.type === "control-flow" && node.kind === "if") {
+            const e = node.else;
+            if (e) {
+                e.parent = node;
+                this.appendParent(e);
+            }
+        }
+        for (const c of node.children) {
+            c.parent = node;
+            this.appendParent(c);
+        }
+    }
+
+    parse(): TemplateAST {
+        const nodes = this.nodes();
+        // TODO: allow multiple styles and scripts
+        const style = nodes.find(it => it.type === "element" && it.tag === "style") as ElementNode | undefined;
+        const script = nodes.find(it => it.type === "element" && it.tag === "script") as ElementNode | undefined;
+
+        const children = nodes.filter(it => it !== style && it !== script);
+
+        const ast: TemplateAST = {
+            type: "root",
+            script,
+            style,
+            children
+        };
+        for (const node of children) {
+            node.parent = ast;
+            this.appendParent(node);
+        }
+        return ast;
     }
 
     private nodes(trimWhitespace = true): TemplateASTNode[] {
@@ -171,26 +205,52 @@ export class Parser {
         return this.oneOfOrThrow(
             [
                 () => this.text(),
-                () => this.element(),
+                () => this.elementOrComponent(),
                 () => this.controlFlow(),
             ],
         );
     }
 
-    private element(): Element {
+    private element(): ElementNode {
+        const e = this.elementOrComponent();
+        if (e.type !== "element") {
+            throw new ParserError("expected", "element");
+        }
+        return e;
+    }
+
+    private component(): ComponentNode {
+        const c = this.elementOrComponent();
+        if (c.type !== "component") {
+            throw new ParserError("expected", "component");
+        }
+        return c;
+    }
+
+    private elementOrComponent(): ElementNode | ComponentNode {
         return this.oneOfOrThrow([
-            () => this.normalElement(),
-            () => this.selfClosingElement()
+            () => this.normalElementOrComponent(),
+            () => this.selfClosingElementOrComponent()
         ]);
     }
 
-    private normalElement(): Element {
+    private normalElementOrComponent(): ElementNode | ComponentNode {
         const { attributes, tagName } = this.openingTag();
         const children = this.nodes();
         const closingTagName = this.closingTag();
 
         if (closingTagName != tagName) {
             throw new ParserError("invalid", `Tag:${tagName} doesn't match at line ${this.line}`);
+        }
+
+        if (isCapitalized(tagName)) {
+            return {
+                type: "component",
+                name: tagName,
+                isSelfClosing: false,
+                props: attributes,
+                children,
+            };
         }
 
         return {
@@ -202,8 +262,19 @@ export class Parser {
         };
     }
 
-    private selfClosingElement(): Element {
+    private selfClosingElementOrComponent(): ElementNode | ComponentNode {
         const { attributes, tagName } = this.selfClosingTag();
+
+        if (isCapitalized(tagName)) {
+            return {
+                type: "component",
+                name: tagName,
+                isSelfClosing: true,
+                props: attributes,
+                children: []
+            };
+        }
+
         return {
             type: "element",
             tag: tagName,
@@ -361,6 +432,7 @@ export class Parser {
         }
 
         // console.dir(children, { depth: null })
+        // console.log(this.tokens[this.current+1])
         this.consumeToken("endif");
 
         return {
@@ -434,4 +506,13 @@ export class Parser {
             children
         };
     }
+}
+
+function getType(tagName: string) {
+    return isCapitalized(tagName) ? "component" : "element";
+}
+
+function isCapitalized(str: string): boolean {
+    if (!str || str.length === 0) return false;
+    return str[0] === str[0].toUpperCase() && str[0] !== str[0].toLowerCase();
 }

@@ -1,7 +1,12 @@
-import { TemplateASTNode } from "../parse/ast";
-import { Transformer, TransformOptions } from "./client/transformer";
+import { TemplateAST } from "../parse/ast";
+import { transform as clientTransform } from "./client";
+import type { TransformOptions as ClientTransformOptions } from "./client/transformer";
 
-export function transform(roots: TemplateASTNode[], options: Partial<TransformOptions>) {
-    const transformer = new Transformer(roots, options)
-    return transformer.build()
+type TransformOptions = ClientTransformOptions & {
+    target?: "client" | "server";
+};
+
+export function transform(ast: TemplateAST, options: Partial<TransformOptions>) {
+    return clientTransform(ast, options);
 }
+
