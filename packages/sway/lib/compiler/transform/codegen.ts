@@ -1,5 +1,5 @@
 import { TextOrInterpolation } from "../parse/ast";
-import { assertUnreachable } from "../utils";
+import { unreachable } from "../utils";
 import { SwayStatement } from "./statements";
 import * as escodegen from "escodegen";
 
@@ -186,7 +186,7 @@ export function generate(statement: SwayStatement, indentation: number, logging 
         }
 
         default: {
-            assertUnreachable(statement);
+            unreachable(statement);
         }
     }
 

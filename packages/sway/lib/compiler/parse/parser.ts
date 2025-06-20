@@ -1,11 +1,10 @@
-import { Token } from "../tokenize";
-import { EachToken, IfOrElifToken, InterpolationToken, LiteralToken, SymbolToken, TextNodeToken, TokenWithoutLineNumber } from "../tokenize/token";
+import { Token, EachToken, IfOrElifToken, InterpolationToken, LiteralToken, SymbolToken, TextNodeToken, TokenWithoutLineNumber } from "./token";
 import { Result } from "../utils";
 import { TemplateASTNode, Attribute, ControlFlowNode, EachNode, Element, Fn, IfNode, InferConstTuple, TextNode } from "./ast";
 import { ParserError } from "./error";
 
 export class Parser {
-    private current = 0
+    private current = 0;
     constructor(public tokens: Token[]) { }
 
     private isAtEnd() {
@@ -13,7 +12,7 @@ export class Parser {
     }
 
     private next() {
-        return this.tokens[this.current++] // yield current and move the pointer to next one
+        return this.tokens[this.current++]; // yield current and move the pointer to next one
     }
 
     private peek() {
@@ -22,45 +21,45 @@ export class Parser {
     }
 
     get line() {
-        return this.peek()?.line
+        return this.peek()?.line;
     }
 
     private safe<T>(fn: () => T): Result<T> { // auto unwinding
-        const position = this.current
+        const position = this.current;
         // BRUH
         try {
             return {
                 ok: true,
                 value: fn()
-            }
+            };
         } catch (error) {
             if (!(error instanceof ParserError)) {
                 throw error;
             }
             // console.log('[unwinding] ',error)
-            this.current = position
+            this.current = position;
             return {
                 ok: false,
                 error: error as any
-            }
+            };
         }
     }
 
     private consumeToken<T extends TokenWithoutLineNumber>(type: T["type"]): T { // TODO: im too lazy to make the type
-        const token = this.peek()!
+        const token = this.peek()!;
 
         if (token.type != type) {
-            throw new ParserError("expected", `Expecting ${type} at line ${token.line}`) // TODO: make error enum
+            throw new ParserError("expected", `Expecting ${type} at line ${token.line}`); // TODO: make error enum
         }
 
-        this.next()
-        return token as unknown as T
+        this.next();
+        return token as unknown as T;
     }
 
     private consumeAll<T>(consume: () => T): T[] {
-        const results: T[] = []
+        const results: T[] = [];
         while (true) {
-            const res = this.safe(() => consume())
+            const res = this.safe(() => consume());
             // console.log({
             //     res: res.value,
             //     current: this.peek()
@@ -68,29 +67,29 @@ export class Parser {
             // console.log(`[consumeAll] consuming ${res.value}`)
             if (!res.ok) {
                 // console.log(`[consumeAll] stoping ${res.ok}`)
-                break
+                break;
             }
-            results.push(res.value)
+            results.push(res.value);
         }
 
-        return results
+        return results;
     }
 
     private oneOf<const T extends readonly Fn<any>[]>(fns: T): Result<InferConstTuple<T>[number]> {
         for (const fn of fns) {
-            const res = this.safe(() => fn())
+            const res = this.safe(() => fn());
             if (res.ok) {
                 return {
                     ok: true,
                     value: res.value
-                } as const
+                } as const;
             }
         }
 
         return {
             ok: false,
             error: undefined
-        } as const
+        } as const;
     }
 
     private oneOfOrThrow<
@@ -100,20 +99,20 @@ export class Parser {
         fns: T,
         errorBuilder: (e: any) => E = (() => new ParserError("expected", "not exist") as Error as E)
     ): InferConstTuple<T>[number] {
-        const res = this.oneOf(fns)
+        const res = this.oneOf(fns);
         if (!res.ok) {
-            throw errorBuilder(res.error)
+            throw errorBuilder(res.error);
         }
 
-        return res.value
+        return res.value;
     }
 
     parse(): TemplateASTNode[] {
-        return this.nodes()
+        return this.nodes();
     }
 
     private nodes(trimWhitespace = true): TemplateASTNode[] {
-        let nodes = this.consumeAll(() => this.node())
+        let nodes = this.consumeAll(() => this.node());
         if (trimWhitespace) {
             // const first = nodes.at(0)
             // const last = nodes.at(-1)
@@ -143,29 +142,29 @@ export class Parser {
 
             nodes = nodes.filter(it => {
                 if (it.type !== "text") {
-                    return true
+                    return true;
                 }
 
                 const firstText = it.texts[0];
                 if (firstText && firstText.type === "static") {
-                    firstText.body = firstText.body.trimStart()
+                    firstText.body = firstText.body.trimStart();
                     if (firstText.body.length === 0) {
-                        it.texts.shift()
+                        it.texts.shift();
                     }
                 }
 
                 const lastText = it.texts.at(-1);
                 if (lastText && lastText.type === "static") {
-                    lastText.body = lastText.body.trimEnd()
+                    lastText.body = lastText.body.trimEnd();
                     if (lastText.body.length === 0) {
-                        it.texts.pop()
+                        it.texts.pop();
                     }
                 }
 
                 return it.texts.length !== 0;
-            })
+            });
         }
-        return nodes
+        return nodes;
     }
 
     private node(): TemplateASTNode {
@@ -175,23 +174,23 @@ export class Parser {
                 () => this.element(),
                 () => this.controlFlow(),
             ],
-        )
+        );
     }
 
     private element(): Element {
         return this.oneOfOrThrow([
             () => this.normalElement(),
             () => this.selfClosingElement()
-        ])
+        ]);
     }
 
     private normalElement(): Element {
-        const { attributes, tagName } = this.openingTag()
-        const children = this.nodes()
-        const closingTagName = this.closingTag()
+        const { attributes, tagName } = this.openingTag();
+        const children = this.nodes();
+        const closingTagName = this.closingTag();
 
         if (closingTagName != tagName) {
-            throw new ParserError("invalid", `Tag:${tagName} doesn't match at line ${this.line}`)
+            throw new ParserError("invalid", `Tag:${tagName} doesn't match at line ${this.line}`);
         }
 
         return {
@@ -200,55 +199,55 @@ export class Parser {
             isSelfClosing: false,
             attributes,
             children,
-        }
+        };
     }
 
     private selfClosingElement(): Element {
-        const { attributes, tagName } = this.selfClosingTag()
+        const { attributes, tagName } = this.selfClosingTag();
         return {
             type: "element",
             tag: tagName,
             isSelfClosing: true,
             attributes,
             children: [],
-        }
+        };
     }
 
 
     private openingTag() {
-        this.consumeToken("tag-open")
-        const res = this.tagBody()
-        this.consumeToken("tag-close")
-        return res
+        this.consumeToken("tag-open");
+        const res = this.tagBody();
+        this.consumeToken("tag-close");
+        return res;
     }
 
     private closingTag() {
-        this.consumeToken("tag-open-2")
-        const { body } = this.consumeToken("literal") as LiteralToken
-        this.consumeToken("tag-close")
-        return body // tag name
+        this.consumeToken("tag-open-2");
+        const { body } = this.consumeToken("literal") as LiteralToken;
+        this.consumeToken("tag-close");
+        return body; // tag name
     }
 
     private selfClosingTag() {
-        this.consumeToken("tag-open")
-        const res = this.tagBody()
+        this.consumeToken("tag-open");
+        const res = this.tagBody();
         // console.log(`Self closing tag: ${res.tagName}`)
         // console.log(this.peek())
-        this.consumeToken("tag-close-2")
+        this.consumeToken("tag-close-2");
         // console.log(`Self closing tag: ${res.tagName}`)
-        return res
+        return res;
     }
 
     private tagBody() {
-        const { body: tagName } = this.consumeToken<LiteralToken>("literal")
+        const { body: tagName } = this.consumeToken<LiteralToken>("literal");
 
         // I dont want to think about `this` so arrow function it is then
-        const attributes = this.consumeAll(() => this.attribute())
+        const attributes = this.consumeAll(() => this.attribute());
 
         return {
             tagName,
             attributes
-        }
+        };
     }
 
     private attribute(): Attribute {
@@ -257,14 +256,14 @@ export class Parser {
                 () => this.wholeAttribute(),
                 () => this.normalAttribute()
             ],
-        )
+        );
     }
 
     private wholeAttribute(): Attribute {
-        let { body: key } = this.consumeToken<LiteralToken>("literal")
-        this.consumeToken("equal")
-        const { body: expression } = this.consumeToken<InterpolationToken>("interpolation")
-        const isBinding = key.startsWith("bind:")
+        let { body: key } = this.consumeToken<LiteralToken>("literal");
+        this.consumeToken("equal");
+        const { body: expression } = this.consumeToken<InterpolationToken>("interpolation");
+        const isBinding = key.startsWith("bind:");
         if (isBinding) {
             key = key.slice(5);
         }
@@ -274,32 +273,32 @@ export class Parser {
             isBinding,
             whole: true,
             expression,
-        }
+        };
     }
 
     private normalAttribute(): Attribute {
-        const { body: key } = this.consumeToken<LiteralToken>("literal")
-        this.consumeToken("equal")
+        const { body: key } = this.consumeToken<LiteralToken>("literal");
+        this.consumeToken("equal");
         const texts = this.oneOfOrThrow([
             () => {
-                this.consumeToken<SymbolToken>("single-quote")
+                this.consumeToken<SymbolToken>("single-quote");
                 const texts = this.consumeAll(() => this.oneOfOrThrow([
                     () => this.consumeToken<InterpolationToken>("interpolation"),
                     () => this.consumeToken<TextNodeToken>("text"),
-                ]))
-                this.consumeToken<SymbolToken>("single-quote")
-                return texts
+                ]));
+                this.consumeToken<SymbolToken>("single-quote");
+                return texts;
             },
             () => {
-                this.consumeToken<SymbolToken>("double-quote")
+                this.consumeToken<SymbolToken>("double-quote");
                 const texts = this.consumeAll(() => this.oneOfOrThrow([
                     () => this.consumeToken<InterpolationToken>("interpolation"),
                     () => this.consumeToken<TextNodeToken>("text"),
-                ]))
-                this.consumeToken<SymbolToken>("double-quote")
-                return texts
+                ]));
+                this.consumeToken<SymbolToken>("double-quote");
+                return texts;
             }
-        ])
+        ]);
 
         return {
             key,
@@ -308,7 +307,7 @@ export class Parser {
                 type: it.type === "text" ? "static" : "interpolation",
                 body: it.body
             }))
-        }
+        };
     }
 
     private text(): TextNode {
@@ -317,10 +316,10 @@ export class Parser {
                 () => this.consumeToken<TextNodeToken>("text"),
                 () => this.consumeToken<InterpolationToken>("interpolation"),
             ],
-        ))
+        ));
 
         if (texts.length === 0) {
-            throw new ParserError("stop-signal", "There is no text left")
+            throw new ParserError("stop-signal", "There is no text left");
         }
 
         return {
@@ -329,40 +328,40 @@ export class Parser {
                 type: it.type === "text" ? "static" : "interpolation",
                 body: it.body
             })),
-        }
+        };
     }
 
     private controlFlow(): ControlFlowNode {
         return this.oneOfOrThrow([
             () => this.ifNode(),
             () => this.eachNode(),
-        ])
+        ]);
     }
 
     private ifNode(): IfNode {
-        const { condition } = this.consumeToken<IfOrElifToken>("if")
+        const { condition } = this.consumeToken<IfOrElifToken>("if");
         // Should we allow empty if body
-        const children = this.nodes()
+        const children = this.nodes();
 
-        let elseChildren: TemplateASTNode[] = []
+        let elseChildren: TemplateASTNode[] = [];
 
-        const elifChildren = this.safe(() => this.elifNode())
+        const elifChildren = this.safe(() => this.elifNode());
 
         if (elifChildren.ok) {
-            elseChildren.push(elifChildren.value)
+            elseChildren.push(elifChildren.value);
         } else {
             const res = this.safe(() => {
-                this.consumeToken("else")
-                return this.nodes()
-            })
+                this.consumeToken("else");
+                return this.nodes();
+            });
 
             if (res.ok) {
-                elseChildren = res.value
+                elseChildren = res.value;
             }
         }
 
         // console.dir(children, { depth: null })
-        this.consumeToken("endif")
+        this.consumeToken("endif");
 
         return {
             type: "control-flow",
@@ -374,20 +373,20 @@ export class Parser {
                 kind: "else",
                 children: elseChildren,
             }
-        }
+        };
     }
 
     private elifNode(): IfNode {
-        const { condition } = this.consumeToken<IfOrElifToken>("elif")
-        const children = this.nodes()
+        const { condition } = this.consumeToken<IfOrElifToken>("elif");
+        const children = this.nodes();
 
         const elseChildren: Result<TemplateASTNode[]> = this.oneOf([
             () => [this.elifNode()],
             () => {
-                this.consumeToken("else")
-                return this.nodes()
+                this.consumeToken("else");
+                return this.nodes();
             }
-        ])
+        ]);
         // console.log("elseChildren")
 
 
@@ -396,29 +395,29 @@ export class Parser {
             kind: "if",
             condition,
             children,
-        }
+        };
 
         if (elseChildren.ok && elseChildren.value.length !== 0) {
             ifNode.else = {
                 type: "control-flow",
                 kind: "else",
                 children: elseChildren.value,
-            }
+            };
         }
 
         return ifNode;
     }
 
     private eachNode(): EachNode {
-        const { iteratable, as = undefined, key = undefined } = this.consumeToken<EachToken>("each")
+        const { iteratable, as = undefined, key = undefined } = this.consumeToken<EachToken>("each");
         // Should we allow empty if body
-        const children = this.nodes()
-        this.consumeToken("endeach")
+        const children = this.nodes();
+        this.consumeToken("endeach");
 
-        let asName = as
-        let index = as?.split(',').at(-1)?.trim()
+        let asName = as;
+        let index = as?.split(',').at(-1)?.trim();
         if (index) {
-            asName = as?.split(',').slice(0, -1).join('')
+            asName = as?.split(',').slice(0, -1).join('');
             // FUCK
             // i forget that everything under {} is js expression 
             // TODO: count { to know when interpolation is stopped
@@ -433,6 +432,6 @@ export class Parser {
             index,
             key,
             children
-        }
+        };
     }
 }

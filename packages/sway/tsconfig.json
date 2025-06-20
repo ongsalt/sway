@@ -15,8 +15,7 @@
 
     /* Linting */
     "strict": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
   },
-  "include": ["lib", "test/reactivity.test.ts"]
+  "include": ["./lib/*"]
 }

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsup --watch",
-    "build": "tsc -p tsconfig.json && vite build",
+    "build": "tsup",
     "test": "vitest"
   },
   "files": [

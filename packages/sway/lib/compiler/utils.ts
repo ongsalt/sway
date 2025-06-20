@@ -8,6 +8,6 @@ export type Result<T, E = undefined> = {
     error?: undefined
 }
 
-export function assertUnreachable(x: never): never {
+export function unreachable(x: never): never {
     throw new Error("Didn't expect to get here");
 }

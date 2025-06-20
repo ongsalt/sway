@@ -1,18 +1,16 @@
-import { parse } from "./parse"
-import { tokenize } from "./tokenize"
-import { transform } from "./transform"
+import { parse } from "./parse";
+import { transform } from "./transform";
 
 export type CompilerOptions = {
     name?: string,
-    ecmaVersion?: string
-}
+    ecmaVersion?: string;
+};
 
 export function compile(source: string, options: CompilerOptions = {}) {
-    const tokens = tokenize(source)
-    const nodes = parse(tokens)
+    const nodes = parse(source);
     const output = transform(nodes, {
         ...options
-    })
+    });
 
-    return output
+    return output;
 }

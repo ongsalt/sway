@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup"
+import { defineConfig } from "tsup";
 
 export default defineConfig({
     entry: [
@@ -7,8 +7,9 @@ export default defineConfig({
         'lib/compiler/index.ts',
     ],
     format: ["cjs", "esm"],
-    // experimentalDts: true,
     dts: true,
     tsconfig: "tsconfig.json",
+    sourcemap: true,
     shims: true,
-})
+    clean: true
+});
