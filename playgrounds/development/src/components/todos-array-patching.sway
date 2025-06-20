@@ -76,7 +76,7 @@
             {/if}
             <button
                 onclick={() => toggleEdit(todo)}
-                class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
+                class="rounded bg-green-500 hover:bg-green-600 p-2 px-4 text-white"
             >
                 {todo.editing ? "Done" : "Edit"}
             </button>

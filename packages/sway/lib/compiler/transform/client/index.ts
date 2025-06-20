@@ -4,7 +4,7 @@ import { TransformOptions } from "./transformer";
 import * as acorn from "acorn";
 import { Node } from "estree";
 import { walk } from "estree-walker";
-import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, SwayStatement, TemplateDefinitionStatement, TemplateEachStatement, TemplateIfStatement, TemplateInitStatement } from "./statements";
+import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, priority, SwayStatement, TemplateDefinitionStatement, TemplateEachStatement, TemplateIfStatement, TemplateInitStatement } from "./statements";
 import { generate, stringify, stringifyNode } from "./codegen";
 import { unreachable } from "../../utils";
 
@@ -160,7 +160,7 @@ export function transform(root: TemplateAST, _options: Partial<TransformOptions>
               blockName: createIdentifier("alternative"),
               body: [
                 ...fragment.statements,
-                ...node.children.flatMap(c => walk(c))
+                ..._else.children.flatMap(c => walk(c))
               ],
               fragment: fragment.name
             };
@@ -208,9 +208,10 @@ export function transform(root: TemplateAST, _options: Partial<TransformOptions>
           type: "append",
           anchor: "$$context.anchor",
           node: name
-        })
+        });
       }
-
+      
+      out.sort((a, b) => priority(a) - priority(b));
       return out;
     }
 
