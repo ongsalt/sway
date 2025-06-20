@@ -2,7 +2,7 @@ import * as acorn from "acorn";
 import { Node } from "estree";
 import { walk } from "estree-walker";
 import { analyze } from "periscopic";
-import { ControlFlowNode, Element, TemplateASTNode } from "../parse/ast";
+import { ControlFlowNode, Element, TemplateASTNode } from "../../parse/ast";
 import { generate } from "./codegen";
 import { stringify } from "./html";
 import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, TemplateInitStatement, EventListenerAttachingStatement, priority, SwayStatement, TemplateEachStatement, TemplateIfStatement, TemplateDefinitionStatement, TemplateScopeStatement } from "./statements";

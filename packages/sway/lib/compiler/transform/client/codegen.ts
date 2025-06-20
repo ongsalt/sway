@@ -1,5 +1,5 @@
-import { TextOrInterpolation } from "../parse/ast";
-import { unreachable } from "../utils";
+import { TextOrInterpolation } from "../../parse/ast";
+import { unreachable } from "../../utils";
 import { SwayStatement } from "./statements";
 import * as escodegen from "escodegen";
 

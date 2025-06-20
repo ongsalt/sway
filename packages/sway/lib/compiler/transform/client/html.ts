@@ -1,4 +1,4 @@
-import { TemplateASTNode, Attribute } from "../parse/ast";
+import { TemplateASTNode, Attribute } from "../../parse/ast";
 
 export function stringifyAttributes(attributes: Attribute[]): string {
     let out = ""

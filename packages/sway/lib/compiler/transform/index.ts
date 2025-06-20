@@ -1,5 +1,5 @@
 import { TemplateASTNode } from "../parse/ast";
-import { Transformer, TransformOptions } from "./transformer";
+import { Transformer, TransformOptions } from "./client/transformer";
 
 export function transform(roots: TemplateASTNode[], options: Partial<TransformOptions>) {
     const transformer = new Transformer(roots, options)

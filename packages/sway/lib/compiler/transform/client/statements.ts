@@ -1,5 +1,5 @@
 import { Node } from "estree";
-import { TextOrInterpolation } from "../parse/ast";
+import { TextOrInterpolation } from "../../parse/ast";
 
 export type EstreeNode = {
     type: "estree",
