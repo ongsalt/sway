@@ -22,7 +22,11 @@ svelte 5 clone (hopefully)
 - deep reactivity
 - Component
     - no generated props type becuase im too lazy 
-    - you can access props by 
+    - you can access props via `$$.props`
+    - COMPONENT DO NOT PRODUCE EFFECT SCOPE. So `onMount` don't exist and `onDestroy` will attach itself to nearest `effectScope`. (svelte 5 onMount is literally an untracked effect)
+    - and there is no deferring yet.
+    - Due to the above reasons, by default, effects will run after DOM updates EXCEPT during component initialization. This behavior might be undesirable; I'll think about this.
+    - `mount(...)`, `#if`, `#each`, `#key (not yet implemented)` do produce effect scope.
 - shorthand props syntax `name={name}` -> `{name}`
 
 ## What's not yet
