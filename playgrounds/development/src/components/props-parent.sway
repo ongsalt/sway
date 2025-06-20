@@ -10,10 +10,11 @@
     index.value = (index.value + 1) % names.length;
   }, 1000);
 
-  const nextName = computed(() => names[(index.value + 1) % names.length])
-// <!-- TODO allow {names} -->
+  const nextName = computed(() => names[(index.value + 1) % names.length]);
+  // <!-- TODO allow {names} -->
+  // TODO: allow html comment
 </script>
 
 <div class="m-6">
-  <Props names={names} index={index.value} nextName={nextName.value} />
+  <Props {names} index={index.value} nextName={nextName.value} />
 </div>

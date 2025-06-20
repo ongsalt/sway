@@ -2,6 +2,7 @@ import { Token, EachToken, IfOrElifToken, InterpolationToken, LiteralToken, Symb
 import { Result } from "../utils";
 import { TemplateASTNode, Attribute, ControlFlowNode, EachNode, ElementNode, Fn, IfNode, InferConstTuple, TextNode, TemplateAST, ComponentNode } from "./ast";
 import { ParserError } from "./error";
+import * as acorn from "acorn";
 
 export class Parser {
     private current = 0;
@@ -322,10 +323,13 @@ export class Parser {
     }
 
     private attribute(): Attribute {
+        // this gonna badly for sure, TODO: refactor it
         return this.oneOfOrThrow(
             [
                 () => this.wholeAttribute(),
-                () => this.normalAttribute()
+                () => this.normalAttribute(),
+                () => this.shorthandAttribute(),
+                () => this.shorthandBindingAttribute()
             ],
         );
     }
@@ -344,6 +348,48 @@ export class Parser {
             isBinding,
             whole: true,
             expression,
+        };
+    }
+
+    private shorthandAttribute(): Attribute {
+        const { body } = this.consumeToken<InterpolationToken>("interpolation");
+
+        const program = acorn.parse(body, {
+            ecmaVersion: 2022 // TODO: get this from options
+        });
+
+        const s = program.body[0];
+        if (s.type !== "ExpressionStatement") {
+            throw new ParserError("expected", "an indentifier");
+        }
+
+        const { expression } = s;
+        if (expression.type !== "Identifier") {
+            throw new ParserError("expected", "an indentifier");
+        }
+
+        return {
+            key: body,
+            whole: true,
+            expression: body,
+            isBinding: false
+        };
+    }
+
+    private shorthandBindingAttribute(): Attribute {
+        let { body: key } = this.consumeToken<LiteralToken>("literal");
+        this.consumeToken("equal");
+        const isBinding = key.startsWith("bind:");
+        if (!isBinding) {
+            throw new ParserError("expected", "shorthand binding");
+        }
+        key = key.slice(5);
+
+        return {
+            expression: key,
+            key,
+            isBinding: true,
+            whole: true
         };
     }
 

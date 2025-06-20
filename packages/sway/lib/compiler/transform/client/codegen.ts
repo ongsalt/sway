@@ -187,7 +187,7 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
             for (const p of props) {
                 const c = p.isBinding ? p.binding : p.value;
                 add(`    get ${p.key}() {`);
-                add(`    return ${generatePropsGetter(c)};`);
+                add(`      return ${generatePropsGetter(c)};`);
                 add(`    },`);
                 if (p.isBinding) {
                     add(`    set ${p.key}($$value) {`);

@@ -20,6 +20,10 @@ svelte 5 clone (hopefully)
 - a reactive proxy like vue `reactive`
 - pass getter and setter instead of a `Signal` to a binding 
 - deep reactivity
+- Component
+    - no generated props type becuase im too lazy 
+    - you can access props by 
+- shorthand props syntax `name={name}` -> `{name}`
 
 ## What's not yet
 - think about each binding: should we make each item a signal or not.
@@ -31,10 +35,8 @@ svelte 5 clone (hopefully)
     - some kind of react-like suspense boundary
     - async derived 💀💀💀 
 - ~~do transpiling magic that allow you to use signal without `.value` like runes~~
-- Component
 - typescript support 
-    - i dont know if i need to mess with vite or not. ts might work without any change (untested)
-    - type definitions of stuff exported form `sway` is for some reason all any when used in `.sway` file
+    - type definitions of stuff exported form `sway` is for some reason all gone when used in `.sway` file. maybe its becuase of svelte lsp
 - SSR
     - i need to create a new transformer and maybe a new parser too
     - hydration look like pain in the ass
@@ -42,10 +44,11 @@ svelte 5 clone (hopefully)
 - a router (or `sway/kit`, beside from ssr thing this look quite fun to make, especially ts magic for PageData)
 - [realworld](https://github.com/gothinkster/realworld) (frontend only)
 - value binding for `select`
+- scoped style
 
 ### Unlikely to implement
 - `:else` block under `#each` 
-- transition
+- transition, animation
 
 ## Packages
 - [packages/sway](packages/sway) core framework

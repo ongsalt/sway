@@ -163,7 +163,7 @@ export function createArrayProxy<T>(arr: T[]): T[] {
             }
 
 
-            // arghhh this is pain in the ass
+            // arghhh
             // vue do wrap every fucking array method
             // how tf does svelte do this
             // 😭😭😭😭
