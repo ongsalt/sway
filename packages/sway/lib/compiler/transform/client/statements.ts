@@ -143,6 +143,7 @@ export type ComponentInitializationStatement = {
     props: Prop[];
     slots: ({
         name: string;
+        anchorName?: string;
         body: SwayStatement[];
     })[];
 };

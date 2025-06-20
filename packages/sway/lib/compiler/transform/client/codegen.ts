@@ -1,7 +1,7 @@
 import * as escodegen from "escodegen";
 import { Attribute, TemplateASTNodeWithRoot, TextOrInterpolation } from "../../parse/ast";
 import { unreachable } from "../../utils";
-import { SwayStatement } from "./statements";
+import { Binding, SwayStatement } from "./statements";
 
 
 export function generateMany(statements: SwayStatement[], indentation: number, logging = false) {
@@ -139,8 +139,6 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
 
         case "event-listener": {
             const { event, listenerFn, node } = statement;
-            // shuold we move this under an effect?
-            // or remove component context and add fragmentContext??
             add(`$.listen(${node}, ${event}, () => ${listenerFn});`);
             break;
         }
@@ -183,10 +181,33 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
 
         case "component-initialization": {
             const { componentName, props, slots, anchor } = statement;
-            add(`${componentName}({`)
-            add(`  anchor: ${anchor}`)
-            add(`})`)
-            throw new Error("component-initialization is not implemented yet");
+            add(`${componentName}({`);
+            add(`  $$anchor: ${anchor},`);
+            add(`  $$props: {`);
+            for (const p of props) {
+                const c = p.isBinding ? p.binding : p.value;
+                add(`    get ${p.key}() {`);
+                add(`    return ${generatePropsGetter(c)};`);
+                add(`    },`);
+                if (p.isBinding) {
+                    add(`    set ${p.key}($$value) {`);
+                    if (p.binding.kind === "functions") {
+                        add(`    ${p.binding.setter}($$value);`);
+                    } else {
+                        add(`    ${p.binding.name} = $$value;`);
+                    }
+                    add(`    },`);
+                }
+            }
+            add(`  },`);
+            add(`  $$slots: {`);
+            for (const slot of slots) {
+                add(`    ${slot.name}: (${slot.anchorName ?? '$$anchor'}) => {`);
+                add(generateMany(slot.body, 6));
+                add(`    },`);
+            }
+            add(`  },`);
+            add(`})`);
             break;
         }
 
@@ -201,6 +222,22 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
     }
 
     return out;
+}
+
+function generatePropsGetter(input: Binding | string | TextOrInterpolation[]) {
+    if (typeof input === "string") {
+        return input;
+    }
+
+    if (Array.isArray(input)) {
+        return generateTextInterpolation(input);
+    }
+
+    if (input.kind === "functions") {
+        return `${input.getter}()`;
+    }
+
+    return input.name;
 }
 
 export function generateTextInterpolation(texts: TextOrInterpolation[]): string {

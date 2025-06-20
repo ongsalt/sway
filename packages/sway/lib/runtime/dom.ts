@@ -67,10 +67,10 @@ export function mount<Props extends Record<string, any> = Record<string, any>>(c
         options.root.appendChild(anchor);
     }
 
-    let bindings;
+
     const scope = effectScope();
-    scope.run(() => {
-        bindings = component({
+    const bindings = scope.run(() => {
+        return component({
             $$anchor: anchor,
             $$props: options.props,
             $$slots: {}
