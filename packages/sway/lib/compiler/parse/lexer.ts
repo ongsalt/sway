@@ -178,7 +178,7 @@ export class Lexer {
 
     private literal() {
         const start = this.current - 1
-        const isValidChar = (c: string) => /[a-zA-Z0-9'-:]/.test(c);
+        const isValidChar = (c: string) => /[a-zA-Z0-9\-:]/.test(c);
 
         while (isValidChar(this.peek())) {
             this.current += 1;
