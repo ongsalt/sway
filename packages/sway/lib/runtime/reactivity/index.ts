@@ -1,4 +1,4 @@
-import { createComputed, createEffect, createEffectScope, createSignal, destroy, Effect, EffectFn, get, getActiveScope, set, updateEffect, withScope } from "./internal";
+import { createComputed, createEffect, createEffectScope, createSignal, destroy, Effect, EffectFn, get, getActiveScope, set, untrack, updateEffect, withScope } from "./internal";
 import { createProxy, destroyProxy, RELEASE } from "./proxy";
 
 // not the same as in internal.ts
@@ -93,7 +93,8 @@ export interface EffectScope {
 }
 
 export interface ComponentScope {
-    markAsInitialized: () => void;
+    mounted: boolean;
+    markAsMounted: () => void;
     deferEffect: (effect: Effect) => void;
 }
 
@@ -107,52 +108,73 @@ export function effectScope(root = false): EffectScope {
     };
 };
 
-let currentComponentScope: ComponentScope[] = [];
+let componentScopeStack: ComponentScope[] = [];
 
 export function getActiveComponentScope(): ComponentScope | null {
-    return currentComponentScope.at(-1) ?? null;
+    return componentScopeStack.at(-1) ?? null;
 }
 
 export function push() {
-    currentComponentScope.push(componentScope());
+    componentScopeStack.push(componentScope());
 }
 
 export function pop() {
-    const top = currentComponentScope.pop();
+    const top = componentScopeStack.pop();
     if (!top) {
         throw new Error("wtf how");
     }
-    top!.markAsInitialized();
+    const t = componentScopeStack.at(-1);
+    if (!t || t.mounted) {
+        top.markAsMounted();
+    } else {
+        onMount(() => top.markAsMounted());
+    }
 }
 
 export function componentScope(): ComponentScope {
     const parentEffectScope = getActiveScope();
     const deferredEffects = new Set<Effect>();
-    let initialized = false;
+    let mounted = false;
 
-    // effect(() => () => deferredEffects.clear());
+    function onDestroy() {
+        deferredEffects.clear();
+    }
+
+    function update() {
+        for (const effect of deferredEffects) {
+            updateEffect(effect);
+        }
+        deferredEffects.clear();
+    };
+
+    // To by pass the capturing
+    const e = createEffect(() => onDestroy, 3);
+    updateEffect(e);
 
     return {
-        markAsInitialized: () => {
-            if (initialized) return;
-            const update = () => {
-                for (const effect of deferredEffects) {
-                    updateEffect(effect);
-                }
-                deferredEffects.clear();
-            };
+        mounted,
+        markAsMounted: () => {
+            if (mounted) return;
             if (parentEffectScope) {
                 withScope(parentEffectScope, update);
             } else {
                 update();
             }
-            initialized = true;
+            mounted = true;
         },
         deferEffect: (effect: Effect) => {
             deferredEffects.add(effect);
         },
     };
 };
+
+export function onMount(fn: EffectFn) {
+    effect(() => untrack(fn));
+}
+
+export function onDestroy(fn: () => any) {
+    effect(() => () => untrack(fn));
+}
 
 export { getActiveScope };
 export { untrack } from "./internal";
