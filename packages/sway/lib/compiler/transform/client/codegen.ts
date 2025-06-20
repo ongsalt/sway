@@ -27,7 +27,7 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
             const { body, name, after, before } = statement;
             add(generateMany(before, indentation, logging));
 
-            add(`export default function ${name}($$context) {`);
+            add(`export default function ${name}({ $$anchor, $$slots, $$props }) {`);
             // add(`$.push()`, 2)
             add(generateMany(body, indentation + 2, logging));
             // add(`$.pop()`, 2)
@@ -181,8 +181,22 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
             break;
         }
 
+        case "component-initialization": {
+            const { componentName, props, slots, anchor } = statement;
+            add(`${componentName}({`)
+            add(`  anchor: ${anchor}`)
+            add(`})`)
+            throw new Error("component-initialization is not implemented yet");
+            break;
+        }
+
+        case "key": {
+            throw new Error("key is not implemented yet");
+            break;
+        }
+
         default: {
-            unreachable(statement);
+            unreachable();
         }
     }
 

@@ -1,6 +1,5 @@
 import { TemplateAST } from "../parse/ast";
-import { transform as clientTransform } from "./client";
-import type { TransformOptions as ClientTransformOptions } from "./client/transformer";
+import { transform as clientTransform, ClientTransformOptions } from "./client";
 
 type TransformOptions = ClientTransformOptions & {
     target?: "client" | "server";

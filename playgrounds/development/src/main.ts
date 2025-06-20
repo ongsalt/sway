@@ -15,7 +15,10 @@ import EachFiltered from "./components/each-filtered.sway";
 const appRoot = document.getElementById("app")!;
 
 // mount(DeepReactivity, appRoot)
-mount(Todos, appRoot)
+mount(Todos, {
+  root: appRoot,
+  props: {}
+});
 // mount(Attributes, appRoot);
 // mount(NestedControlFlow, appRoot);
 // mount(EachFiltered, appRoot)

@@ -126,14 +126,40 @@ export type Binding = {
     name: string;
 };
 
+export type Prop = {
+    key: string;
+    isBinding: false;
+    value: string | TextOrInterpolation[];
+} | {
+    key: string;
+    isBinding: true;
+    binding: Binding;
+};
 
-export type SwayContainerStatement = TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement;
+export type ComponentInitializationStatement = {
+    type: "component-initialization";
+    anchor: string;
+    componentName: string;
+    props: Prop[];
+    slots: ({
+        name: string;
+        body: SwayStatement[];
+    })[];
+};
+
+export type KeyStatement = {
+    type: "key",
+    key: string;
+    body: SwayStatement[];
+};
+
+export type SwayContainerStatement = ComponentInitializationStatement | KeyStatement | TemplateScopeStatement | TemplateIfStatement | TemplateEachStatement | TemplateEffectStatement;
 
 export type SwayStatement = TemplateEffectStatement | AccessorDefinitionStatement | TemplateEachStatement | TemplateIfStatement | TemplateDefinitionStatement
     | TemplateScopeStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
     | TemplateInitStatement | AppendStatement | EventListenerAttachingStatement
-    | BindingStatement;
+    | BindingStatement | ComponentInitializationStatement | KeyStatement;
 
 export function priority(statement: SwayStatement) {
     switch (statement.type) {

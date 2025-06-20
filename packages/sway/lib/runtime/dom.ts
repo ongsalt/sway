@@ -42,7 +42,7 @@ export function append(anchor: Node, fragment: Node | Node[] | DocumentFragment,
     }
 }
 
-export function comment(data = '') {
+export function comment(data = 'runtime-comment') {
     return document.createComment(data);
 }
 
@@ -54,17 +54,35 @@ export function remove(node: Node) {
     node.parentNode!.removeChild(node);
 }
 
-export function mount(component: Component, root: HTMLElement) {
-    const anchor = comment();
-    root.appendChild(anchor);
+export type MountOptions<Props extends Record<string, any>> = {
+    root: HTMLElement;
+    anchor?: Node;
+    props: Props;
+};
+
+export function mount<Props extends Record<string, any> = Record<string, any>>(component: Component, options: MountOptions<Props>) {
+    let anchor = options.anchor;
+    if (!anchor) {
+        anchor = comment();
+        options.root.appendChild(anchor);
+    }
 
     let bindings;
     const scope = effectScope();
     scope.run(() => {
-        bindings = component({ anchor });
+        bindings = component({
+            $$anchor: anchor,
+            $$props: options.props,
+            $$slots: {}
+        });
     });
 
-    return { bindings }
+    const destroy = () => {
+        sweep(anchor, null); // idk to
+        scope.destroy();
+    };
+
+    return { bindings, destroy };
 }
 
 // TODO: Listener should be inside an effect

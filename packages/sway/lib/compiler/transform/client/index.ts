@@ -1,18 +1,21 @@
-import { analyze } from "periscopic";
-import { Attribute, ControlFlowNode, ElementNode, Parent, TemplateAST, TemplateASTNode, TemplateASTNodeWithRoot, TextNode, TextOrInterpolation } from "../../parse/ast";
-import { TransformOptions } from "./transformer";
 import * as acorn from "acorn";
 import { Node } from "estree";
 import { walk } from "estree-walker";
-import { AccessorDefinitionStatement, Binding, BindingStatement, ComponentDeclarationStatement, priority, SwayStatement, TemplateDefinitionStatement, TemplateEachStatement, TemplateIfStatement, TemplateInitStatement } from "./statements";
-import { generate, stringify, stringifyNode } from "./codegen";
+import { analyze } from "periscopic";
+import { Attribute, ControlFlowNode, ElementNode, Parent, TemplateAST, TemplateASTNodeWithRoot, TextNode, TextOrInterpolation } from "../../parse/ast";
 import { unreachable } from "../../utils";
+import { generate, stringify } from "./codegen";
+import { AccessorDefinitionStatement, Binding, ComponentDeclarationStatement, priority, Prop, SwayStatement, TemplateDefinitionStatement, TemplateEachStatement, TemplateIfStatement } from "./statements";
 
 
-const ROOT_TEMPLATE_NAME = "template";
+export type ClientTransformOptions = {
+  name: string,
+  ecmaVersion: string,
+  logging: boolean;
+};
 
-export function transform(root: TemplateAST, _options: Partial<TransformOptions> = {}) {
-  const options: TransformOptions = {
+export function transform(root: TemplateAST, _options: Partial<ClientTransformOptions> = {}) {
+  const options: ClientTransformOptions = {
     name: _options.name ?? "Component",
     ecmaVersion: _options.ecmaVersion ?? "2022",
     logging: _options.logging ?? false
@@ -197,7 +200,21 @@ export function transform(root: TemplateAST, _options: Partial<TransformOptions>
       }
 
       if (node.type === "component") {
-        throw new Error("Component is not yet implemented");
+        const accessor = getOrCreateAccessor(node);
+
+        out.push(...accessor.statements);
+        out.push({
+          type: "component-initialization",
+          componentName: node.name,
+          anchor: accessor.name,
+          props: toProps(node.props),
+          slots: [
+            {
+              name: "children",
+              body: node.children.flatMap(c => walk(c))
+            }
+          ]
+        });
       }
 
       if (node.type === "root") {
@@ -206,11 +223,11 @@ export function transform(root: TemplateAST, _options: Partial<TransformOptions>
         out.push(...node.children.flatMap(c => walk(c)));
         out.push({
           type: "append",
-          anchor: "$$context.anchor",
+          anchor: "$$anchor",
           node: name
         });
       }
-      
+
       out.sort((a, b) => priority(a) - priority(b));
       return out;
     }
@@ -303,7 +320,6 @@ function createAttributeEffect(accessorName: string, attribute: Attribute): Sway
         ];
       }
 
-
       return [
         {
           type: "template-effect",
@@ -346,6 +362,30 @@ function createAttributeEffect(accessorName: string, attribute: Attribute): Sway
   return [];
 }
 
+
+function toProps(attributes: Attribute[]): Prop[] {
+  return attributes.map((attr): Prop => {
+    if (attr.whole) {
+      if (attr.isBinding) {
+        return {
+          key: attr.key,
+          isBinding: true,
+          binding: parseBinding(attr.expression)
+        };
+      }
+      return {
+        key: attr.key,
+        isBinding: false,
+        value: attr.expression,
+      };
+    }
+    return {
+      key: attr.key,
+      isBinding: false,
+      value: attr.texts
+    };
+  });
+}
 
 function isDynamic(texts: TextOrInterpolation[]) {
   return texts.some(it => it.type === "interpolation");

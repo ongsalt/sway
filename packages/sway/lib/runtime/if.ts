@@ -1,9 +1,9 @@
+import { RenderFn } from "../types";
 import { append, comment, sweep } from "./dom";
 import { templateEffect, effectScope } from "./reactivity";
 
 // TODO: transformer: avoid this type of name collision
 
-export type RenderFn = ($$anchor: Node) => void;
 export type RenderDelegationFn = (fn: RenderFn, key?: boolean) => void;
 export type IfEffect = ($$render: RenderDelegationFn) => void;
 
