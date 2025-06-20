@@ -56,9 +56,9 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
       unreachable();
     }
 
-    if (node.type === "component") {
-      throw new Error("TODO: component");
-    }
+    // if (node.type === "component") {
+    //   throw new Error("TODO: component");
+    // }
 
     if (!node.parent) {
       throw new Error("parent is component root");
@@ -70,7 +70,9 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
       ? "text"
       : node.type === "control-flow"
         ? `${node.kind}_anchor`
-        : node.tag;
+        : node.type === "component"
+          ? `${node.name}_anchor`
+          : node.tag;
     const name = createIdentifier(preferredName);
 
     const accessor: AccessorDefinitionStatement = {
@@ -200,6 +202,7 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
       }
 
       if (node.type === "component") {
+        createTemplateDefinitions(node);
         const accessor = getOrCreateAccessor(node);
 
         out.push(...accessor.statements);
@@ -233,7 +236,12 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
     }
 
     function createTemplateDefinitions(node: Parent) {
-      const name = createIdentifier("template");
+      const preferredName = node.type === "control-flow"
+        ? `template_${node.kind}`
+        : node.type === "component"
+          ? `template_${node.name}`
+          : `template`;
+      const name = createIdentifier(preferredName);
       templateNames.set(node, name);
       const statement: TemplateDefinitionStatement = {
         type: "template-definition",

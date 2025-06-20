@@ -67,7 +67,6 @@ export function mount<Props extends Record<string, any> = Record<string, any>>(c
         options.root.appendChild(anchor);
     }
 
-
     const scope = effectScope();
     const bindings = scope.run(() => {
         return component({
@@ -78,7 +77,7 @@ export function mount<Props extends Record<string, any> = Record<string, any>>(c
     });
 
     const destroy = () => {
-        sweep(anchor, null); // idk to
+        sweep(anchor, null); // idk to where tho, maybe setup an end anchor
         scope.destroy();
     };
 
