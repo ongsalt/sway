@@ -28,14 +28,47 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
             add(generateMany(before, indentation, logging));
 
             add(`export default function ${name}({ $$anchor, $$slots, $$props }) {`);
-            // add(`$.push()`, 2)
-            add(generateMany(body, indentation + 2, logging));
-            // add(`$.pop()`, 2)
+            add(`$.push()`, 2);
+            add(generateMany(body, indentation, logging));
+            add(`$.pop()`, 2);
             add(`}`);
 
             add(generateMany(after, indentation, logging));
             break;
         }
+
+        case "component-initialization": {
+            const { componentName, props, slots, anchor } = statement;
+            add(`${componentName}({`);
+            add(`  $$anchor: ${anchor},`);
+            add(`  $$props: {`);
+            for (const p of props) {
+                const c = p.isBinding ? p.binding : p.value;
+                add(`    get ${p.key}() {`);
+                add(`      return ${generatePropsGetter(c)};`);
+                add(`    },`);
+                if (p.isBinding) {
+                    add(`    set ${p.key}($$value) {`);
+                    if (p.binding.kind === "functions") {
+                        add(`    ${p.binding.setter}($$value);`);
+                    } else {
+                        add(`    ${p.binding.name} = $$value;`);
+                    }
+                    add(`    },`);
+                }
+            }
+            add(`  },`);
+            add(`  $$slots: {`);
+            for (const slot of slots) {
+                add(`    ${slot.name}: (${slot.anchorName ?? '$$anchor'}) => {`);
+                add(generateMany(slot.body, 6));
+                add(`    },`);
+            }
+            add(`  },`);
+            add(`})`);
+            break;
+        }
+
 
         case "accessor-definition": {
             const { mode, name, parent, index } = statement;
@@ -176,38 +209,6 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
                 setter = binding.setter;
             }
             add(`$.bind(${node}, \`${key}\`, ${getter}, ${setter})`);
-            break;
-        }
-
-        case "component-initialization": {
-            const { componentName, props, slots, anchor } = statement;
-            add(`${componentName}({`);
-            add(`  $$anchor: ${anchor},`);
-            add(`  $$props: {`);
-            for (const p of props) {
-                const c = p.isBinding ? p.binding : p.value;
-                add(`    get ${p.key}() {`);
-                add(`      return ${generatePropsGetter(c)};`);
-                add(`    },`);
-                if (p.isBinding) {
-                    add(`    set ${p.key}($$value) {`);
-                    if (p.binding.kind === "functions") {
-                        add(`    ${p.binding.setter}($$value);`);
-                    } else {
-                        add(`    ${p.binding.name} = $$value;`);
-                    }
-                    add(`    },`);
-                }
-            }
-            add(`  },`);
-            add(`  $$slots: {`);
-            for (const slot of slots) {
-                add(`    ${slot.name}: (${slot.anchorName ?? '$$anchor'}) => {`);
-                add(generateMany(slot.body, 6));
-                add(`    },`);
-            }
-            add(`  },`);
-            add(`})`);
             break;
         }
 

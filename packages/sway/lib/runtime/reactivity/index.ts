@@ -1,4 +1,4 @@
-import { createComputed, createEffect, createEffectScope, createSignal, destroy, EffectFn, get, set, withScope } from "./internal";
+import { createComputed, createEffect, createEffectScope, createSignal, destroy, Effect, EffectFn, get, getActiveScope, set, updateEffect, withScope } from "./internal";
 import { createProxy, destroyProxy, RELEASE } from "./proxy";
 
 // not the same as in internal.ts
@@ -68,6 +68,13 @@ export function computed<T>(fn: () => T): Computed<T> {
 
 export function effect(fn: EffectFn, priority = 3) {
     const e = createEffect(fn, priority);
+    const c = getActiveComponentScope();
+    if (c) {
+        c.deferEffect(e);
+    } else {
+        // eagerly run it except when use inside a component
+        updateEffect(e);
+    }
 
     return () => destroy(e);
 }
@@ -85,6 +92,12 @@ export interface EffectScope {
     destroy: () => void;
 }
 
+export interface ComponentScope {
+    markAsInitialized: () => void;
+    deferEffect: (effect: Effect) => void;
+}
+
+
 export function effectScope(root = false): EffectScope {
     const scope = createEffectScope(root);
 
@@ -94,5 +107,53 @@ export function effectScope(root = false): EffectScope {
     };
 };
 
+let currentComponentScope: ComponentScope[] = [];
+
+export function getActiveComponentScope(): ComponentScope | null {
+    return currentComponentScope.at(-1) ?? null;
+}
+
+export function push() {
+    currentComponentScope.push(componentScope());
+}
+
+export function pop() {
+    const top = currentComponentScope.pop();
+    if (!top) {
+        throw new Error("wtf how");
+    }
+    top!.markAsInitialized();
+}
+
+export function componentScope(): ComponentScope {
+    const parentEffectScope = getActiveScope();
+    const deferredEffects = new Set<Effect>();
+    let initialized = false;
+
+    // effect(() => () => deferredEffects.clear());
+
+    return {
+        markAsInitialized: () => {
+            if (initialized) return;
+            const update = () => {
+                for (const effect of deferredEffects) {
+                    updateEffect(effect);
+                }
+                deferredEffects.clear();
+            };
+            if (parentEffectScope) {
+                withScope(parentEffectScope, update);
+            } else {
+                update();
+            }
+            initialized = true;
+        },
+        deferEffect: (effect: Effect) => {
+            deferredEffects.add(effect);
+        },
+    };
+};
+
+export { getActiveScope };
 export { untrack } from "./internal";
 export { getRawValue as raw } from "./proxy";

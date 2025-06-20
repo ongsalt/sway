@@ -64,6 +64,14 @@ let activeSubscriber: Subscriber | null = null;
 const batch = new DedupBucketPQ<Effect>();
 let batchNumber = 0;
 
+export function getActiveScope() {
+    return activeScope;
+}
+
+export function addToScope(scope: EffectScope, subscriber: Subscriber | EffectScope) {
+    scope.children.add(subscriber);
+}
+
 export function createEffectScope(root = false): EffectScope {
     const scope: EffectScope = {
         children: new Set(),
@@ -71,7 +79,7 @@ export function createEffectScope(root = false): EffectScope {
     };
 
     if (scope.parent) {
-        scope.parent.children.add(scope);
+        addToScope(scope.parent, scope);
     }
 
     return scope;
@@ -100,6 +108,7 @@ export function createSignal<T>(value: T): Signal<T> {
 }
 
 export function createEffect(fn: EffectFn, priority = 1): Effect {
+    // TODO: shuold we defer effect first run to after component initialization
     const effect: Effect = {
         dirty: false,
         fn,
@@ -111,10 +120,9 @@ export function createEffect(fn: EffectFn, priority = 1): Effect {
     };
 
     if (effect.parent) {
-        effect.parent.children.add(effect);
+        addToScope(effect.parent, effect);
     }
 
-    updateEffect(effect);
     return effect;
 }
 
@@ -164,7 +172,7 @@ function notifyComputed(computed: Computed, depth = 0) {
     }
 }
 
-function updateEffect(effect: Effect) {
+export function updateEffect(effect: Effect) {
     const previous = activeSubscriber;
     activeSubscriber = effect;
 
@@ -188,7 +196,7 @@ function updateEffect(effect: Effect) {
     }
 }
 
-function updateComputed(computed: Computed) {
+export function updateComputed(computed: Computed) {
     // console.log("updating")
     const previous = activeSubscriber;
     activeSubscriber = computed;
