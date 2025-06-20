@@ -141,7 +141,7 @@ export function createComputed<T>(computation: () => T): Computed<T> {
     };
 
     if (computed.parent) {
-        computed.parent.children.add(computed);
+        addToScope(computed.parent, computed);
     }
 
     return computed;
@@ -255,7 +255,14 @@ function flush() {
     for (const effect of batch.flush()) {
         updateEffect(effect);
     }
+
     // batchNumber += 1;
+
+    for (const fn of afterFlushes) {
+        fn();
+    }
+
+    afterFlushes = [];
 }
 
 export function set<T>(signal: Signal<T>, value: T) {
@@ -314,4 +321,12 @@ export function untrack<T>(fn: () => T) {
         activeScope = p1;
         activeSubscriber = p2;
     }
+}
+
+let afterFlushes: (() => any)[] = [];
+
+export function tick() {
+    const { promise, resolve } = Promise.withResolvers<void>();
+    afterFlushes.push(resolve);
+    return promise;
 }
