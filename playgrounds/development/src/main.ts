@@ -19,5 +19,3 @@ const appRoot = document.getElementById("app")!;
 mount(Attributes, appRoot);
 // mount(NestedControlFlow, appRoot);
 // mount(EachFiltered, appRoot)
-// reactiveContext()
-

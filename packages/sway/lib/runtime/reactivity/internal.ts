@@ -209,14 +209,6 @@ function updateComputed(computed: Computed) {
     }
 }
 
-function flush() {
-    // console.log(`batchNumber: ${batchNumber}`);
-    for (const effect of batch.flush()) {
-        updateEffect(effect);
-    }
-    // batchNumber += 1;
-}
-
 function link(source: Source, subscriber: Subscriber) {
     source.subscribers.add(subscriber);
     subscriber.sources.add(source);
@@ -250,13 +242,18 @@ export function trigger(signal: Signal<any>) {
     flush();
 }
 
+function flush() {
+    // console.log(`batchNumber: ${batchNumber}`);
+    for (const effect of batch.flush()) {
+        updateEffect(effect);
+    }
+    // batchNumber += 1;
+}
+
 export function set<T>(signal: Signal<T>, value: T) {
     signal.value = value;
     // start a batch
-    for (const subscriber of signal.subscribers) {
-        notify(subscriber);
-    }
-    flush();
+    trigger(signal);
 }
 
 function runCleanup(effect: Effect) {

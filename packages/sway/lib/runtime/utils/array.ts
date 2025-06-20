@@ -46,7 +46,6 @@ export function findLargestSortedIntersection<T>(previous: T[], after: T[]) {
 }
 
 export function getTransformation<T>(previous: T[], after: T[]): Operation<T>[] {
-    // TODO: handle reverse, wait why do i reverse
     const sequence = findLargestSortedIntersection(previous, after)
     const operations: Operation<T>[] = []
     const workArray = [...previous]
@@ -77,7 +76,7 @@ export function getTransformation<T>(previous: T[], after: T[]): Operation<T>[] 
         }
     }
 
-    // TODO: use element.moveBefore sometime later 
+    // TODO: use element.moveBefore some time later 
     return operations;
 }
 
