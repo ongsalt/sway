@@ -2,7 +2,7 @@
   import Props from "./props.sway";
   import { signal, computed } from "sway";
 
-  const names = ["Kanade", "Mafuyu", "Mizuki", "Ena"];
+  let names = ["Kanade", "Mafuyu", "Mizuki", "Ena"];
 
   const index = signal(0);
 
@@ -11,10 +11,9 @@
   }, 1000);
 
   const nextName = computed(() => names[(index.value + 1) % names.length]);
-  // <!-- TODO allow {names} -->
   // TODO: allow html comment
 </script>
 
 <div class="m-6">
-  <Props {names} index={index.value} nextName={nextName.value} />
+  <Props bind:names bind:index={index.value} nextName={nextName.value} />
 </div>

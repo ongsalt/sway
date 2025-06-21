@@ -499,7 +499,8 @@ function parseBinding(rawExpression: string): Binding {
 
   const expression = statement.expression;
   // bind:value={signal.value}
-  if (expression.type === "MemberExpression") {
+  if (expression.type === "MemberExpression" || expression.type === "Identifier") {
+    // TODO: should we allow identifier tho
     return {
       kind: "variables",
       name: rawExpression

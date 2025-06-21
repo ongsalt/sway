@@ -11,7 +11,7 @@ import Todos from "./components/todos-array-patching.sway";
 // import Binding from "./components/binding.sway";
 // import DeepReactivity from "./components/deep-reactivity.sway";
 // import EachFiltered from "./components/each-filtered.sway";
-import PropsParent from "./components/props-parent.sway"
+import PropsParent from "./components/props-parent.sway";
 
 const appRoot = document.getElementById("app")!;
 
@@ -23,3 +23,4 @@ mount(PropsParent, {
 // mount(Attributes, appRoot);
 // mount(NestedControlFlow, appRoot);
 // mount(EachFiltered, appRoot)
+

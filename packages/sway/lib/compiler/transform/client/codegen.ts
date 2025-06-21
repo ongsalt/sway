@@ -50,9 +50,9 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
                 if (p.isBinding) {
                     add(`    set ${p.key}($$value) {`);
                     if (p.binding.kind === "functions") {
-                        add(`    ${p.binding.setter}($$value);`);
+                        add(`      ${p.binding.setter}($$value);`);
                     } else {
-                        add(`    ${p.binding.name} = $$value;`);
+                        add(`      ${p.binding.name} = $$value;`);
                     }
                     add(`    },`);
                 }

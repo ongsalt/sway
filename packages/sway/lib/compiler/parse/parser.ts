@@ -378,7 +378,6 @@ export class Parser {
 
     private shorthandBindingAttribute(): Attribute {
         let { body: key } = this.consumeToken<LiteralToken>("literal");
-        this.consumeToken("equal");
         const isBinding = key.startsWith("bind:");
         if (!isBinding) {
             throw new ParserError("expected", "shorthand binding");
