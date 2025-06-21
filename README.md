@@ -22,9 +22,9 @@ svelte 5 clone (hopefully)
 - deep reactivity
 - Component
     - no generated props type becuase im too lazy 
-    - you can access props via `$$.props`
+    - you can access props via `$$props`
     - `mount(...)`, `#if`, `#each`, `#key (not yet implemented)` do produce effect scope.
-- shorthand props syntax `name={name}` -> `{name}`
+- shorthand props syntax `name={name}` -> `{name}`, `bind:name={name}` -> `bind:name`
 
 ## What's not yet
 - think about each binding: should we make each item a signal or not.
