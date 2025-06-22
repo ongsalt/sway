@@ -6,8 +6,7 @@ svelte 5 clone (hopefully)
 - Templating syntax: literally svelte, you can even use svelte lsp.
     - you can do interpolation e.g. `{count.value}`.
     - `#if` `:else` `:else if`
-        - else if is not yet tested
-    - one component can contain multiple root nodes. (compiler magic)
+    - one component can contain multiple root nodes like svelte
 - Reactivity: i want it to look like svelte but i hate doing transformation so `.value` it is then. 
     - `signal` behave the same as svelte `$state` except you need to use `.value`. (i should say "more like vue" tho)
     - there is also `effect` and `computed`
