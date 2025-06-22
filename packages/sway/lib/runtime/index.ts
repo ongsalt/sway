@@ -4,4 +4,4 @@ export { append, children, comment, mount, sibling, listen, setAttribute, setTex
 export { if } from "./if"
 export { each } from "./each"
 export { parse, template } from "./template"
-export { bind } from "./binding"
+export { bind, bindThis } from "./binding"

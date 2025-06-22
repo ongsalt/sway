@@ -28,9 +28,11 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
             add(generateMany(before, indentation, logging));
 
             add(`export default function ${name}({ $$anchor, $$slots, $$props }) {`);
-            add(`$.push()`, 2);
+            add(`$.push();`, 2);
+            add(`const $$exports = {};`, 2);
             add(generateMany(body, indentation, logging));
-            add(`$.pop()`, 2);
+            add(`$.pop();`, 2);
+            add(`return $$exports;`, 2);
             add(`}`);
 
             add(generateMany(after, indentation, logging));
@@ -38,8 +40,12 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
         }
 
         case "component-initialization": {
-            const { componentName, props, slots, anchor } = statement;
-            add(`${componentName}({`);
+            const { instanceName, componentName, props, slots, anchor } = statement;
+            if (instanceName) {
+                add(`const ${instanceName} = ${componentName}({`);
+            } else {
+                add(`${componentName}({`);
+            }
             add(`  $$anchor: ${anchor},`);
             add(`  $$props: {`);
             for (const p of props) {
@@ -65,10 +71,16 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
                 add(`    },`);
             }
             add(`  },`);
-            add(`})`);
+            add(`  $$exports: {}`);
+            add(`});`);
             break;
         }
 
+        case "bind-this": {
+            const { identifier, instanceName } = statement;
+            add(`$.bindThis(($$instance) => { ${identifier} = $$instance; }, ${instanceName});`);
+            break;
+        }
 
         case "accessor-definition": {
             const { mode, name, parent, index } = statement;

@@ -17,14 +17,16 @@ svelte 5 clone (hopefully)
     - auto coerce type to number for `<input type="number">`
     - the same go for checkbox
 - Dynamic attribute `class="border {someExpression}"` or `placeholder={anotherExpression}`
-- a reactive proxy like vue `reactive`
+- a reactive proxy like vue `reactive` for deep reactivity
+    - we also do array patching.
 - pass getter and setter instead of a `Signal` to a binding 
-- deep reactivity
 - Component
     - no generated props type becuase im too lazy 
     - you can access props via `$$props`
+    - instance binding `bind:this`
     - `mount(...)`, `#if`, `#each`, `#key (not yet implemented)` do produce effect scope.
 - shorthand props syntax `name={name}` -> `{name}`, `bind:name={name}` -> `bind:name`
+- lifecycle hooks: `onMount`, `onDestroy`
 
 ## What's not yet
 - think about each binding: should we make each item a signal or not.

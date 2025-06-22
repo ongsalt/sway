@@ -70,7 +70,7 @@ export function effect(fn: EffectFn, priority = 3) {
     const e = createEffect(fn, priority);
     const c = getActiveComponentScope();
     if (c) {
-        c.deferEffect(e);
+        c.defer(() => updateEffect(e));
     } else {
         // eagerly run it except when use inside a component
         updateEffect(e);
@@ -95,7 +95,7 @@ export interface EffectScope {
 export interface ComponentScope {
     mounted: boolean;
     markAsMounted: () => void;
-    deferEffect: (effect: Effect) => void;
+    defer: (fn: () => any, priority?: number) => void;
 }
 
 
@@ -133,21 +133,35 @@ export function pop() {
 
 export function componentScope(): ComponentScope {
     const parentEffectScope = getActiveScope();
-    const deferredEffects = new Set<Effect>();
+    let deferreds: { fn: () => any, priority: number; }[] = [];
     let mounted = false;
 
+    //  a simple priority queue 
+    function defer(fn: () => any, priority = 0) {
+        if (!deferreds.length) {
+            deferreds.push({ fn, priority });
+            return;
+        }
+
+        let i = deferreds.length - 1;
+        while (i >= 0 && deferreds[i].priority < priority) {
+            i--;
+        }
+        deferreds.splice(i + 1, 0, { fn, priority });
+    }
+
     function onDestroy() {
-        deferredEffects.clear();
+        deferreds = [];
     }
 
     function update() {
-        for (const effect of deferredEffects) {
-            updateEffect(effect);
+        for (const { fn } of deferreds) {
+            fn();
         }
-        deferredEffects.clear();
+        deferreds = [];
     };
 
-    // To by pass the capturing
+    // attach onDestroy | This is to by pass the capturing
     const e = createEffect(() => onDestroy, 3);
     updateEffect(e);
 
@@ -162,9 +176,7 @@ export function componentScope(): ComponentScope {
             }
             mounted = true;
         },
-        deferEffect: (effect: Effect) => {
-            deferredEffects.add(effect);
-        },
+        defer
     };
 };
 

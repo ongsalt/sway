@@ -72,7 +72,7 @@ export function mount<Props extends Record<string, any> = Record<string, any>>(c
         return component({
             $$anchor: anchor,
             $$props: options.props,
-            $$slots: {}
+            $$slots: {},
         });
     });
 

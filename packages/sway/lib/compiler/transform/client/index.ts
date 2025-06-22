@@ -128,9 +128,21 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
       if (node.type === "element") {
         const _statements: SwayStatement[] = [];
         const accessor = getOrCreateAccessor(node);
-        for (const attr of node.attributes) {
+
+        const bindThis = node.attributes.find(it => it.key === "this" && it.whole && it.isBinding);
+        const rest = node.attributes.filter(it => it !== bindThis);
+
+        for (const attr of rest) {
           const s = createAttributeEffect(accessor.name, attr);
           _statements.push(...s);
+        }
+
+        if (bindThis) {
+          _statements.push({
+            type: "bind-this",
+            identifier: (bindThis as any).expression,
+            instanceName: accessor.name
+          });
         }
 
         // TODO: prune unused
@@ -203,14 +215,21 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
 
       if (node.type === "component") {
         createTemplateDefinitions(node);
-        const accessor = getOrCreateAccessor(node);
+        const accessor = getOrCreateAccessor(node); // the anchor
+        const bindThis = node.props.find(it => it.key === "this" && it.whole && it.isBinding);
+        const rest = node.props.filter(it => it !== bindThis);
+        let instanceName: string | undefined = undefined;
+        if (bindThis) {
+          instanceName = createIdentifier(`${node.name}_instance`); 
+        }
 
         out.push(...accessor.statements);
         out.push({
           type: "component-initialization",
           componentName: node.name,
           anchor: accessor.name,
-          props: toProps(node.props),
+          instanceName,
+          props: toProps(rest),
           slots: [
             {
               name: "children",
@@ -218,6 +237,14 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
             }
           ]
         });
+
+        if (bindThis) {
+          out.push({
+            type: "bind-this",
+            instanceName: instanceName!,
+            identifier: (bindThis as any).expression
+          });
+        }
       }
 
       if (node.type === "root") {

@@ -1,7 +1,7 @@
 <script>
   import Props from "./props.sway";
-  import { signal, computed } from "sway";
-
+  import { signal, computed, onMount } from "sway";
+  
   let names = ["Kanade", "Mafuyu", "Mizuki", "Ena"];
 
   const index = signal(0);
@@ -12,8 +12,18 @@
 
   const nextName = computed(() => names[(index.value + 1) % names.length]);
   // TODO: allow html comment
+
+  let instance;
+  onMount(() => {
+    console.log(instance);
+  });
 </script>
 
 <div class="m-6">
-  <Props bind:names bind:index={index.value} nextName={nextName.value} />
+  <Props
+    bind:this={instance}
+    bind:names
+    bind:index={index.value}
+    nextName={nextName.value}
+  />
 </div>

@@ -141,11 +141,18 @@ export type ComponentInitializationStatement = {
     anchor: string;
     componentName: string;
     props: Prop[];
+    instanceName?: string;
     slots: ({
         name: string;
         anchorName?: string;
         body: SwayStatement[];
     })[];
+};
+
+export type BindThisStatement = {
+    type: "bind-this",
+    instanceName: string;
+    identifier: string;
 };
 
 export type KeyStatement = {
@@ -160,7 +167,7 @@ export type SwayStatement = TemplateEffectStatement | AccessorDefinitionStatemen
     | TemplateScopeStatement | TextSettingStatement | AttributeUpdatingStatement
     | EstreeNode | AnyStatement | ComponentDeclarationStatement | UserScriptStatement
     | TemplateInitStatement | AppendStatement | EventListenerAttachingStatement
-    | BindingStatement | ComponentInitializationStatement | KeyStatement;
+    | BindingStatement | ComponentInitializationStatement | KeyStatement | BindThisStatement;
 
 export function priority(statement: SwayStatement) {
     switch (statement.type) {

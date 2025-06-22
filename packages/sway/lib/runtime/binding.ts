@@ -1,5 +1,5 @@
 import { listen } from "./dom";
-import { Signal, templateEffect } from "./reactivity";
+import { getActiveComponentScope, onMount, templateEffect } from "./reactivity";
 
 export function bind<T>(node: Node, attribute: string, getter: () => T, setter: () => unknown) {
     if (!(node instanceof Element)) {
@@ -61,3 +61,11 @@ function bindCheckbox(element: HTMLInputElement, getter: () => boolean, setter: 
 //         element.checked = target.value;
 //     })
 // }
+
+
+// T should be component binding or html element
+export function bindThis<T>(setter: (instance: T) => any, instance: T) {
+    const scope = getActiveComponentScope();
+    scope?.defer(() => setter(instance), 1);
+}
+

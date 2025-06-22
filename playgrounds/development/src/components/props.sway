@@ -1,10 +1,11 @@
 <script>
-  console.log("Init")
+  $$exports.a = 8;
+  console.log("Init");
 </script>
 
-<div class="border rounded p-4">  
-  <h1 class="text-lg">{$$props.names[$$props.index]}</h1 >
-  <h1 class="text-md">Next: {$$props.nextName}</h1 >
+<div class="border rounded p-4">
+  <h1 class="text-lg">{$$props.names[$$props.index]}</h1>
+  <h1 class="text-md">Next: {$$props.nextName}</h1>
   <p>{$$props.index}</p>
 </div>
 
