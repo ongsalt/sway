@@ -23,10 +23,11 @@ svelte 5 clone (hopefully)
 - Component
     - no generated props type becuase im too lazy 
     - you can access props via `$$props`
-    - instance binding `bind:this`
     - `mount(...)`, `#if`, `#each`, `#key (not yet implemented)` do produce effect scope.
 - shorthand props syntax `name={name}` -> `{name}`, `bind:name={name}` -> `bind:name`
 - lifecycle hooks: `onMount`, `onDestroy`
+- Component instance binding `bind:this`
+    - you cant use `export function something(...)` syntax yet. for now use `$$exports.something = ...`
 
 ## What's not yet
 - think about each binding: should we make each item a signal or not.
