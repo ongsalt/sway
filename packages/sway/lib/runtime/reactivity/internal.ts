@@ -185,7 +185,7 @@ export function updateEffect(effect: Effect) {
 
     try {
         const cleanup = effect.fn(); // fuck ts
-        if (cleanup) {
+        if (typeof cleanup === "function") {
             effect.cleanups.push(cleanup);
         }
         effect.dirty = false;
