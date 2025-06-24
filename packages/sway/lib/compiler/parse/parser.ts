@@ -4,6 +4,9 @@ import { TemplateASTNode, Attribute, ControlFlowNode, EachNode, ElementNode, Fn,
 import { ParserError } from "./error";
 import * as acorn from "acorn";
 
+// i fucked up error handling
+// TODO: produce readable error message
+// and not silenly fail
 export class Parser {
     private current = 0;
     constructor(public tokens: Token[]) { }
@@ -127,6 +130,10 @@ export class Parser {
 
     parse(): TemplateAST {
         const nodes = this.nodes();
+        if (this.peek()?.type !== "eof") {
+            throw new Error("Parse failure");
+        }
+        // console.dir({ nodes }, { depth: null });
         // TODO: allow multiple styles and scripts
         const style = nodes.find(it => it.type === "element" && it.tag === "style") as ElementNode | undefined;
         const script = nodes.find(it => it.type === "element" && it.tag === "script") as ElementNode | undefined;
