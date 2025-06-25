@@ -173,9 +173,10 @@ export function priority(statement: SwayStatement) {
     switch (statement.type) {
         // case "accessor-definition":
         //     return -1;
-        case "if":
-        case "each":
-        case "template-effect":
+        // case "if":
+        // case "each":
+        // case "template-effect":
+        case "append":
             return 1;
 
         default:

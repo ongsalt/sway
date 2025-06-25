@@ -15,6 +15,7 @@ export function children(fragment: Node | Node[], index = 0): Node {
     return fragment.childNodes[index];
 }
 
+// TODO: $.reset, and internal `current` node state
 export function sibling(node: Node, index: number) {
     console.log(node, index);
     return children(node.parentNode!, index);
