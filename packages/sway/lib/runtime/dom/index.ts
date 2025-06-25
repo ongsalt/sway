@@ -1,5 +1,5 @@
 import { templateEffect } from "../reactivity";
-import { createRenderer } from "../renderer";
+import { createRuntime } from "../internal";
 import { bind } from "./binding";
 
 type CleanupFn = () => unknown;
@@ -9,7 +9,7 @@ declare global {
     }
 }
 
-export function children(fragment: Node | Node[], index = 0): Node {
+function children(fragment: Node | Node[], index = 0): Node {
     if (Array.isArray(fragment)) {
         return fragment[index];
     }
@@ -17,7 +17,7 @@ export function children(fragment: Node | Node[], index = 0): Node {
 }
 
 // TODO: $.reset, and internal `current` node state
-export function sibling(node: Node, index: number) {
+function sibling(node: Node, index: number) {
     console.log(node, index);
     return children(node.parentNode!, index);
     // while (index > 0) {
@@ -29,9 +29,10 @@ export function sibling(node: Node, index: number) {
     // return node
 }
 
-export function append(anchor: Node, fragment: Node | Node[] | DocumentFragment, before = false) {
+function append(anchor: Node, fragment: Node | Node[] | DocumentFragment, before = false) {
     // i want insertAfter but whatever
     const parent = anchor.parentNode!;
+    console.log({ anchor })
     let currentAnchor = before ? anchor : anchor.nextSibling;
     if (fragment instanceof DocumentFragment) {
         parent.insertBefore(fragment, currentAnchor);
@@ -44,11 +45,11 @@ export function append(anchor: Node, fragment: Node | Node[] | DocumentFragment,
     }
 }
 
-export function comment(data = 'runtime-comment') {
+function comment(data = 'runtime-comment') {
     return document.createComment(data);
 }
 
-export function remove(node: Node) {
+function remove(node: Node) {
     if (node instanceof Element) { // TODO: make ts shut up 
         node.$$cleanups?.forEach(cleanup => cleanup());
     }
@@ -57,8 +58,8 @@ export function remove(node: Node) {
 }
 
 export type MountOptions<Props extends Record<string, any>, HostNode = Node> = {
-    root: HTMLElement;
-    anchor: HostNode; // TODO: make this opional again
+    root: HostNode;
+    anchor?: HostNode; // TODO: make this opional again
     props: Props;
 };
 
@@ -74,7 +75,7 @@ export function listen<E extends Element>(element: E, type: keyof HTMLElementEve
 }
 
 // exclusive
-export function sweep(from: Node, to: Node | null) {
+function sweep(from: Node, to: Node | null) {
     let current = from.nextSibling;
     while (current != to) {
         const toRemove = current!;
@@ -83,7 +84,7 @@ export function sweep(from: Node, to: Node | null) {
     }
 }
 
-export function setText(node: Node, text: string) {
+function setText(node: Node, text: string) {
     if (node.nodeType !== 3) {
         throw new Error(`${node} is not a text node`);
     }
@@ -91,16 +92,19 @@ export function setText(node: Node, text: string) {
     node.textContent = text;
 }
 
-export function setAttribute(element: Element, attributes: string, value: string) {
+function setAttribute(element: Element, attributes: string, value: string) {
     element.setAttribute(attributes, value);
 }
 
-const { mount, runtime } = createRenderer<Node, Element, DocumentFragment, Event>({
+const { mount, runtime } = createRuntime<Node, Element, DocumentFragment, Event>({
     addEventListener(element, type, callback) {
         element.addEventListener(type, callback);
     },
     appendNode(node, after) {
         append(node, after);
+    },
+    appendChild(parent, fragment) {
+        parent.appendChild(fragment);
     },
     createBinding(node, key, getter, setter) {
         bind(node, key, getter, setter);

@@ -1,6 +1,6 @@
 import { RenderFn } from "../types";
 import { templateEffect, effectScope } from "./reactivity";
-import { SwayRuntime } from "./renderer";
+import { SwayRuntime } from "./internal";
 
 // TODO: transformer: avoid this type of name collision
 

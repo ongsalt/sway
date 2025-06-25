@@ -112,7 +112,7 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
 
     const rootTemplate = createTemplateDefinitions(root);
 
-    // walk it, find hole and create $.template()
+    // walk it, find hole and create $.staticContent()
     // also create intepolation
     // we do everything in 1 pass
     function walk(node: TemplateASTNodeWithRoot): SwayStatement[] {

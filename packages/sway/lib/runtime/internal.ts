@@ -3,7 +3,7 @@ import { MountOptions } from "./dom";
 import { bind } from "./dom/binding";
 import { each } from "./each";
 import { _if, IfEffect } from "./if";
-import { effect, effectScope, Signal, templateEffect } from "./reactivity";
+import { effect, effectScope, getActiveComponentScope, pop, push, Signal, templateEffect } from "./reactivity";
 
 export interface Renderer<HostNode, HostElement extends HostNode, HostFragment extends HostNode, HostEvent> {
   createFragment(): HostFragment;
@@ -13,6 +13,7 @@ export interface Renderer<HostNode, HostElement extends HostNode, HostFragment e
   setText(node: HostNode, text: string): void;
 
   appendNode(node: HostNode | HostFragment, after: HostNode): void;
+  appendChild(parent: HostNode, fragment: HostNode): void;
   removeNode(node: HostNode): void;
 
   // getChildren(node: HostNode): HostNode[];
@@ -42,13 +43,14 @@ export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, 
   sweep(from: HostNode, to: HostNode | null): void;
   setText(node: HostNode, text: string): void;
 
-  static(content: string): () => HostNode;
+  createStaticContent(content: string): () => HostNode;
 
   setAttribute(element: HostElement, attributes: string, value: any): void;
 
   // These depend on reactivity
   listen(element: HostElement, type: string, createListener: () => (event: HostEvent) => any): void;
   bind<T>(node: HostNode, key: string, getter: () => T, setter: () => unknown): void;
+  bindThis<T>(setter: (instance: T) => any, instance: T): void;
 
   if(anchor: HostNode, effect: IfEffect): void;
   each<T>(
@@ -57,9 +59,20 @@ export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, 
     children: (anchor: HostNode, value: T, index: Signal<number>) => void
   ): void;
   key(anchor: HostNode, keyFn: () => any, children: (anchor: HostNode) => void): void;
+
+  // state
+  push(): void;
+  pop(): void;
 }
 
-export function createRenderer<
+// TODO: split runtime into platform specific and generic
+
+// Generic
+// these will depends ob compiler flag
+// $.static(content: string): ($$renderer) => HostNode
+// $.static(content: ($$renderer) => HostNode): ($$renderer) => HostNode
+
+export function createRuntime<
   HostNode,
   HostElement extends HostNode,
   HostFragment extends HostNode,
@@ -68,7 +81,7 @@ export function createRenderer<
   const runtime: SwayRuntime<HostNode, HostElement, HostEvent> = {
     append(anchor, fragment) {
       // TODO: handle fragment?
-      renderer.appendNode(fragment, anchor);
+      renderer.appendNode(anchor, fragment);
     },
     child(fragment, index) {
       return renderer.getChild(fragment, index);
@@ -94,11 +107,10 @@ export function createRenderer<
     setText(node, text) {
       renderer.setText(node, text);
     },
-    static(content) {
+    createStaticContent(content) {
       if (renderer.createStaticContent) {
         return renderer.createStaticContent!(content);
       }
-
       throw new Error("Omitting renderer.createStaticContent is not yet supported. This need to be a compiler flag too");
     },
     if(anchor, effect) {
@@ -107,14 +119,16 @@ export function createRenderer<
     each(anchor, collection, children) {
       each(runtime, anchor, collection, children);
     },
-
     bind(node, key, getter, setter) {
       renderer.createBinding(node, key, getter, setter);
+    },
+    bindThis(setter, instance) {
+      const scope = getActiveComponentScope();
+      scope?.defer(() => setter(instance), 1);
     },
     setAttribute(element, attribute, value) {
       renderer.setAttribute(element, attribute, value);
     },
-
     listen(element, type, createListener) {
       // generic impl
       effect(() => {
@@ -130,6 +144,14 @@ export function createRenderer<
     key(anchor, keyFn, children) {
       throw new Error("key is unimplemented");
     },
+
+    pop() {
+      pop();
+    },
+
+    push() {
+      push();
+    },
   };
 
   function mount<
@@ -140,10 +162,10 @@ export function createRenderer<
     options: MountOptions<Props, HostNode>
   ) {
     let anchor = options.anchor;
-    // if (!anchor) {
-    //   anchor = runtime.comment();
-    //   options.root.appendChild(anchor);
-    // }
+    if (!anchor) {
+      anchor = runtime.comment();
+      renderer.appendChild(options.root, anchor);
+    }
 
     const scope = effectScope();
     const bindings = scope.run(() => {
@@ -162,7 +184,6 @@ export function createRenderer<
 
     return { bindings, destroy };
   }
-
 
   return {
     mount,

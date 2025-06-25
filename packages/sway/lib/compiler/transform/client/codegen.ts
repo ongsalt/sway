@@ -27,7 +27,7 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
             const { body, name, after, before } = statement;
             add(generateMany(before, indentation, logging));
 
-            add(`export default function ${name}({ $$anchor, $$slots, $$props }) {`);
+            add(`export default function ${name}({ $$anchor, $$slots, $$props, $$runtime }) {`);
             add(`$.push();`, 2);
             add(`const $$exports = {};`, 2);
             add(generateMany(body, indentation, logging));
@@ -71,22 +71,23 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
                 add(`    },`);
             }
             add(`  },`);
-            add(`  $$exports: {}`);
+            add(`  $$exports: {},`);
+            add(`  $$runtime,`);
             add(`});`);
             break;
         }
 
         case "bind-this": {
             const { identifier, instanceName } = statement;
-            add(`$.bindThis(($$instance) => { ${identifier} = $$instance; }, ${instanceName});`);
+            add(`$$runtime.bindThis(($$instance) => { ${identifier} = $$instance; }, ${instanceName});`);
             break;
         }
 
         case "accessor-definition": {
             const { mode, name, parent, index } = statement;
             // well well well...
-            const fn = mode === "children" ? "children" : "sibling";
-            add(`const ${name} = $.${fn}(${parent}, ${index});`);
+            const fn = mode === "children" ? "child" : "sibling";
+            add(`const ${name} = $$runtime.${fn}(${parent}, ${index});`);
             break;
         }
 
@@ -123,14 +124,14 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
         case "text-setting": {
             const { accessor, texts } = statement;
             const code = generateTextInterpolation(texts);
-            add(`$.setText(${accessor}, ${code})`);
+            add(`$$runtime.setText(${accessor}, ${code})`);
             break;
         }
 
         case "attribute-updating": {
             const { key, accessor, texts } = statement;
             const code = generateTextInterpolation(texts);
-            add(`$.setAttribute(${accessor}, \`${key}\`, ${code})`);
+            add(`$$runtime.setAttribute(${accessor}, \`${key}\`, ${code})`);
             break;
         }
 
@@ -166,25 +167,25 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
 
         case "template-definition": {
             const { name, template } = statement;
-            add(`const ${name} = $.template(\`${template}\`);`);
+            add(`const ${name} = $.staticContent(\`${template}\`);`);
             break;
         }
 
         case "template-init": {
             const { name, templateName: root } = statement;
-            add(`const ${name} = ${root}();`);
+            add(`const ${name} = ${root}($$runtime);`);
             break;
         }
 
         case "append": {
             const { anchor, node } = statement;
-            add(`$.append(${anchor}, ${node});`);
+            add(`$$runtime.append(${anchor}, ${node});`);
             break;
         }
 
         case "event-listener": {
             const { event, listenerFn, node } = statement;
-            add(`$.listen(${node}, ${event}, () => ${listenerFn});`);
+            add(`$$runtime.listen(${node}, ${event}, () => ${listenerFn});`);
             break;
         }
 
@@ -198,9 +199,9 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
                 }
             }
 
-            add(`$.each(${anchor}, () => ${iteratable}, ($$anchor, ${asAndIndex}) => {`);
+            add(`$$runtime.each(${anchor}, () => ${iteratable}, ($$anchor, ${asAndIndex}) => {`);
             add(generateMany(body, indentation + 2, logging));
-            add(`$.append($$anchor, ${fragment});`, 2);
+            add(`$$runtime.append($$anchor, ${fragment});`, 2);
             if (key) {
                 add(`}, (${asAndIndex}) => ${key});`);
             } else {
@@ -220,7 +221,7 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
                 getter = binding.getter;
                 setter = binding.setter;
             }
-            add(`$.bind(${node}, \`${key}\`, ${getter}, ${setter})`);
+            add(`$$runtime.bind(${node}, \`${key}\`, ${getter}, ${setter})`);
             break;
         }
 

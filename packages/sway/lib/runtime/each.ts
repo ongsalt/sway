@@ -1,5 +1,5 @@
 import { effectScope, EffectScope, signal, Signal, templateEffect } from "./reactivity";
-import { SwayRuntime } from "./renderer";
+import { SwayRuntime } from "./internal";
 import { getTransformation } from "./utils/array";
 import { identity } from "./utils/functions";
 
