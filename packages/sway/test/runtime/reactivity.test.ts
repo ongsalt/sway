@@ -2,7 +2,7 @@ import { createSignal, createEffect, createComputed, get, set } from "../../lib/
 
 import { expect, it, test } from "vitest";
 
-test("Computed", () => {
+test("only Computed", () => {
     const counter = createSignal(0);
     const doubled = createComputed(() => get(counter) * 2);
 
@@ -11,7 +11,7 @@ test("Computed", () => {
     expect(get(doubled)).toBe(2);
 });
 
-test("Effect", () => {
+test("only Effect", () => {
     const counter = createSignal(8);
     let res = 0;
     createEffect(() => {
@@ -74,3 +74,31 @@ test("Complex graph", () => {
 // idk how to test how many time the computed tun tho
 // i mean i can console.log it but i dont want to export too many thing
 // btw, the test above trigger a computed rerun total of 9 times which is good
+
+
+test("Update batching", async () => {
+    const a = createSignal(8);
+    const b = createSignal(9);
+    const c = createComputed(() => a.value + b.value);
+
+    function increment() {
+        set(a, get(a) + 1);
+        set(b, get(b) + 1);
+    }
+
+    let rerunCount = 0;
+    createEffect(() => {
+        rerunCount += 1;
+        console.log(get(c));
+    });
+
+    increment();
+    increment();
+    increment();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    increment();
+
+    console.log(c.value);
+
+    expect(rerunCount).toBe(2);
+});

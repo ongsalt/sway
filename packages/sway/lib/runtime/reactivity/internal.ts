@@ -247,7 +247,16 @@ export function trigger(signal: Signal<any>) {
     for (const subscriber of signal.subscribers) {
         notify(subscriber);
     }
-    flush();
+    scheduleFlush();
+}
+
+let willFlush = false;
+function scheduleFlush() {
+    if (willFlush) {
+        return;
+    }
+    queueMicrotask(() => flush());
+    willFlush = true;
 }
 
 function flush() {
@@ -263,6 +272,7 @@ function flush() {
     }
 
     afterFlushes = [];
+    willFlush = false;
 }
 
 export function set<T>(signal: Signal<T>, value: T) {

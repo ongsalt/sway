@@ -1,0 +1,22 @@
+<script>
+  import { signal, reactive, computed, effect } from "sway";
+
+  const a = signal(8);
+  const b = signal(9);
+  const c = computed(() => a.value + b.value);
+
+  function onclick() {
+    a.value += 1;
+    b.value += 1;
+  }
+
+  effect(() => console.log(c.value));
+</script>
+
+<p>
+  a = {a.value} <br />
+  b = {b.value} <br />
+  c = {c.value} <br />
+</p>
+
+<button {onclick} class="border p-1"> increment </button>
