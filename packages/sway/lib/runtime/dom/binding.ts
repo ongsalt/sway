@@ -1,5 +1,5 @@
-import { listen } from "./dom";
-import { getActiveComponentScope, onMount, templateEffect } from "./reactivity";
+import { listen } from ".";
+import { getActiveComponentScope, templateEffect } from "../reactivity";
 
 export function bind<T>(node: Node, attribute: string, getter: () => T, setter: () => unknown) {
     if (!(node instanceof Element)) {

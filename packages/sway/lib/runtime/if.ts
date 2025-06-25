@@ -1,25 +1,25 @@
 import { RenderFn } from "../types";
-import { append, comment, sweep } from "./dom";
 import { templateEffect, effectScope } from "./reactivity";
+import { SwayRuntime } from "./renderer";
 
 // TODO: transformer: avoid this type of name collision
 
-export type RenderDelegationFn = (fn: RenderFn, key?: boolean) => void;
-export type IfEffect = ($$render: RenderDelegationFn) => void;
+export type RenderDelegationFn<HostNode> = (fn: RenderFn<HostNode>, key?: boolean) => void;
+export type IfEffect<HostNode = any> = ($$render: RenderDelegationFn<HostNode>) => void;
 
 // Should anchor be a node
-function _if(anchor: Node, ifEffect: IfEffect) {
-    const endAnchor = comment();
-    append(anchor, endAnchor);
+export function _if<HostNode>(runtime: SwayRuntime<HostNode, any, any>, anchor: HostNode, ifEffect: IfEffect<HostNode>) {
+    const endAnchor = runtime.comment();
+    runtime.append(anchor, endAnchor);
 
     let key: boolean | undefined;
     const scope = effectScope();
 
-    const render: RenderDelegationFn = (init, newKey = true) => {
+    const render: RenderDelegationFn<HostNode> = (init, newKey = true) => {
         if (key !== newKey) {
             if (key !== undefined) {
                 scope.destroy();
-                sweep(anchor, endAnchor);
+                runtime.sweep(anchor, endAnchor);
             }
             // templateEffect below should not track init's dependencies 
             scope.run(() => {
@@ -32,7 +32,4 @@ function _if(anchor: Node, ifEffect: IfEffect) {
     templateEffect(() => {
         ifEffect(render);
     });
-}
-
-export { _if as if };
-
+};

@@ -1,5 +1,6 @@
-import { Component } from "../types";
-import { effectScope, templateEffect } from "./reactivity";
+import { templateEffect } from "../reactivity";
+import { createRenderer } from "../renderer";
+import { bind } from "./binding";
 
 type CleanupFn = () => unknown;
 declare global {
@@ -55,37 +56,12 @@ export function remove(node: Node) {
     node.parentNode!.removeChild(node);
 }
 
-export type MountOptions<Props extends Record<string, any>> = {
+export type MountOptions<Props extends Record<string, any>, HostNode = Node> = {
     root: HTMLElement;
-    anchor?: Node;
+    anchor: HostNode; // TODO: make this opional again
     props: Props;
 };
 
-export function mount<Props extends Record<string, any> = Record<string, any>>(component: Component, options: MountOptions<Props>) {
-    let anchor = options.anchor;
-    if (!anchor) {
-        anchor = comment();
-        options.root.appendChild(anchor);
-    }
-
-    const scope = effectScope();
-    const bindings = scope.run(() => {
-        return component({
-            $$anchor: anchor,
-            $$props: options.props,
-            $$slots: {},
-        });
-    });
-
-    const destroy = () => {
-        sweep(anchor, null); // idk to where tho, maybe setup an end anchor
-        scope.destroy();
-    };
-
-    return { bindings, destroy };
-}
-
-// TODO: Listener should be inside an effect
 export function listen<E extends Element>(element: E, type: keyof HTMLElementEventMap, createListener: () => EventListenerOrEventListenerObject) {
     templateEffect(() => {
         const listener = createListener();
@@ -118,3 +94,50 @@ export function setText(node: Node, text: string) {
 export function setAttribute(element: Element, attributes: string, value: string) {
     element.setAttribute(attributes, value);
 }
+
+const { mount, runtime } = createRenderer<Node, Element, DocumentFragment, Event>({
+    addEventListener(element, type, callback) {
+        element.addEventListener(type, callback);
+    },
+    appendNode(node, after) {
+        append(node, after);
+    },
+    createBinding(node, key, getter, setter) {
+        bind(node, key, getter, setter);
+    },
+    createComment(text) {
+        return comment(text);
+    },
+    createFragment() {
+        return document.createDocumentFragment();
+    },
+    createText(text) {
+        return document.createTextNode(text ?? "");
+    },
+    getChild(node, index) {
+        return children(node, index);
+    },
+    getNextSibling(node) {
+        return node.nextSibling;
+    },
+    removeEventListener(element, type, callback) {
+        element.removeEventListener(type, callback);
+    },
+    removeNode(node) {
+        remove(node);
+    },
+    setAttribute(element, key, value) {
+        setAttribute(element, key, value);
+    },
+    setText(node, text) {
+        setText(node, text);
+    },
+    createStaticContent(content) {
+        const template: HTMLTemplateElement = document.createElement("template");
+        template.innerHTML = content;
+
+        return () => template.content.cloneNode(true) as DocumentFragment;
+    },
+});
+
+export { mount, runtime };
