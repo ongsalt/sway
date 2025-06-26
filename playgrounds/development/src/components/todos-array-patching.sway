@@ -1,100 +1,131 @@
 <script>
-    import { reactive, signal } from "sway";
+  import { reactive, signal } from "sway";
 
-    let id = 12768;
+  let id = 12768;
 
-    const todos = reactive([
-        {
-            id: id++,
-            description: "lorem",
-            editing: false,
-        },
-    ]);
+  const todos = reactive([
+    {
+      id: id++,
+      description: "lorem",
+      editing: false,
+    },
+  ]);
 
-    function remove2(index) {
-        return () => {
-            const [removed] = todos.splice(index, 1);
-            console.log(`removing todo number ${index}`, removed);
-            // console.log("raw", raw(todos))
-        };
-    }
+  function remove2(index) {
+    return () => {
+      const [removed] = todos.splice(index, 1);
+      console.log(`removing todo number ${index}`, removed);
+      // console.log("raw", raw(todos))
+    };
+  }
 
-    const description = signal("");
+  const description = signal("");
 
-    function addTodo() {
-        todos.push({
-            id: id++,
-            description: description.value,
-            editing: false,
-        });
-        // console.log(todos)
-        description.value = "";
-    }
+  function addTodo() {
+    todos.push({
+      id: id++,
+      description: description.value,
+      editing: false,
+    });
+    // console.log(todos)
+    description.value = "";
+  }
 
-    function toggleEdit(todo) {
-        todo.editing = !todo.editing;
-        // TODO: make this NOT run immediately
-        console.log(todo);
-    }
+  function toggleEdit(todo) {
+    todo.editing = !todo.editing;
+    // TODO: make this NOT run immediately
+    console.log(todo);
+  }
 </script>
 
-<main class="m-8 border rounded-lg shadow-sm p-6 space-y-8">
-    <div>
-        <h1 class="text-2xl">Todo list</h1>
+<main class="max-w-2xl mx-auto p-6">
+  <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h1 class="text-2xl font-semibold text-gray-900">Todo List</h1>
+      <p class="text-gray-600 mt-1 text-sm">Keep track of your tasks</p>
     </div>
 
-    <div class="gap-2 flex flex-col">
-        <label for="description">Description</label>
+    <div class="p-6 bg-gray-50 border-b border-gray-200">
+      <div class="flex gap-3">
         <input
-            type="text"
-            class="border rounded-md shadow-sm p-2 px-4"
-            placeholder="Type something..."
-            bind:value={description.value}
+          type="text"
+          class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="What needs to be done?"
+          bind:value={description.value}
         />
         <button
-            onclick={addTodo}
-            class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
+          onclick={addTodo}
+          class="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium"
         >
-            Add todo
+          Add
         </button>
+      </div>
     </div>
 
-    {#each todos as todo, index (todo.id)}
-        <div class="border rounded-md p-4">
-            <span>index: {index.value}, id: {todo.id}</span>
-            {#if todo.editing}
-                <div>
-                    <input
-                        type="text"
-                        class="border rounded-md shadow-sm p-2 px-4"
-                        placeholder="Type something..."
-                        bind:value={todo.description}
-                    />
-                </div>
-            {:else}
-                <p class="">{todo.description}</p>
-            {/if}
-            <button
+    <div class="divide-y divide-gray-200">
+      {#each todos as todo, index (todo.id)}
+        <div class="p-6">
+          <div class="flex items-start gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <span
+                  class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded font-mono"
+                >
+                  {index.value + 1}
+                </span>
+                <span class="text-xs text-gray-400">ID {todo.id}</span>
+              </div>
+
+              {#if todo.editing}
+                <input
+                  type="text"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  bind:value={todo.description}
+                />
+              {:else}
+                <p class="text-gray-900">{todo.description}</p>
+              {/if}
+            </div>
+
+            <div class="flex gap-2">
+              <button
                 onclick={() => toggleEdit(todo)}
-                class="rounded bg-green-500 hover:bg-green-600 p-2 px-4 text-white"
-            >
-                {todo.editing ? "Done" : "Edit"}
-            </button>
-            <button
+                class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1 rounded-md text-sm font-medium"
+              >
+                {todo.editing ? "Save" : "Edit"}
+              </button>
+              <button
                 onclick={remove2(index.value)}
-                class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
-            >
-                Remove
-            </button>
+                class="bg-white hover:bg-red-50 border border-red-300 text-red-700 px-3 py-1 rounded-md text-sm font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
-    {/each}
-</main>
+      {/each}
 
-<div class="border rounded-lg bg-neutral-100 m-8 overflow-clip">
-    <div class="p-4 bg-white border-b shadow-sm flex gap-2">
-        <h3 class="font-medium">JSON</h3>
+      {#if todos.length === 0}
+        <div class="p-12 text-center">
+          <div class="text-gray-300 text-4xl mb-3">📝</div>
+          <p class="text-gray-500">No todos yet</p>
+          <p class="text-gray-400 text-sm mt-1">Add your first todo above</p>
+        </div>
+      {/if}
     </div>
-    <p class="p-4">
-        {JSON.stringify(todos)}
-    </p>
-</div>
+  </div>
+
+  <div class="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm overflow-clip">
+    <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+      <h3 class="text-sm font-medium text-gray-900">Debug Data</h3>
+    </div>
+    <div class="p-4">
+      <pre
+        class="text-xs text-gray-600 overflow-x-auto bg-gray-50 p-3 rounded border">{JSON.stringify(
+          todos,
+          null,
+          2,
+        )}</pre>
+    </div>
+  </div>
+</main>

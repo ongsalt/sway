@@ -109,6 +109,8 @@ export function createProxy<T>(obj: T): T {
     });
 }
 
+// TODO: this currently sometime trigger more than needed
+// when add an item after delete
 export function createArrayProxy<T>(arr: T[]): T[] {
     // only allow array, TODO: validate it at run time
 

@@ -110,7 +110,7 @@ export function each<Item, HostNode>(
         for (let i = 0; i < _items.length; i++) {
             items.push(_items[i]); // this is to create linked proxy 
         }
-        console.log(`[each] rerun`, _items);
+        // console.log(`[each] rerun`, _items);
 
         // we at least for now, cant determine if items is writable or not
         // so fuck it, everything is writable now
@@ -132,11 +132,11 @@ export function each<Item, HostNode>(
         // if (!diff.length) {
         //     return;
         // }
-        console.log({
-            diff,
-            currentKeys,
-            newKeys
-        });
+        // console.log({
+        //     diff,
+        //     currentKeys,
+        //     newKeys
+        // });
 
         // TODO: in fact we could have just swap the data props
         //       and keep the node only if key is provided
