@@ -32,6 +32,19 @@ export interface Renderer<HostNode, HostElement extends HostNode, HostEvent> {
   createBinding<T>(node: HostNode, key: string, getter: () => T, setter: () => unknown): void;
 }
 
+export type NodeDefinition<HostNode> =
+  { type: "comment"; } |
+  {
+    type: "text";
+    text: string;
+  } | {
+    type: | "element";
+    tag: any;
+    attributes?: Record<string, string>;
+    children?: NodeDefinition<HostNode>[];
+    // only use when its textNode
+  };
+
 export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, HostEvent = any> {
   child(fragment: HostNode, index: number): HostNode | null;
   // next(skip?: number): HostNode; // unused
@@ -46,6 +59,7 @@ export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, 
 
   createText(text?: string): HostNode;
   createElement(type: any): HostElement;
+  create(definition: NodeDefinition<HostNode>): HostNode;
   createStaticContent(content: string): () => HostNode[] | HostNode;
 
   setAttribute(element: HostElement, attributes: string, value: any): void;
@@ -80,6 +94,28 @@ export function createRuntime<
   HostElement extends HostNode,
   HostEvent
 >(renderer: Renderer<HostNode, HostElement, HostEvent>) {
+
+  function create(definition: NodeDefinition<HostNode>): HostNode {
+    if (definition.type === "text") {
+      return renderer.createText(definition.text);
+    }
+
+    if (definition.type === "comment") {
+      return renderer.createComment();
+    }
+
+    const element = renderer.createElement(definition.tag);
+    for (const [key, value] of Object.entries(definition.attributes ?? {})) {
+      renderer.setAttribute(element, key, value);
+    }
+
+    for (const c of definition.children ?? []) {
+      renderer.appendChild(element, create(c));
+    }
+
+    return element;
+  }
+
   const runtime: SwayRuntime<HostNode, HostElement, HostEvent> = {
     append(anchor, fragment) {
       renderer.append(anchor, fragment);
@@ -114,6 +150,7 @@ export function createRuntime<
     createElement(type) {
       return renderer.createElement(type);
     },
+    create,
     createText(text) {
       return renderer.createText(text ?? "");
     },

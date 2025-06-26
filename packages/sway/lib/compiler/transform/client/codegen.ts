@@ -394,9 +394,9 @@ export function generateTemplateInitInstructions(nodes: TemplateASTNode[]) {
                 output += `  const ${nodeName} = $$runtime.createText(\`${text}\`);\n`;
             } else {
                 output += `  const ${nodeName} = $$runtime.createElement(\`${node.tag}\`);\n`;
-                output += `  const ${nodeName}_children = [];`;
                 output += generateAttributesInitInstructions(nodeName, node.attributes);
                 output += `{\n`;
+                output += `  const ${nodeName}_children = [];`;
                 output += generateTemplate(node.children, `${nodeName}_children`);
                 output += `${nodeName}_children.forEach(it => $$runtime.appendChild(${nodeName}, it))\n`;
                 output += `}\n`;
@@ -409,6 +409,55 @@ export function generateTemplateInitInstructions(nodes: TemplateASTNode[]) {
 
     code += generateTemplate(nodes, "nodes");
     code += `  return nodes;\n`;
+    code += `}\n`;
+
+    return code;
+}
+
+
+export function generateTemplateInitInstructions2(nodes: TemplateASTNode[]): string {
+    let code = `($$runtime) => {\n`;
+    code += `  const definitions = `;
+
+    function nodeToDefinition(node: TemplateASTNode): string {
+        if (node.type === "text") {
+            const isDynamic = node.texts.some(it => it.type === "interpolation");
+            if (isDynamic) {
+                return `{ type: "text", text: " " }`;
+            }
+            const text = node.texts.map(it => it.body).join('');
+            return `{ type: "text", text: \`${text}\` }`;
+        }
+
+        if (node.type === "element") {
+            const staticAttributes: Record<string, string> = {};
+            for (const attr of node.attributes) {
+                if (!attr.whole) {
+                    const isDynamic = attr.texts.some(it => it.type === "interpolation");
+                    if (!isDynamic) {
+                        staticAttributes[attr.key] = attr.texts.map(it => it.body).join('');
+                    }
+                }
+            }
+
+            const children = node.children.map(nodeToDefinition).join(', ');
+            const attrs = Object.keys(staticAttributes).length > 0
+                ? `, attributes: ${JSON.stringify(staticAttributes)}`
+                : '';
+            const childrenProp = node.children.length > 0
+                ? `, children: [${children}]`
+                : '';
+
+            return `{ type: "element", tag: \`${node.tag}\` ${attrs}${childrenProp} }`;
+        }
+
+        // For components and control-flow, return comment placeholder
+        return `{ type: "comment" }`;
+    }
+
+    const definitions = nodes.map(nodeToDefinition).join(', ');
+    code += `[${definitions}];\n`;
+    code += `  return definitions.map(def => $$runtime.create(def));\n`;
     code += `}\n`;
 
     return code;
