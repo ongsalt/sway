@@ -32,7 +32,7 @@ function sibling(node: Node, index: number) {
 function append(anchor: Node, fragment: Node | Node[] | DocumentFragment, before = false) {
     // i want insertAfter but whatever
     const parent = anchor.parentNode!;
-    console.log({ anchor })
+    // console.log({ anchor });
     let currentAnchor = before ? anchor : anchor.nextSibling;
     if (fragment instanceof DocumentFragment) {
         parent.insertBefore(fragment, currentAnchor);
@@ -96,12 +96,12 @@ function setAttribute(element: Element, attributes: string, value: string) {
     element.setAttribute(attributes, value);
 }
 
-const { mount, runtime } = createRuntime<Node, Element, DocumentFragment, Event>({
+const { mount, runtime } = createRuntime<Node, Element, Event>({
     addEventListener(element, type, callback) {
         element.addEventListener(type, callback);
     },
-    appendNode(node, after) {
-        append(node, after);
+    append(anchor, node) {
+        append(anchor, node);
     },
     appendChild(parent, fragment) {
         parent.appendChild(fragment);
@@ -112,8 +112,8 @@ const { mount, runtime } = createRuntime<Node, Element, DocumentFragment, Event>
     createComment(text) {
         return comment(text);
     },
-    createFragment() {
-        return document.createDocumentFragment();
+    createElement(type) {
+        return document.createElement(type);
     },
     createText(text) {
         return document.createTextNode(text ?? "");

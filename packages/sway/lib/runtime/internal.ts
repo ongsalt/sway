@@ -5,23 +5,22 @@ import { each } from "./each";
 import { _if, IfEffect } from "./if";
 import { effect, effectScope, getActiveComponentScope, pop, push, Signal, templateEffect } from "./reactivity";
 
-export interface Renderer<HostNode, HostElement extends HostNode, HostFragment extends HostNode, HostEvent> {
-  createFragment(): HostFragment;
+export interface Renderer<HostNode, HostElement extends HostNode, HostEvent> {
   createComment(text?: string): HostNode;
-
+  createElement(type: any): HostElement; // use when !staticTemplateParsing
   createText(text: string): HostNode;
+
   setText(node: HostNode, text: string): void;
 
-  appendNode(node: HostNode | HostFragment, after: HostNode): void;
-  appendChild(parent: HostNode, fragment: HostNode): void;
+  append(anchor: HostNode, node: HostNode | HostNode[]): void;
   removeNode(node: HostNode): void;
 
-  // getChildren(node: HostNode): HostNode[];
+  appendChild(parent: HostNode, fragment: HostNode): void; // use when !staticTemplateParsing || no initial anchor specified 
   getChild(node: HostNode, index: number): HostNode | null;
   getNextSibling(node: HostNode): HostNode | null;
 
   // TODO: fallback 
-  createStaticContent?(content: string): () => HostFragment;
+  createStaticContent?(content: string): () => HostNode | HostNode[];
 
   setAttribute(element: HostElement, key: string, value: any): void;
 
@@ -37,13 +36,17 @@ export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, 
   child(fragment: HostNode, index: number): HostNode | null;
   // next(skip?: number): HostNode; // unused
 
-  append(anchor: HostNode, fragment: HostNode): void;
+  append(anchor: HostNode, fragment: HostNode | HostNode[]): void;
+  appendChild(parent: HostNode, fragment: HostNode): void; // use when !staticTemplateParsing || no initial anchor specified 
+
   comment(text?: string): HostNode;
   remove(node: HostNode): void;
   sweep(from: HostNode, to: HostNode | null): void;
   setText(node: HostNode, text: string): void;
 
-  createStaticContent(content: string): () => HostNode;
+  createText(text?: string): HostNode;
+  createElement(type: any): HostElement;
+  createStaticContent(content: string): () => HostNode[] | HostNode;
 
   setAttribute(element: HostElement, attributes: string, value: any): void;
 
@@ -68,20 +71,21 @@ export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, 
 // TODO: split runtime into platform specific and generic
 
 // Generic
-// these will depends ob compiler flag
-// $.static(content: string): ($$renderer) => HostNode
-// $.static(content: ($$renderer) => HostNode): ($$renderer) => HostNode
+// these will depends on compiler flag
+// $.staticContent(content: string): ($$renderer) => HostNode
+// $.staticContent(content: ($$renderer) => HostNode): ($$renderer) => HostNode
 
 export function createRuntime<
   HostNode,
   HostElement extends HostNode,
-  HostFragment extends HostNode,
   HostEvent
->(renderer: Renderer<HostNode, HostElement, HostFragment, HostEvent>) {
+>(renderer: Renderer<HostNode, HostElement, HostEvent>) {
   const runtime: SwayRuntime<HostNode, HostElement, HostEvent> = {
     append(anchor, fragment) {
-      // TODO: handle fragment?
-      renderer.appendNode(anchor, fragment);
+      renderer.append(anchor, fragment);
+    },
+    appendChild(parent, node) {
+      renderer.appendChild(parent, node);
     },
     child(fragment, index) {
       return renderer.getChild(fragment, index);
@@ -107,11 +111,17 @@ export function createRuntime<
     setText(node, text) {
       renderer.setText(node, text);
     },
+    createElement(type) {
+      return renderer.createElement(type);
+    },
+    createText(text) {
+      return renderer.createText(text ?? "");
+    },
     createStaticContent(content) {
       if (renderer.createStaticContent) {
         return renderer.createStaticContent!(content);
       }
-      throw new Error("Omitting renderer.createStaticContent is not yet supported. This need to be a compiler flag too");
+      throw new Error("Omitting renderer.createStaticContent is not yet supported. This needs to be a compiler flag too");
     },
     if(anchor, effect) {
       _if(runtime, anchor, effect);

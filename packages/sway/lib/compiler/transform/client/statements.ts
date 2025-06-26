@@ -72,6 +72,7 @@ export type TemplateDefinitionStatement = {
     type: "template-definition",
     name: string,
     template: string,
+    isCode: boolean;
 };
 
 export type TemplateInitStatement = {

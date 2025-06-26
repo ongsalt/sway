@@ -1,12 +1,9 @@
 import { parse } from "./parse";
-import { transform } from "./transform";
+import { transform, TransformOptions } from "./transform";
 
-export type CompilerOptions = {
-    name?: string,
-    ecmaVersion?: string;
-};
+export type CompilerOptions = TransformOptions;
 
-export function compile(source: string, options: CompilerOptions = {}) {
+export function compile(source: string, options: Partial<CompilerOptions> = {}) {
     const nodes = parse(source);
     const output = transform(nodes, {
         ...options
