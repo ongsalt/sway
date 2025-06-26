@@ -13,12 +13,12 @@
     });
 </script>
 
-<main class="m-8 border rounded p-4 space-y-2">
+<main class="m-8 border rounded-sm p-4 space-y-2">
     <h1 class="text-2xl">Counter</h1>
     <p class="">Count {counter.value}</p>
     Inline tripled {counter.value * 3}
     <p class="">Doubled {doubled.value}</p>
-    <button class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white">
+    <button class="rounded-sm bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white">
         increment
     </button>
 </main>

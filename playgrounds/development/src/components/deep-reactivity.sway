@@ -9,13 +9,13 @@
 
 </script>
 
-<main class="m-8 border rounded-lg shadow-sm p-6 space-y-2">
+<main class="m-8 border rounded-lg shadow-xs p-6 space-y-2">
     <h1 class="text-2xl">Binding test</h1>
-    <div class="text-center  border rounded bg-slate-50 p-6 flex flex-col">
+    <div class="text-center  border rounded-sm bg-slate-50 p-6 flex flex-col">
         <span class="opacity-60">Your text</span>
         <span class="text-5xl">{obj[0].nested.text}</span>
     </div>
 
    
-    <input type="text" class="border rounded-md shadow-sm p-2 px-4" placeholder="Type something..." bind:value={obj[0].nested.text} />
+    <input type="text" class="border rounded-md shadow-xs p-2 px-4" placeholder="Type something..." bind:value={obj[0].nested.text} />
 </main>

@@ -3,7 +3,7 @@ import * as $ from "sway/runtime";
 const template = $.staticContent(($$runtime) => {
   const nodes = [];
   const div = $$runtime.createElement(`div`);
-  const div_children = []; $$runtime.setAttribute(div, `class`, `border rounded p-4`);
+  const div_children = []; $$runtime.setAttribute(div, `class`, `border rounded-sm p-4`);
   {
     const h1 = $$runtime.createElement(`h1`);
     const h1_children = []; $$runtime.setAttribute(h1, `class`, `text-lg`);

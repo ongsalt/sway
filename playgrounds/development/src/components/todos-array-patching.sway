@@ -39,7 +39,7 @@
 </script>
 
 <main class="max-w-2xl mx-auto p-6">
-  <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+  <div class="bg-white rounded-lg border border-gray-200 shadow-xs">
     <div class="px-6 py-4 border-b border-gray-200">
       <h1 class="text-2xl font-semibold text-gray-900">Todo List</h1>
       <p class="text-gray-600 mt-1 text-sm">Keep track of your tasks</p>
@@ -49,7 +49,7 @@
       <div class="flex gap-3">
         <input
           type="text"
-          class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           placeholder="What needs to be done?"
           bind:value={description.value}
         />
@@ -69,7 +69,7 @@
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-2">
                 <span
-                  class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded font-mono"
+                  class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-sm font-mono"
                 >
                   {index.value + 1}
                 </span>
@@ -79,7 +79,7 @@
               {#if todo.editing}
                 <input
                   type="text"
-                  class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   bind:value={todo.description}
                 />
               {:else}
@@ -115,13 +115,13 @@
     </div>
   </div>
 
-  <div class="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm overflow-clip">
+  <div class="mt-6 bg-white rounded-lg border border-gray-200 shadow-xs overflow-clip">
     <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
       <h3 class="text-sm font-medium text-gray-900">Debug Data</h3>
     </div>
     <div class="p-4">
       <pre
-        class="text-xs text-gray-600 overflow-x-auto bg-gray-50 p-3 rounded border">{JSON.stringify(
+        class="text-xs text-gray-600 overflow-x-auto bg-gray-50 p-3 rounded-sm border">{JSON.stringify(
           todos,
           null,
           2,

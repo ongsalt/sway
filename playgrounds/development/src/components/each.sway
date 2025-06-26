@@ -19,25 +19,25 @@
     };
 </script>
 
-<main class="m-8 border rounded-lg shadow-sm p-6 space-y-2">
+<main class="m-8 border rounded-lg shadow-xs p-6 space-y-2">
     <h1 class="text-2xl">Each test</h1>
     <button
         onclick={add}
-        class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
+        class="rounded-sm bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
     >
         Add
     </button>
 
     <button
         onclick={addAt2}
-        class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
+        class="rounded-sm bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
     >
         Add at 2
     </button>
 
     <button
         onclick={remove}
-        class="rounded bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
+        class="rounded-sm bg-blue-500 hover:bg-blue-600 p-2 px-4 text-white"
     >
         Remove
     </button>
