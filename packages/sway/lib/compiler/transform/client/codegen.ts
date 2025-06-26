@@ -142,19 +142,19 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
 
             add(`const ${blockName} = ($$anchor) => {`, 2);
             add(generateMany(body, indentation + 4, logging));
-            add(`$.append($$anchor, ${fragment});`, 4);
+            add(`$$runtime.append($$anchor, ${fragment});`, 4);
             add(`};`, 2);
 
             if (_else) {
                 const { blockName, body, fragment } = _else;
                 add(`const ${blockName} = ($$anchor) => {`, 2);
                 add(generateMany(body, indentation + 4, logging));
-                add(`$.append($$anchor, ${fragment});`, 4);
+                add(`$$runtime.append($$anchor, ${fragment});`, 4);
                 add(`};`, 2);
             }
 
             add('');
-            add(`$.if(${anchor}, ($$render) => {`, 2);
+            add(`$$runtime.if(${anchor}, ($$render) => {`, 2);
             add(`if (${condition}) $$render(${blockName})`, 4);
             if (_else) {
                 add(` else $$render(${_else.blockName}, false);`);
@@ -415,7 +415,7 @@ export function generateTemplateInitInstructions(nodes: TemplateASTNode[]) {
 }
 
 
-export function generateTemplateInitInstructions2(nodes: TemplateASTNode[]): string {
+export function generateTemplateInitDsl(nodes: TemplateASTNode[]): string {
     function nodeToDefinition(node: TemplateASTNode): string {
         if (node.type === "text") {
             const isDynamic = node.texts.some(it => it.type === "interpolation");

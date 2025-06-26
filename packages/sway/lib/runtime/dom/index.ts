@@ -53,7 +53,6 @@ function remove(node: Node) {
     if (node instanceof Element) { // TODO: make ts shut up 
         node.$$cleanups?.forEach(cleanup => cleanup());
     }
-    // console.log(node)
     node.parentNode!.removeChild(node);
 }
 

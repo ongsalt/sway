@@ -4,7 +4,7 @@ import { walk } from "estree-walker";
 import { analyze } from "periscopic";
 import { Attribute, ControlFlowNode, ElementNode, Parent, TemplateAST, TemplateASTNodeWithRoot, TextNode, TextOrInterpolation } from "../../parse/ast";
 import { unreachable } from "../../utils";
-import { generate, generateTemplateInitInstructions2, stringify } from "./codegen";
+import { generate, generateTemplateInitDsl, stringify } from "./codegen";
 import { AccessorDefinitionStatement, Binding, ComponentDeclarationStatement, priority, Prop, SwayStatement, TemplateDefinitionStatement, TemplateEachStatement, TemplateIfStatement } from "./statements";
 
 export type ClientTransformOptions = {
@@ -275,7 +275,7 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
         type: "template-definition",
         name,
         isCode: !options.staticTemplateParsing,
-        template: options.staticTemplateParsing ? stringify(node.children) : generateTemplateInitInstructions2(node.children) //
+        template: options.staticTemplateParsing ? stringify(node.children) : generateTemplateInitDsl(node.children) //
       };
       before.push(statement);
       return {

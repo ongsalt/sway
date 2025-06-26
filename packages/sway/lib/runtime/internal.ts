@@ -29,7 +29,7 @@ export interface Renderer<HostNode, HostElement extends HostNode, HostEvent> {
   removeEventListener(element: HostElement, type: any, callback: (event: HostEvent) => any): void;
 
   // TODO: think about this: the user should not mess with effect in this
-  createBinding<T>(node: HostNode, key: string, getter: () => T, setter: () => unknown): void;
+  createBinding<T>(node: HostNode, key: string, getter: () => T, setter: (value: T) => unknown): void;
 }
 
 export type NodeDefinition<HostNode> =
@@ -66,7 +66,7 @@ export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, 
 
   // These depend on reactivity
   listen(element: HostElement, type: string, createListener: () => (event: HostEvent) => any): void;
-  bind<T>(node: HostNode, key: string, getter: () => T, setter: () => unknown): void;
+  bind<T>(node: HostNode, key: string, getter: () => T, setter: (value: T) => unknown): void;
   bindThis<T>(setter: (instance: T) => any, instance: T): void;
 
   if(anchor: HostNode, effect: IfEffect): void;
@@ -134,7 +134,7 @@ export function createRuntime<
     },
     sweep(from, to) {
       let current = renderer.getNextSibling(from);
-      while (current != to) {
+      while (current !== to) {
         const toRemove = current!;
         if (current) {
           current = renderer.getNextSibling(current);
