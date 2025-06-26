@@ -27,6 +27,7 @@ svelte 5 clone (hopefully)
 - lifecycle hooks: `onMount`, `onDestroy`
 - Component instance binding `bind:this`
     - you cant use `export function something(...)` syntax yet. for now use `$$exports.something = ...`
+- non dom support with custom renderer
 
 ## What's not yet
 - think about each binding: should we make each item a signal or not.
