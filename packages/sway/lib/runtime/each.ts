@@ -45,8 +45,9 @@ export function each<Item, HostNode>(
     children: (anchor: HostNode, value: Item, index: Signal<number>) => void,
     keyFn: KeyFn<Item> = identity // use object reference as key
 ) {
+    const eachAnchot = anchor;
     const endAnchor = runtime.comment();
-    runtime.append(anchor, endAnchor);
+    runtime.append(eachAnchot, endAnchor);
 
     let currentKeys: Key[] = [];
     type ChildrenContext = {
@@ -60,7 +61,7 @@ export function each<Item, HostNode>(
         const anchor = runtime.comment();
         // We need a way to put anchor at any arbitary index
         if (index >= childrenContexts.length) {
-            runtime.append(endAnchor, anchor); // TODO: fix append side
+            runtime.append(eachAnchot, anchor); // TODO: fix append side
         } else {
             runtime.append(childrenContexts[index].anchor, anchor);
         }
