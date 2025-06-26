@@ -416,9 +416,6 @@ export function generateTemplateInitInstructions(nodes: TemplateASTNode[]) {
 
 
 export function generateTemplateInitInstructions2(nodes: TemplateASTNode[]): string {
-    let code = `($$runtime) => {\n`;
-    code += `  const definitions = `;
-
     function nodeToDefinition(node: TemplateASTNode): string {
         if (node.type === "text") {
             const isDynamic = node.texts.some(it => it.type === "interpolation");
@@ -448,7 +445,7 @@ export function generateTemplateInitInstructions2(nodes: TemplateASTNode[]): str
                 ? `, children: [${children}]`
                 : '';
 
-            return `{ type: "element", tag: \`${node.tag}\` ${attrs}${childrenProp} }`;
+            return `{ type: "element", tag: \`${node.tag}\`${attrs}${childrenProp} }`;
         }
 
         // For components and control-flow, return comment placeholder
@@ -456,9 +453,5 @@ export function generateTemplateInitInstructions2(nodes: TemplateASTNode[]): str
     }
 
     const definitions = nodes.map(nodeToDefinition).join(', ');
-    code += `[${definitions}];\n`;
-    code += `  return definitions.map(def => $$runtime.create(def));\n`;
-    code += `}\n`;
-
-    return code;
+    return `[${definitions}]`;
 }
