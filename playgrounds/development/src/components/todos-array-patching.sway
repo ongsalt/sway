@@ -59,7 +59,7 @@
         </button>
     </div>
 
-    {#each todos as todo, index}
+    {#each todos as todo, index (todo.id)}
         <div class="border rounded-md p-4">
             <span>index: {index.value}, id: {todo.id}</span>
             {#if todo.editing}

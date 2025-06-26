@@ -1,7 +1,7 @@
 import { listen } from ".";
 import { getActiveComponentScope, templateEffect } from "../reactivity";
 
-export function bind<T>(node: Node, attribute: string, getter: () => T, setter: () => unknown) {
+export function bind<T>(node: Node, attribute: string, getter: () => T, setter: (value: T) => unknown) {
     if (!(node instanceof Element)) {
         throw new Error(`${node} is not an Element.`);
     }

@@ -6,7 +6,7 @@ export default defineConfig({
     plugins: [
         sway({
             compiler: {
-                staticTemplateParsing: false
+                // staticTemplateParsing: false
             }
         }),
         Inspect()

@@ -45,13 +45,14 @@ export function each<Item, HostNode>(
     children: (anchor: HostNode, value: Item, index: Signal<number>) => void,
     keyFn: KeyFn<Item> = identity // use object reference as key
 ) {
-    const eachAnchot = anchor;
+    const eachAnchor = anchor;
     const endAnchor = runtime.comment();
-    runtime.append(eachAnchot, endAnchor);
+    runtime.append(eachAnchor, endAnchor);
 
     let currentKeys: Key[] = [];
     type ChildrenContext = {
         anchor: HostNode,
+        endAnchor: HostNode,
         index: Signal<number>,
         scope: EffectScope;
     };
@@ -59,14 +60,17 @@ export function each<Item, HostNode>(
 
     function createContext(index: number): ChildrenContext {
         const anchor = runtime.comment();
+        const endAnchor = runtime.comment();
         // We need a way to put anchor at any arbitary index
-        if (index >= childrenContexts.length) {
-            runtime.append(eachAnchot, anchor); // TODO: fix append side
+        if (index === 0) {
+            runtime.append(eachAnchor, anchor);
         } else {
-            runtime.append(childrenContexts[index].anchor, anchor);
+            runtime.append(childrenContexts[index - 1].endAnchor, anchor);
         }
+        runtime.append(anchor, endAnchor);
         const context: ChildrenContext = {
             anchor,
+            endAnchor,
             index: signal(index),
             scope: effectScope()
         };
@@ -83,9 +87,11 @@ export function each<Item, HostNode>(
     }
 
     function yeet(index: number) {
-        childrenContexts[index].scope.destroy();
-        runtime.sweep(childrenContexts[index].anchor, childrenContexts[index + 1]?.anchor ?? endAnchor);
-        runtime.remove(childrenContexts[index].anchor);
+        const context = childrenContexts[index];
+        context.scope.destroy();
+        runtime.sweep(context.anchor, context.endAnchor);
+        runtime.remove(context.anchor);
+        runtime.remove(context.endAnchor);
         childrenContexts.splice(index, 1);
     }
 
@@ -112,8 +118,20 @@ export function each<Item, HostNode>(
         // but now object reference comparison is fucked up
 
         // todo: dont key thing unless explicitly stated
+        // TODO: optimize diffing
         const newKeys = items.map(keyFn);
+        const itemMap = new Map<any, Item>();
+        for (let i = 0; i < newKeys.length; i++) {
+            if (itemMap.has(newKeys[i])) {
+                throw new Error(`Duplicate key ${newKeys[i]}`);
+            }
+            itemMap.set(newKeys[i], items[i]);
+        }
+
         const diff = getTransformation(currentKeys, newKeys);
+        // if (!diff.length) {
+        //     return;
+        // }
         console.log({
             diff,
             currentKeys,
@@ -124,14 +142,14 @@ export function each<Item, HostNode>(
         //       and keep the node only if key is provided
         for (const op of diff) {
             if (op.type === "insert") {
-                render(op.index, op.item);
+                const item = itemMap.get(op.item)!;
+                render(op.index, item);
             } else if (op.type === "remove") {
                 yeet(op.index);
             }
         }
 
         notifyOrderChange();
-
         currentKeys = newKeys;
 
         // each child will have there dispose function

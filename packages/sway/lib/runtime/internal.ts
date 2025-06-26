@@ -73,7 +73,8 @@ export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, 
   each<T>(
     anchor: HostNode,
     collection: () => T[],
-    children: (anchor: HostNode, value: T, index: Signal<number>) => void
+    children: (anchor: HostNode, value: T, index: Signal<number>) => void,
+    keyFn?: (item: T) => any
   ): void;
   key(anchor: HostNode, keyFn: () => any, children: (anchor: HostNode) => void): void;
 
@@ -138,10 +139,8 @@ export function createRuntime<
         const toRemove = current!;
         if (current) {
           current = renderer.getNextSibling(current);
-        } else {
-          current = null;
+          renderer.removeNode(toRemove);
         }
-        renderer.removeNode(toRemove);
       }
     },
     setText(node, text) {
@@ -163,8 +162,8 @@ export function createRuntime<
     if(anchor, effect) {
       _if(runtime, anchor, effect);
     },
-    each(anchor, collection, children) {
-      each(runtime, anchor, collection, children);
+    each(anchor, collection, children, keyFn) {
+      each(runtime, anchor, collection, children, keyFn);
     },
     bind(node, key, getter, setter) {
       renderer.createBinding(node, key, getter, setter);
