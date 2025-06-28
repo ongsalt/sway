@@ -20,6 +20,7 @@ export interface Source<T = any> {
     // get(): T;
     value: T;
     subscribers: Set<Subscriber>; // performance? who care
+    parent: EffectScope | null;
 }
 
 export interface Subscriber {
@@ -42,7 +43,7 @@ export interface Computed<T = any> extends Source<T>, Subscriber {
 
 export type Cleanup = () => any;
 export type EffectFn = () => (void | Cleanup);
-// effect shuold also Own all subscriber inside it 
+// effect should also Own all subscriber inside it 
 export interface Effect extends Subscriber, EffectScope {
     fn: EffectFn;
     priority: number;
@@ -101,10 +102,13 @@ export function withScope<T>(scope: EffectScope, fn: () => T) {
 export function createSignal<T>(value: T): Signal<T> {
     const subscribers = new Set<Subscriber>();
 
-    return {
+    const s: Signal<T> = {
         value,
         subscribers,
+        parent: activeScope
     };
+
+    return s;
 }
 
 export function createEffect(fn: EffectFn, priority = 1): Effect {
@@ -173,8 +177,10 @@ function notifyComputed(computed: Computed, depth = 0) {
 }
 
 export function updateEffect(effect: Effect) {
-    const previous = activeSubscriber;
+    const previousSubscriber = activeSubscriber;
+    const previousScope = activeScope;
     activeSubscriber = effect;
+    activeScope = effect;
 
     for (const source of effect.sources) {
         unlink(source, effect);
@@ -192,7 +198,8 @@ export function updateEffect(effect: Effect) {
     } catch (e) {
         console.error("[Effect]", e);
     } finally {
-        activeSubscriber = previous;
+        activeSubscriber = previousSubscriber;
+        activeScope = previousScope;
     }
 }
 
@@ -228,7 +235,8 @@ function unlink(source: Source, subscriber: Subscriber) {
 }
 
 export function get<T>(source: Source<T>) {
-    if (activeSubscriber) {
+    if (source.parent !== activeSubscriber && activeSubscriber) {
+        console.log(source.parent, activeSubscriber);
         link(source, activeSubscriber);
     }
 

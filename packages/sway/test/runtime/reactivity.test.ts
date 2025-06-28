@@ -113,13 +113,16 @@ test("Update batching", async () => {
 });
 
 test("State read within the same scope that it was defined", async () => {
+    let rerun = 0;
     effect(() => {
         const n = signal(1);
 
         n.value;
         n.value = Math.random();
-        console.log("rerun?");
+        n.value = Math.random();
+        n.value = Math.random();
+        rerun += 1;
     });
-    // await new Promise(resolve => setTimeout(resolve, 1000));
+    expect(rerun).toBe(1);
 })
 
