@@ -250,6 +250,7 @@ export function trigger(signal: Signal<any>) {
     scheduleFlush();
 }
 
+// or should we just add batch(() => ...)
 let willFlush = false;
 function scheduleFlush() {
     if (willFlush) {
@@ -336,6 +337,10 @@ export function untrack<T>(fn: () => T) {
 let afterFlushes: (() => any)[] = [];
 
 export function tick() {
+    if (!willFlush) {
+        return Promise.resolve();
+    }
+    // how should we handle the case when there is no pending work
     const { promise, resolve } = Promise.withResolvers<void>();
     afterFlushes.push(resolve);
     return promise;
