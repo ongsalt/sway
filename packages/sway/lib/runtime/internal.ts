@@ -1,9 +1,8 @@
-import { Component, RenderFn } from "../types";
+import { Component } from "../types";
 import { MountOptions } from "./dom";
-import { bind } from "./dom/binding";
 import { each } from "./each";
 import { _if, IfEffect } from "./if";
-import { effect, effectScope, getActiveComponentScope, pop, push, Signal, templateEffect } from "./reactivity";
+import { effect, effectScope, getActiveComponentScope, pop, push, Signal } from "./reactivity";
 
 export interface Renderer<HostNode, HostElement extends HostNode, HostEvent> {
   createComment(text?: string): HostNode;

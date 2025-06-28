@@ -1,0 +1,18 @@
+{
+  "name": "custom-renderer",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "raylib": "^0.14.0",
+    "sway": "workspace:*",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3"
+  }
+}

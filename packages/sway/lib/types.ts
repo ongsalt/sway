@@ -19,5 +19,3 @@ export type Component<
     Exports extends Record<string, any> = {}
 > = (context: ComponentContext<Props, Slots>) => Exports;
 
-export type TagName = keyof HTMLElementTagNameMap | "text";
-export type NodeCount = Partial<Record<TagName, number>>;
