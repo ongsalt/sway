@@ -1,6 +1,7 @@
-import { createSignal, createEffect, createComputed, get, set } from "../../lib/runtime/reactivity/internal";
+import { computed, effect, signal } from "../../lib/runtime/reactivity";
+import { createComputed, createEffect, createSignal, get, set, tick } from "../../lib/runtime/reactivity/internal";
 
-import { expect, it, test } from "vitest";
+import { expect, test } from "vitest";
 
 test("only Computed", () => {
     const counter = createSignal(0);
@@ -11,14 +12,14 @@ test("only Computed", () => {
     expect(get(doubled)).toBe(2);
 });
 
-test("only Effect", () => {
-    const counter = createSignal(8);
+test("only Effect", async () => {
+    const counter = signal(8);
     let res = 0;
-    createEffect(() => {
-        res = get(counter);
+    effect(() => {
+        res = counter.value;
     });
-    set(counter, 42);
-
+    counter.value = 42;
+    await tick();
     expect(res).toBe(42);
 });
 
@@ -48,11 +49,21 @@ test("Computed and Effect", () => {
     \ /
      D
 */
-test("Complex graph", () => {
-    const a = createSignal(0);
-    const b = createComputed(() => get(a) * 4 + 1);
-    const c = createComputed(() => get(a) * 3 + get(b));
-    const d = createComputed(() => 2 * (get(b) + get(c)));
+test("Complex graph", async () => {
+    let rerun = 0;
+    const a = signal(0);
+    const b = computed(() => {
+        rerun += 1;
+        return a.value * 4 + 1;
+    });
+    const c = computed(() => {
+        rerun += 1;
+        return a.value * 3 + b.value;
+    });
+    const d = computed(() => {
+        rerun += 1;
+        return 2 * (b.value + c.value);
+    });
 
     // a             |  3, 12
     // b = 4a + 1    | 13, 49
@@ -60,45 +71,55 @@ test("Complex graph", () => {
     // d = 2(b + c)  | 70, 268
     let res = 0;
 
-    createEffect(() => {
-        res = get(d);
-        // console.log(res);
+    effect(() => {
+        console.log(d.value);
+        res = d.value;
     });
 
-    set(a, 3);
+    a.value = 3;
+    await tick();
     expect(res).toBe(70);
-    set(a, 12);
+    a.value = 12;
+    await tick();
     expect(res).toBe(268);
+    expect(rerun).toBe(9);
 });
 
-// idk how to test how many time the computed tun tho
-// i mean i can console.log it but i dont want to export too many thing
-// btw, the test above trigger a computed rerun total of 9 times which is good
-
-
 test("Update batching", async () => {
-    const a = createSignal(8);
-    const b = createSignal(9);
-    const c = createComputed(() => a.value + b.value);
+    const a = signal(8);
+    const b = signal(9);
+    const c = computed(() => a.value + b.value);
 
     function increment() {
-        set(a, get(a) + 1);
-        set(b, get(b) + 1);
+        a.value += 1;
+        b.value += 1;
     }
 
     let rerunCount = 0;
-    createEffect(() => {
+    effect(() => {
         rerunCount += 1;
-        console.log(get(c));
+        console.log(c.value);
     });
 
     increment();
     increment();
     increment();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await tick();
+
     increment();
+    await tick();
 
-    console.log(c.value);
-
-    expect(rerunCount).toBe(2);
+    expect(rerunCount).toBe(3);
 });
+
+test("State read within the same scope that it was defined", async () => {
+    effect(() => {
+        const n = signal(1);
+
+        n.value;
+        n.value = Math.random();
+        console.log("rerun?");
+    });
+    // await new Promise(resolve => setTimeout(resolve, 1000));
+})
+
