@@ -42,7 +42,7 @@ svelte 5 clone (hopefully)
 - typescript support 
     - type definitions of stuff exported form `sway` is for some reason all gone when used in `.sway` file. maybe its becuase of svelte lsp
 - SSR
-    - i need to create a new transformer and maybe a new parser too
+    - i need to ~~create a new transformer~~ and maybe a new parser too
     - hydration look like pain in the ass
     - think about vite integration or may be we could offload this to `sway/kit` lmao
 - a router (or `sway/kit`, beside from ssr thing this look quite fun to make, especially ts magic for PageData)
