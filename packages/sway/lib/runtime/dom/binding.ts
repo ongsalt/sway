@@ -1,7 +1,8 @@
 import { listen } from ".";
 import { getActiveComponentScope, templateEffect } from "../reactivity";
+import type { ValueProxy } from "../utils/reactivity";
 
-export function bind<T>(node: Node, attribute: string, getter: () => T, setter: (value: T) => unknown) {
+export function bind<T>(node: Node, attribute: string, valueProxy: ValueProxy<T>) {
     if (!(node instanceof Element)) {
         throw new Error(`${node} is not an Element.`);
     }
@@ -9,43 +10,47 @@ export function bind<T>(node: Node, attribute: string, getter: () => T, setter: 
     const isTextArea = node instanceof HTMLTextAreaElement;
     if ((isInput || isTextArea) && attribute === "value") {
         // @ts-ignore TODO: fix this later
-        bindTextInput(node as TextInputElement, getter, setter);
+        bindTextInput(node as TextInputElement, valueProxy);
     } else if (isInput && attribute === "checked" && node?.type === "checkbox") {
         // @ts-ignore fuck this
-        bindCheckbox(node, getter, setter);
+        bindCheckbox(node, valueProxy);
     } else {
         throw new Error(`${node} is not bindable.`);
     }
 }
 
 type TextInputElement = HTMLInputElement | HTMLTextAreaElement;
-function bindTextInput(element: TextInputElement, getter: () => string, setter: (value: string) => unknown) {
+function bindTextInput(element: TextInputElement, valueProxy: ValueProxy<string>) {
     // type inference is kinda shit
+    element.value = valueProxy.get();
+
     listen(element, "input", () => (event) => {
         const { value } = element;
         if (element.type === "number" || element.type === "range") {
             parseFloat(value);
         } else {
-            setter(value);
+            valueProxy.set(value);
         }
     });
 
-    templateEffect(() => {
-        element.value = getter();
+    valueProxy.onValue(value => {
+        element.value = value;
     });
 }
 
-function bindCheckbox(element: HTMLInputElement, getter: () => boolean, setter: (value: boolean) => unknown) { // only type="checkbox"
+function bindCheckbox(element: HTMLInputElement, valueProxy: ValueProxy<boolean>) { // only type="checkbox"
     if (element.type !== "checkbox") {
         throw new Error(`${element} is not a checkbox.`);
     }
 
+    element.checked = valueProxy.get();
+
     listen(element, "input", () => (event) => {
-        setter(element.checked);
+        valueProxy.set(element.checked);
     });
 
-    templateEffect(() => {
-        element.checked = getter();
+    valueProxy.onValue(value => {
+        element.checked = value;
     });
 }
 

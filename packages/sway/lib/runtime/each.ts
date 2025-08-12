@@ -1,5 +1,5 @@
 import { effectScope, EffectScope, signal, Signal, templateEffect } from "./reactivity";
-import { SwayRuntime } from "./internal";
+import { SwayRenderer } from "./renderer";
 import { getTransformation } from "./utils/array";
 import { identity } from "./utils/functions";
 
@@ -39,15 +39,15 @@ type KeyFn<T> = (value: T) => Key;
 
 // look kinda pain in the ass to do this
 export function each<Item, HostNode>(
-    runtime: SwayRuntime<HostNode, any, any>,
+    renderer: SwayRenderer<HostNode, any, any>,
     anchor: HostNode,
     collection: () => Item[],
     children: (anchor: HostNode, value: Item, index: Signal<number>) => void,
     keyFn: KeyFn<Item> = identity // use object reference as key
 ) {
     const eachAnchor = anchor;
-    const endAnchor = runtime.comment();
-    runtime.append(eachAnchor, endAnchor);
+    const endAnchor = renderer.comment();
+    renderer.append(eachAnchor, endAnchor);
 
     let currentKeys: Key[] = [];
     type ChildrenContext = {
@@ -59,15 +59,15 @@ export function each<Item, HostNode>(
     let childrenContexts: ChildrenContext[] = [];
 
     function createContext(index: number): ChildrenContext {
-        const anchor = runtime.comment();
-        const endAnchor = runtime.comment();
+        const anchor = renderer.comment();
+        const endAnchor = renderer.comment();
         // We need a way to put anchor at any arbitary index
         if (index === 0) {
-            runtime.append(eachAnchor, anchor);
+            renderer.append(eachAnchor, anchor);
         } else {
-            runtime.append(childrenContexts[index - 1].endAnchor, anchor);
+            renderer.append(childrenContexts[index - 1].endAnchor, anchor);
         }
-        runtime.append(anchor, endAnchor);
+        renderer.append(anchor, endAnchor);
         const context: ChildrenContext = {
             anchor,
             endAnchor,
@@ -89,9 +89,9 @@ export function each<Item, HostNode>(
     function yeet(index: number) {
         const context = childrenContexts[index];
         context.scope.destroy();
-        runtime.sweep(context.anchor, context.endAnchor);
-        runtime.remove(context.anchor);
-        runtime.remove(context.endAnchor);
+        renderer.sweep(context.anchor, context.endAnchor);
+        renderer.remove(context.anchor);
+        renderer.remove(context.endAnchor);
         childrenContexts.splice(index, 1);
     }
 

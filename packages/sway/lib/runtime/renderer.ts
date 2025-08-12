@@ -4,8 +4,9 @@ import { bind } from "./dom/binding";
 import { each } from "./each";
 import { _if, IfEffect } from "./if";
 import { effect, effectScope, getActiveComponentScope, pop, push, Signal, templateEffect } from "./reactivity";
+import { createValueProxy, type ValueProxy } from "./utils/reactivity";
 
-export interface Renderer<HostNode, HostElement extends HostNode, HostEvent> {
+export interface HostConfig<HostNode, HostElement extends HostNode, HostEvent> {
   createComment(text?: string): HostNode;
   createElement(type: any): HostElement; // use when !staticTemplateParsing
   createText(text: string): HostNode;
@@ -29,7 +30,7 @@ export interface Renderer<HostNode, HostElement extends HostNode, HostEvent> {
   removeEventListener(element: HostElement, type: any, callback: (event: HostEvent) => any): void;
 
   // TODO: think about this: the user should not mess with effect in this
-  createBinding<T>(node: HostNode, key: string, getter: () => T, setter: (value: T) => unknown): void;
+  createBinding<T>(node: HostNode, key: string, valueProxy: ValueProxy<T>): void;
 }
 
 export type NodeDefinition<HostNode> =
@@ -45,7 +46,7 @@ export type NodeDefinition<HostNode> =
     // only use when its textNode
   };
 
-export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, HostEvent = any> {
+export interface SwayRenderer<HostNode, HostElement extends HostNode = HostNode, HostEvent = any> {
   child(fragment: HostNode, index: number): HostNode | null;
   // next(skip?: number): HostNode; // unused
 
@@ -67,34 +68,18 @@ export interface SwayRuntime<HostNode, HostElement extends HostNode = HostNode, 
   // These depend on reactivity
   listen(element: HostElement, type: string, createListener: () => (event: HostEvent) => any): void;
   bind<T>(node: HostNode, key: string, getter: () => T, setter: (value: T) => unknown): void;
-  bindThis<T>(setter: (instance: T) => any, instance: T): void;
-
-  if(anchor: HostNode, effect: IfEffect): void;
-  each<T>(
-    anchor: HostNode,
-    collection: () => T[],
-    children: (anchor: HostNode, value: T, index: Signal<number>) => void,
-    keyFn?: (item: T) => any
-  ): void;
-  key(anchor: HostNode, keyFn: () => any, children: (anchor: HostNode) => void): void;
-
-  // state
-  push(): void;
-  pop(): void;
 }
-
-// TODO: split runtime into platform specific and generic
 
 // Generic
 // these will depends on compiler flag
 // $.staticContent(content: string): ($$renderer) => HostNode
 // $.staticContent(content: ($$renderer) => HostNode): ($$renderer) => HostNode
 
-export function createRuntime<
+export function createRenderer<
   HostNode,
   HostElement extends HostNode,
   HostEvent
->(renderer: Renderer<HostNode, HostElement, HostEvent>) {
+>(renderer: HostConfig<HostNode, HostElement, HostEvent>) {
 
   function create(definition: NodeDefinition<HostNode>): HostNode {
     if (definition.type === "text") {
@@ -117,7 +102,7 @@ export function createRuntime<
     return element;
   }
 
-  const runtime: SwayRuntime<HostNode, HostElement, HostEvent> = {
+  const runtime: SwayRenderer<HostNode, HostElement, HostEvent> = {
     append(anchor, fragment) {
       renderer.append(anchor, fragment);
     },
@@ -159,25 +144,16 @@ export function createRuntime<
       }
       throw new Error("Omitting renderer.createStaticContent is not yet supported. This needs to be a compiler flag too");
     },
-    if(anchor, effect) {
-      _if(runtime, anchor, effect);
-    },
-    each(anchor, collection, children, keyFn) {
-      each(runtime, anchor, collection, children, keyFn);
-    },
     bind(node, key, getter, setter) {
-      renderer.createBinding(node, key, getter, setter);
-    },
-    bindThis(setter, instance) {
-      const scope = getActiveComponentScope();
-      scope?.defer(() => setter(instance), 1);
+      const valueProxy = createValueProxy(getter, setter);
+      renderer.createBinding(node, key, valueProxy);
     },
     setAttribute(element, attribute, value) {
       renderer.setAttribute(element, attribute, value);
     },
     listen(element, type, createListener) {
       // generic impl
-      effect(() => {
+      templateEffect(() => {
         const listener = createListener();
         renderer.addEventListener(element, type, listener);
 
@@ -186,19 +162,19 @@ export function createRuntime<
         };
       });
     },
-
-    key(anchor, keyFn, children) {
-      throw new Error("key is unimplemented");
-    },
-
-    pop() {
-      pop();
-    },
-
-    push() {
-      push();
-    },
   };
+
+  return runtime;
+}
+
+export function createRuntime<
+  HostNode,
+  HostElement extends HostNode,
+  HostEvent
+>(
+  host: HostConfig<HostNode, HostElement, HostEvent>
+) {
+  const renderer = createRenderer(host);
 
   function mount<
     Props extends Record<string, any> = {},
@@ -209,7 +185,7 @@ export function createRuntime<
   ) {
     let anchor = options.anchor;
     if (!anchor) {
-      anchor = runtime.comment();
+      anchor = renderer.comment();
       renderer.appendChild(options.root, anchor);
     }
 
@@ -224,15 +200,37 @@ export function createRuntime<
     });
 
     const destroy = () => {
-      runtime.sweep(anchor, null); // idk to where tho, TODO: maybe setup an end anchor
+      renderer.sweep(anchor, null); // idk to where tho, TODO: maybe setup an end anchor
       scope.destroy();
     };
 
     return { bindings, destroy };
   }
 
-  return {
-    mount,
-    runtime
+
+  const runtime = {
+    ...renderer,
+    bindThis<T>(setter: (value: T) => void, instance: T) {
+      const scope = getActiveComponentScope();
+      scope?.defer(() => setter(instance), 1);
+    },
+    if(anchor: HostNode, effect: IfEffect<HostNode>) {
+      _if(runtime, anchor, effect);
+    },
+    each<T>(anchor: HostNode, collection: () => T[], children: (anchor: HostNode, value: T, index: Signal<number>) => void, keyFn: () => any) {
+      each<T, HostNode>(renderer, anchor, collection, children, keyFn);
+    },
+    key(anchor: HostNode, keyFn: () => any, children: () => void) {
+      throw new Error("key is unimplemented");
+    },
+    pop() {
+      pop();
+    },
+    push() {
+      push();
+    },
+    mount
   };
+
+  return runtime;
 }

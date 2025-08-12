@@ -1,4 +1,4 @@
-import type { SwayRuntime } from "./runtime";
+import type { SwayRenderer } from "./runtime";
 
 export type RenderFn<HostNode> = ($$anchor: HostNode) => void;
 
@@ -10,7 +10,7 @@ export type ComponentContext<
     $$anchor: HostNode;
     $$props: Props,
     $$slots: Slots,
-    $$runtime: SwayRuntime<any, any, any>;
+    $$runtime: SwayRenderer<any, any, any>;
 };
 
 export type Component<

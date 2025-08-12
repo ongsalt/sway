@@ -1,5 +1,5 @@
 import { templateEffect } from "../reactivity";
-import { createRuntime } from "../internal";
+import { createRuntime } from "../renderer";
 import { bind } from "./binding";
 
 type CleanupFn = () => unknown;
@@ -95,7 +95,7 @@ function setAttribute(element: Element, attributes: string, value: string) {
     element.setAttribute(attributes, value);
 }
 
-const { mount, runtime } = createRuntime<Node, Element, Event>({
+const runtime = createRuntime<Node, Element, Event>({
     addEventListener(element, type, callback) {
         element.addEventListener(type, callback);
     },
@@ -105,8 +105,8 @@ const { mount, runtime } = createRuntime<Node, Element, Event>({
     appendChild(parent, fragment) {
         parent.appendChild(fragment);
     },
-    createBinding(node, key, getter, setter) {
-        bind(node, key, getter, setter);
+    createBinding(node, key, valueProxy) {
+        bind(node, key, valueProxy);
     },
     createComment(text) {
         return comment(text);
@@ -142,5 +142,7 @@ const { mount, runtime } = createRuntime<Node, Element, Event>({
         return () => template.content.cloneNode(true) as DocumentFragment;
     },
 });
+
+const mount = runtime.mount;
 
 export { mount, runtime };
