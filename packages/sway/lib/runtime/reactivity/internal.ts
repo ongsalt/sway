@@ -236,7 +236,7 @@ function unlink(source: Source, subscriber: Subscriber) {
 
 export function get<T>(source: Source<T>) {
     if (source.parent !== activeSubscriber && activeSubscriber) {
-        console.log(source.parent, activeSubscriber);
+        // console.log(source.parent, activeSubscriber);
         link(source, activeSubscriber);
     }
 

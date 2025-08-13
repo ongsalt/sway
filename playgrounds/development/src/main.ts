@@ -1,11 +1,11 @@
-import { mount } from "sway";
-// import Todos from "./components/todos.sway"
+import { mount } from "sway/runtime/dom";
+import Todos from "./components/todos-array-patching.sway"
 // import PropsParent from "./components/props-parent.sway";
-import SignalBatching from "./components/signal-batching.sway";
+// import SignalBatching from "./components/signal-batching.sway";
 
 const appRoot = document.getElementById("app")!;
 
-mount(SignalBatching, {
+mount(Todos, {
   root: appRoot,
   props: {},
 });

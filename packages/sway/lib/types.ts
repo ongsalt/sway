@@ -10,7 +10,6 @@ export type ComponentContext<
     $$anchor: HostNode;
     $$props: Props,
     $$slots: Slots,
-    $$runtime: SwayRenderer<any, any, any>;
 };
 
 export type Component<

@@ -1,6 +1,6 @@
 import { templateEffect } from "../reactivity";
-import { createRuntime } from "../renderer";
-import { bind } from "./binding";
+import { createRuntime } from "../runtime";
+import { bind as _bind } from "./binding";
 
 type CleanupFn = () => unknown;
 declare global {
@@ -9,7 +9,7 @@ declare global {
     }
 }
 
-function children(fragment: Node | Node[], index = 0): Node {
+function _children(fragment: Node | Node[], index = 0): Node {
     if (Array.isArray(fragment)) {
         return fragment[index];
     }
@@ -17,9 +17,9 @@ function children(fragment: Node | Node[], index = 0): Node {
 }
 
 // TODO: $.reset, and internal `current` node state
-function sibling(node: Node, index: number) {
+function _sibling(node: Node, index: number) {
     console.log(node, index);
-    return children(node.parentNode!, index);
+    return _children(node.parentNode!, index);
     // while (index > 0) {
     //     node = node.nextSibling!
     //     console.log(node)
@@ -29,7 +29,7 @@ function sibling(node: Node, index: number) {
     // return node
 }
 
-function append(anchor: Node, fragment: Node | Node[] | DocumentFragment, before = false) {
+function _append(anchor: Node, fragment: Node | Node[] | DocumentFragment, before = false) {
     // i want insertAfter but whatever
     const parent = anchor.parentNode!;
     // console.log({ anchor });
@@ -45,11 +45,11 @@ function append(anchor: Node, fragment: Node | Node[] | DocumentFragment, before
     }
 }
 
-function comment(data = 'runtime-comment') {
+function _comment(data = 'runtime-comment') {
     return document.createComment(data);
 }
 
-function remove(node: Node) {
+function _remove(node: Node) {
     if (node instanceof Element) { // TODO: make ts shut up 
         node.$$cleanups?.forEach(cleanup => cleanup());
     }
@@ -62,7 +62,7 @@ export type MountOptions<Props extends Record<string, any>, HostNode = Node> = {
     props: Props;
 };
 
-export function listen<E extends Element>(element: E, type: keyof HTMLElementEventMap, createListener: () => EventListenerOrEventListenerObject) {
+export function _listen<E extends Element>(element: E, type: keyof HTMLElementEventMap, createListener: () => EventListenerOrEventListenerObject) {
     templateEffect(() => {
         const listener = createListener();
         element.addEventListener(type, listener);
@@ -74,16 +74,16 @@ export function listen<E extends Element>(element: E, type: keyof HTMLElementEve
 }
 
 // exclusive
-function sweep(from: Node, to: Node | null) {
+function _sweep(from: Node, to: Node | null) {
     let current = from.nextSibling;
     while (current != to) {
         const toRemove = current!;
         current = current!?.nextSibling;
-        remove(toRemove);
+        _remove(toRemove);
     }
 }
 
-function setText(node: Node, text: string) {
+function _setText(node: Node, text: string) {
     if (node.nodeType !== 3) {
         throw new Error(`${node} is not a text node`);
     }
@@ -91,7 +91,7 @@ function setText(node: Node, text: string) {
     node.textContent = text;
 }
 
-function setAttribute(element: Element, attributes: string, value: string) {
+function _setAttribute(element: Element, attributes: string, value: string) {
     element.setAttribute(attributes, value);
 }
 
@@ -100,16 +100,16 @@ const runtime = createRuntime<Node, Element, Event>({
         element.addEventListener(type, callback);
     },
     append(anchor, node) {
-        append(anchor, node);
+        _append(anchor, node);
     },
     appendChild(parent, fragment) {
         parent.appendChild(fragment);
     },
     createBinding(node, key, valueProxy) {
-        bind(node, key, valueProxy);
+        _bind(node, key, valueProxy);
     },
     createComment(text) {
-        return comment(text);
+        return _comment(text);
     },
     createElement(type) {
         return document.createElement(type);
@@ -118,7 +118,7 @@ const runtime = createRuntime<Node, Element, Event>({
         return document.createTextNode(text ?? "");
     },
     getChild(node, index) {
-        return children(node, index);
+        return _children(node, index);
     },
     getNextSibling(node) {
         return node.nextSibling;
@@ -127,13 +127,13 @@ const runtime = createRuntime<Node, Element, Event>({
         element.removeEventListener(type, callback);
     },
     removeNode(node) {
-        remove(node);
+        _remove(node);
     },
     setAttribute(element, key, value) {
-        setAttribute(element, key, value);
+        _setAttribute(element, key, value);
     },
     setText(node, text) {
-        setText(node, text);
+        _setText(node, text);
     },
     createStaticContent(content) {
         const template: HTMLTemplateElement = document.createElement("template");
@@ -143,6 +143,5 @@ const runtime = createRuntime<Node, Element, Event>({
     },
 });
 
-const mount = runtime.mount;
-
-export { mount, runtime };
+export default runtime;
+export const { mount } = runtime;

@@ -1,4 +1,3 @@
-import { ar } from "vitest/dist/chunks/reporters.nr4dxCkA.js";
 import { createSignal, destroy, get, set, Source, trigger } from "./internal";
 
 export const RAW_VALUE = Symbol("raw-value");
@@ -31,6 +30,10 @@ const arrayMutMethods: (keyof any[])[] = ["fill", "pop", "push", "reverse", "shi
 
 export function createProxy<T>(obj: T): T {
     if (typeof obj !== "object" || obj === null) {
+        return obj;
+    }
+    if (isProxy(obj)) {
+        console.log(obj, "is already proxied");
         return obj;
     }
     // only allow plain object, anything else should use normal signal instead
@@ -113,11 +116,12 @@ export function createProxy<T>(obj: T): T {
 // when add an item after delete
 export function createArrayProxy<T>(arr: T[]): T[] {
     // only allow array, TODO: validate it at run time
+    const array = arr.map(it => createProxy(it));
 
     const sources = new Map<string | symbol, Source>();
 
     // console.log dont read any of the props, so we cant track it unless we are doing codegen
-    const arrayRoot = createSignal(arr);
+    const arrayRoot = createSignal(array);
     sources.set(ARRAY_ROOT, arrayRoot);
 
     function invalidateArrayIndex() {
@@ -136,8 +140,8 @@ export function createArrayProxy<T>(arr: T[]): T[] {
         trigger(arrayRoot!);
         for (const key of toInvalidate) {
             const s = sources.get(key)!;
-            if (key in arr) {
-                set(s, createProxy(arr[key as any]));
+            if (key in array) {
+                set(s, createProxy(array[key as any]));
             } else {
                 destroy(s);
             }
@@ -145,7 +149,7 @@ export function createArrayProxy<T>(arr: T[]): T[] {
         // we should not lazily create this
         const l = sources.get("lenght");
         if (l) {
-            set(l, arr.length);
+            set(l, array.length);
         }
     }
 
@@ -155,10 +159,10 @@ export function createArrayProxy<T>(arr: T[]): T[] {
         }
     }
 
-    return new Proxy(arr, {
+    return new Proxy(array, {
         get(target, p, receiver) {
             if (p === RAW_VALUE) {
-                return arr; // what is the different from target
+                return array;
             }
             if (p === RELEASE) {
                 return release;

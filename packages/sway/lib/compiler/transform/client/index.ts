@@ -9,6 +9,7 @@ import { AccessorDefinitionStatement, Binding, ComponentDeclarationStatement, pr
 
 export type ClientTransformOptions = {
   name: string,
+  runtimePath: string;
   ecmaVersion: string,
   logging: boolean;
   staticTemplateParsing: boolean;
@@ -18,6 +19,7 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
   const options: ClientTransformOptions = {
     name: _options.name ?? "Component",
     ecmaVersion: _options.ecmaVersion ?? "2022",
+    runtimePath: _options.runtimePath ?? "sway/runtime/dom",
     logging: _options.logging ?? false,
     staticTemplateParsing: _options.staticTemplateParsing ?? true
   };
@@ -297,6 +299,7 @@ export function transform(root: TemplateAST, _options: Partial<ClientTransformOp
   const declaration: ComponentDeclarationStatement = {
     type: "component-declaration",
     name: options.name,
+    runtimePath: options.runtimePath ?? "sway/runtime/dom",
     before: [...importStatements, ...before],
     body: [
       {
@@ -477,12 +480,7 @@ function transformScript(script: string) {
 
 function extractImport(program: acorn.Program, script: string) {
   const toRemove: Node[] = [];
-  const importStatements: SwayStatement[] = [
-    {
-      type: "any",
-      body: "import * as $ from 'sway/runtime';"
-    }
-  ];
+  const importStatements: SwayStatement[] = [];
 
   walk(program as Node, {
     enter(node, parent, key, index) {

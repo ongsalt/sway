@@ -24,10 +24,11 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
 
     switch (statement.type) {
         case "component-declaration": {
-            const { body, name, after, before } = statement;
+            const { body, name, after, before, runtimePath } = statement;
+            add(`import $ from '${runtimePath}'`);
             add(generateMany(before, indentation, logging));
 
-            add(`export default function ${name}({ $$anchor, $$slots, $$props, $$runtime }) {`);
+            add(`export default function ${name}({ $$anchor, $$slots, $$props }) {`);
             add(`$.push();`, 2);
             add(`const $$exports = {};`, 2);
             add(generateMany(body, indentation, logging));
@@ -72,14 +73,13 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
             }
             add(`  },`);
             add(`  $$exports: {},`);
-            add(`  $$runtime,`);
             add(`});`);
             break;
         }
 
         case "bind-this": {
             const { identifier, instanceName } = statement;
-            add(`$$runtime.bindThis(($$instance) => { ${identifier} = $$instance; }, ${instanceName});`);
+            add(`$.bindThis(($$instance) => { ${identifier} = $$instance; }, ${instanceName});`);
             break;
         }
 
@@ -87,7 +87,7 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
             const { mode, name, parent, index } = statement;
             // well well well...
             const fn = mode === "children" ? "child" : "sibling";
-            add(`const ${name} = $$runtime.${fn}(${parent}, ${index});`);
+            add(`const ${name} = $.${fn}(${parent}, ${index});`);
             break;
         }
 
@@ -124,14 +124,14 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
         case "text-setting": {
             const { accessor, texts } = statement;
             const code = generateTextInterpolation(texts);
-            add(`$$runtime.setText(${accessor}, ${code})`);
+            add(`$.setText(${accessor}, ${code})`);
             break;
         }
 
         case "attribute-updating": {
             const { key, accessor, texts } = statement;
             const code = generateTextInterpolation(texts);
-            add(`$$runtime.setAttribute(${accessor}, \`${key}\`, ${code})`);
+            add(`$.setAttribute(${accessor}, \`${key}\`, ${code})`);
             break;
         }
 
@@ -142,19 +142,19 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
 
             add(`const ${blockName} = ($$anchor) => {`, 2);
             add(generateMany(body, indentation + 4, logging));
-            add(`$$runtime.append($$anchor, ${fragment});`, 4);
+            add(`$.append($$anchor, ${fragment});`, 4);
             add(`};`, 2);
 
             if (_else) {
                 const { blockName, body, fragment } = _else;
                 add(`const ${blockName} = ($$anchor) => {`, 2);
                 add(generateMany(body, indentation + 4, logging));
-                add(`$$runtime.append($$anchor, ${fragment});`, 4);
+                add(`$.append($$anchor, ${fragment});`, 4);
                 add(`};`, 2);
             }
 
             add('');
-            add(`$$runtime.if(${anchor}, ($$render) => {`, 2);
+            add(`$.if(${anchor}, ($$render) => {`, 2);
             add(`if (${condition}) $$render(${blockName})`, 4);
             if (_else) {
                 add(` else $$render(${_else.blockName}, false);`);
@@ -177,19 +177,19 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
 
         case "template-init": {
             const { name, templateName: root } = statement;
-            add(`const ${name} = ${root}($$runtime);`);
+            add(`const ${name} = ${root}($);`);
             break;
         }
 
         case "append": {
             const { anchor, node } = statement;
-            add(`$$runtime.append(${anchor}, ${node});`);
+            add(`$.append(${anchor}, ${node});`);
             break;
         }
 
         case "event-listener": {
             const { event, listenerFn, node } = statement;
-            add(`$$runtime.listen(${node}, ${event}, () => ${listenerFn});`);
+            add(`$.listen(${node}, ${event}, () => ${listenerFn});`);
             break;
         }
 
@@ -203,9 +203,9 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
                 }
             }
 
-            add(`$$runtime.each(${anchor}, () => ${iteratable}, ($$anchor, ${asAndIndex}) => {`);
+            add(`$.each(${anchor}, () => ${iteratable}, ($$anchor, ${asAndIndex}) => {`);
             add(generateMany(body, indentation + 2, logging));
-            add(`$$runtime.append($$anchor, ${fragment});`, 2);
+            add(`$.append($$anchor, ${fragment});`, 2);
             if (key) {
                 add(`}, (${asAndIndex}) => ${key});`);
             } else {
@@ -225,7 +225,7 @@ export function generate(statement: SwayStatement, indentation: number = 0, logg
                 getter = binding.getter;
                 setter = binding.setter;
             }
-            add(`$$runtime.bind(${node}, \`${key}\`, ${getter}, ${setter})`);
+            add(`$.bind(${node}, \`${key}\`, ${getter}, ${setter})`);
             break;
         }
 
@@ -350,13 +350,13 @@ function generateAttributesInitInstructions(nodeName: string, attributes: Attrib
             continue;
         }
         // TODO: escape " and 
-        out += `$$runtime.setAttribute(${nodeName}, \`${attribute.key}\`, \`${attribute.texts.map(it => it.body).join()}\`);\n`;
+        out += `$.setAttribute(${nodeName}, \`${attribute.key}\`, \`${attribute.texts.map(it => it.body).join()}\`);\n`;
     }
     return out;
 }
 
 export function generateTemplateInitInstructions(nodes: TemplateASTNode[]) {
-    let code = `($$runtime) => {\n`;
+    let code = `($) => {\n`;
     code += `const nodes = [];\n`;
     const identifiers = new Set();
 
@@ -384,21 +384,21 @@ export function generateTemplateInitInstructions(nodes: TemplateASTNode[]) {
             const nodeName = createIdentifier(preferredName);
 
             if (node.type === "component" || node.type === "control-flow") {
-                output += `  const ${nodeName} = $$runtime.comment();\n`;
+                output += `  const ${nodeName} = $.comment();\n`;
             } else if (node.type === "text") {
                 const isDynamic = node.texts.some(it => it.type === "interpolation");
                 let text = " ";
                 if (!isDynamic) {
                     text = node.texts.map(it => it.body).join('');
                 }
-                output += `  const ${nodeName} = $$runtime.createText(\`${text}\`);\n`;
+                output += `  const ${nodeName} = $.createText(\`${text}\`);\n`;
             } else {
-                output += `  const ${nodeName} = $$runtime.createElement(\`${node.tag}\`);\n`;
+                output += `  const ${nodeName} = $.createElement(\`${node.tag}\`);\n`;
                 output += generateAttributesInitInstructions(nodeName, node.attributes);
                 output += `{\n`;
                 output += `  const ${nodeName}_children = [];`;
                 output += generateTemplate(node.children, `${nodeName}_children`);
-                output += `${nodeName}_children.forEach(it => $$runtime.appendChild(${nodeName}, it))\n`;
+                output += `${nodeName}_children.forEach(it => $.appendChild(${nodeName}, it))\n`;
                 output += `}\n`;
             }
             output += `  ${targetArray}.push(${nodeName});\n`;

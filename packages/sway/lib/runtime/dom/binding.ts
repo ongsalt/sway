@@ -1,4 +1,4 @@
-import { listen } from ".";
+import runtime from ".";
 import { getActiveComponentScope, templateEffect } from "../reactivity";
 import type { ValueProxy } from "../utils/reactivity";
 
@@ -24,7 +24,7 @@ function bindTextInput(element: TextInputElement, valueProxy: ValueProxy<string>
     // type inference is kinda shit
     element.value = valueProxy.get();
 
-    listen(element, "input", () => (event) => {
+    runtime.listen(element, "input", () => (event) => {
         const { value } = element;
         if (element.type === "number" || element.type === "range") {
             parseFloat(value);
@@ -45,7 +45,7 @@ function bindCheckbox(element: HTMLInputElement, valueProxy: ValueProxy<boolean>
 
     element.checked = valueProxy.get();
 
-    listen(element, "input", () => (event) => {
+    runtime.listen(element, "input", () => (event) => {
         valueProxy.set(element.checked);
     });
 
@@ -58,7 +58,7 @@ function bindCheckbox(element: HTMLInputElement, valueProxy: ValueProxy<boolean>
 // need special handling for HTMLOptionElement we cant use .value directly, 
 // use custom attr .__value instead
 // function bindSelected(element: HTMLSelectElement) {
-//     listen(element, "input", (event) => {
+//     runtime.listen(element, "input", (event) => {
 //         target.value = element.checked;
 //     })
 

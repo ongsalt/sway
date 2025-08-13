@@ -92,6 +92,7 @@ export type AccessorDefinitionStatement = {
 
 export type ComponentDeclarationStatement = {
     type: "component-declaration",
+    runtimePath: string;
     before: SwayStatement[],
     name: string,
     body: SwayStatement[];

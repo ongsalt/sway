@@ -1,5 +1,5 @@
 <script>
-  import { reactive, signal } from "sway";
+  import { reactive, signal, effect } from "sway";
 
   let id = 12768;
 
@@ -36,6 +36,10 @@
     // TODO: make this NOT run immediately
     console.log(todo);
   }
+
+  effect(() => {
+    console.log(todos[0].description)
+  })
 </script>
 
 <main class="max-w-2xl mx-auto p-6">

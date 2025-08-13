@@ -4,6 +4,7 @@ export default defineConfig({
     entry: [
         'lib/index.ts',
         'lib/runtime/index.ts',
+        'lib/runtime/dom/index.ts',
         'lib/compiler/index.ts',
     ],
     format: ["cjs", "esm"],

@@ -2,6 +2,7 @@ import { NodeDefinition, SwayRenderer } from "./renderer";
 
 type StaticPartBuilder<HostNode> = (runtime: SwayRenderer<HostNode>) => HostNode | HostNode[];
 
+// TODO: directly pass in renderer here
 export function staticContent<HostNode>(content: string | NodeDefinition<HostNode>[] | StaticPartBuilder<HostNode>) {
   const fns = new Map<SwayRenderer<HostNode>, StaticPartBuilder<HostNode>>();
 

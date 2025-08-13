@@ -26,6 +26,11 @@
       "types": "./dist/runtime/index.d.ts",
       "import": "./dist/runtime/index.js",
       "require": "./dist/runtime/index.cjs"
+    },
+    "./runtime/dom": {
+      "types": "./dist/runtime/dom/index.d.ts",
+      "import": "./dist/runtime/dom/index.js",
+      "require": "./dist/runtime/dom/index.cjs"
     }
   },
   "devDependencies": {
