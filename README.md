@@ -30,6 +30,9 @@ svelte 5 clone (hopefully)
 - non dom support with custom renderer
 
 ## What's not yet
+- Think about alternative ui definitions (swiftui/flutter inspired) 
+    - but we still need to compile it tho
+    - need to make If/For/ a component as well
 - think about each binding: should we make each item a signal or not.
 - parse more complex expression here `#each {expression} as something, index`
     - `#each cats.filter(it => it.id.length < lenght) as cat, i`
