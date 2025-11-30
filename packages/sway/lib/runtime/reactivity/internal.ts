@@ -62,7 +62,7 @@ type ReactiveNode = Subscriber | Source | ReactiveScope;
 // TODO: scope
 let activeScope: EffectScope | null = null;
 let activeSubscriber: Subscriber | null = null;
-const batch = new DedupBucketPQ<Effect>();
+const pendingEffects = new DedupBucketPQ<Effect>();
 let batchNumber = 0;
 
 export function getActiveScope() {
@@ -162,10 +162,10 @@ function notify(subscriber: Subscriber, depth = 0) {
 function notifyEffect(effect: Effect) {
     // eagerly run it
 
-    // we should start a new batch after a set call
+    // we should start a new pendingEffects after a set call
     // TODO: schedule these then batchNumber += 1
     //       so a state set in an effect will run after this 
-    batch.insert(effect, effect.priority);
+    pendingEffects.insert(effect, effect.priority);
 }
 
 function notifyComputed(computed: Computed, depth = 0) {
@@ -251,7 +251,7 @@ export function get<T>(source: Source<T>) {
 }
 
 export function trigger(signal: Signal<any>) {
-    // start a batch
+    // start a pendingEffects
     for (const subscriber of signal.subscribers) {
         notify(subscriber);
     }
@@ -270,7 +270,7 @@ function scheduleFlush() {
 
 function flush() {
     // console.log(`batchNumber: ${batchNumber}`);
-    for (const effect of batch.flush()) {
+    for (const effect of pendingEffects.flush()) {
         updateEffect(effect);
     }
 
@@ -286,7 +286,7 @@ function flush() {
 
 export function set<T>(signal: Signal<T>, value: T) {
     signal.value = value;
-    // start a batch
+    // start a pendingEffects
     trigger(signal);
 }
 
