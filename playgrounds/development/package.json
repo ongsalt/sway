@@ -12,7 +12,7 @@
     "@types/bun": "^1.2.17",
     "sway": "workspace:*",
     "typescript": "~5.6.3",
-    "vite": "^6.3.5",
+    "vite": "^7.2.7",
     "vite-plugin-sway": "workspace:*"
   },
   "dependencies": {
