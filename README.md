@@ -2,6 +2,10 @@
 ### 🌟☄️🌸🎼
 svelte 5 clone (hopefully)
 
+## What's broken
+- Array proxy 
+
+
 ## What's done
 - Templating syntax: literally svelte, you can even use svelte lsp.
     - you can do interpolation e.g. `{count.value}`.
